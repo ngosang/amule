@@ -12,9 +12,8 @@ turns up a consistent set of problems:
   `download_active_time` and `lost_to_corruption` are bytes, bytes, a unix
   timestamp, seconds and bytes. Nothing in the names says so, and `saved_by_ich`
   sitting between two of them is a count of *packets*.
-- **Booleans that do not read as booleans**, and one field that looks like a
-  boolean but is a counter: `uploading` on `GET /shared` is *the number of clients
-  currently downloading that file*.
+- **A field that looks like a boolean but is a counter:** `uploading` on
+  `GET /shared` is *the number of clients currently downloading that file*.
 - **The same concept under different names** on neighbouring endpoints:
   `xfer.up_total` / `total_uploaded`, `count` / `total`, `exp` / `expires_at`,
   `kind` / `type`, `obfuscation` / `obfuscation_status`.
@@ -41,7 +40,7 @@ that covered only the units and the duplicate names (§1's `_bytes` / `_seconds`
 `xfer`, `count`/`total`, `exp`/`expires_at`, and the internal vocabulary now
 handled by R8) — everything it argued is below.
 
-**Bugs and design defects are tracked separately.** This file is names only.
+**Bugs and design defects are tracked separately.** This file is the naming pass.
 What is *wrong* rather than badly spelled is in
 [`api-protocol-and-correctness-bugs.md`](api-protocol-and-correctness-bugs.md),
 and what is merely inconsistent is in
@@ -55,9 +54,13 @@ collection-action paths, the error-code catalog, and the handful of renames that
 did land (`firewalled_tcp`, `lan_mode`, the three `core_tweaks.*_minutes`,
 `?status=`) — is gone from here.
 
-This issue is **naming only**. No new data is read from the daemon and no EC
-change is required; every rename is a key string in a serializer, a parser
-branch, a JS property and a doc line.
+This issue is **mostly naming**. No new data is read from the daemon and no EC
+change is required; nearly every rename is just a key string in a serializer, a
+parser branch, a JS property and a doc line. A handful also change a value's
+*representation* rather than only its key — `color` to `#rrggbb` (§1.5), dropping
+the ISO-8601 timestamp twins (R3), `""`/`0` sentinels to `null` (R10) and the
+added `ip` on `/servers` (§1.4) — and those carry parser and test work the pure
+renames do not. They are called out where they appear.
 
 **The result ships as `/api/v1/`.** `docs/api/REFERENCE.md:5` promises that
 *"`/api/v0/` is frozen against any backwards-incompatible change"*, and this
@@ -78,9 +81,9 @@ re-litigate them.
 | # | Rule |
 |---|---|
 | **R1** | `snake_case` for every path segment, query parameter and JSON key. The only violation today is the path `/logs/serverinfo`. |
-| **R2** | **Units live in the name.** `_bytes`, `_bps` (**bytes** per second), `_kbps` (**1024 bytes** per second — the unit the daemon itself stores), `_seconds`, `_minutes`, `_ms`, `_percent` (always 0–100). A bare number is only acceptable when it is a dimensionless count. The one genuine bit rate on the surface — the media bitrate ffprobe reports — is `_kbits`, because `ParseBitrateKbps` (`MediaProbe.cpp:434-450`) divides ffprobe's bits/second by **1000** and so cannot borrow either byte spelling. `_bps` goes against networking convention, where `bps` is bits, so the reference must carry a literal numeric example beside the definition (`speed_bps: 524288` is 512 KiB/s), not just the sentence; **if it does not, this rule has failed and the long spelling wins.** `b` is a byte and `k` is 1024, throughout, and both halves of that are stated in the same sentence as the example. An IEC-style `_kibps` was tried and reverted: it mixes a loose local convention (`b` = byte, which is not SI) with a strict standard one (`i` = 1024) inside one token, and `kibps` is not IEC notation for anything either — the correct IEC spelling is `KiB/s`. Either the whole token is a documented local convention or none of it is. The error it would have prevented is also small: a client assuming `k` = 1000 sets a bandwidth *limit* 2.4% off, which is invisible in practice, unlike the 8× a mis-read `_bps` puts on a displayed speed. **Two alternatives were considered and rejected.** *Spell it out* — `speed_bytes_per_second` — is unambiguous but buys nothing the numeric example does not, at 13 more characters on the most-read key in the API. *Convert the values to bits* so `bps` means what a network engineer expects does not survive contact with the payload: `GET /downloads/{hash}` returns `size` and `size_done` in bytes beside `speed_bps`, and `(size - size_done) / speed` is the object's most natural computation, so a bit-valued rate would make two adjacent, identical-looking fields differ by 8× with nothing on screen to say so — a worse trap than a name, because a name is visible. Every other quantity on the surface is bytes (`total_uploaded`, `lost_to_corruption`, `session.download_bytes`, and `/stats/graphs`' `unit: "bytes_per_second"`, whose points match `status.speeds.download_bps` value for value), so the rate would be the lone exception. |
+| **R2** | **Units live in the name.** `_bytes`, `_bps` (**bytes** per second), `_kbps` (**1024 bytes** per second — the unit the daemon itself stores), `_seconds`, `_minutes`, `_ms`, `_percent` (always 0–100). A bare number is only acceptable when it is a dimensionless count. The one genuine bit rate on the surface — the media bitrate ffprobe reports — is `_kbits`, because `ParseBitrateKbps` (`MediaProbe.cpp:462`) divides ffprobe's bits/second by **1000** and so cannot borrow either byte spelling. `_bps` goes against networking convention, where `bps` is bits, so the reference must carry a literal numeric example beside the definition (`speed_bps: 524288` is 512 KiB/s), not just the sentence; **if it does not, this rule has failed and the long spelling wins.** `b` is a byte and `k` is 1024 in the byte-rate tokens (`_kbps` = KiB/s), stated in the same sentence as the example. `_kbits` is the **one** token where `k` is 1000, not 1024 — it mirrors ffprobe's kilo**bit** figure, which `ParseBitrateKbps` divides by 1000 (`MediaProbe.cpp:462`). So `k` is *not* uniform across the surface: the reference gives each token its own numeric example rather than leaning on one blanket rule. An IEC-style `_kibps` was tried and reverted: it mixes a loose local convention (`b` = byte, which is not SI) with a strict standard one (`i` = 1024) inside one token, and `kibps` is not IEC notation for anything either — the correct IEC spelling is `KiB/s`. Either the whole token is a documented local convention or none of it is. The error it would have prevented is also small: a client assuming `k` = 1000 sets a bandwidth *limit* 2.4% off, which is invisible in practice, unlike the 8× a mis-read `_bps` puts on a displayed speed. **Two alternatives were considered and rejected.** *Spell it out* — `speed_bytes_per_second` — is unambiguous but buys nothing the numeric example does not, at 13 more characters on the most-read key in the API. *Convert the values to bits* so `bps` means what a network engineer expects does not survive contact with the payload: `GET /downloads/{hash}` returns `size` and `size_done` in bytes beside `speed_bps`, and `(size - size_done) / speed` is the object's most natural computation, so a bit-valued rate would make two adjacent, identical-looking fields differ by 8× with nothing on screen to say so — a worse trap than a name, because a name is visible. Every other quantity on the surface is bytes (`total_uploaded`, `lost_to_corruption`, `session.download_bytes`, and `/stats/graphs`' `unit: "bps"` (§1.8), whose points match `status.speeds.download_bps` value for value), so the rate would be the lone exception. |
 | **R3** | **Timestamps are integer unix seconds and end in `_at`.** One representation, not two: drop the parallel ISO-8601 twins (`expires_at` + `expires_at_unix` → a single `expires_at`). Formatting is a client concern, exactly as the reference already says about numbers. |
-| **R4** | **Booleans read as predicates:** `is_*`, `has_*`, `can_*`, `*_enabled`, `*_supported`. Never a bare adjective (`static`, `failed`), never a bare verb (`uploading`, `reconnect`), and never a field that holds a count. |
+| **R4** | **Booleans carry no `is_`/`has_`/`can_` prefix.** A boolean already reads as a predicate: an adjective or past participle (`online`, `incomplete`, `recursive`), or an `_enabled`/`_supported` suffix on a stateful noun (`kad_enabled`, `mmap_supported`). A boolean must never be a field that holds a count (`uploading` is an integer — rename to `_count`), a bare command-verb that reads as an imperative (`reconnect`), or a reserved word (`static` breaks codegen — rename it, e.g. `permanent`). |
 | **R5** | **Counts end in `_count`** — except inside an object that already names the thing being counted, where the parent carries it (`sources.total`, `sources.transferring`). The pagination envelope keeps `total` for "matching items before the window". |
 | **R6** | **One concept, one key, everywhere.** The same quantity must not be `xfer.up_total` on one resource and `total_uploaded` on the next. |
 | **R7** | **A `sort` value *is* the response key it orders by**, spelled identically, dotted for nested keys: `sort=speed_bps`, `sort=ping_ms`, `sort=size_bytes`, `sort=sources.total`. No stripped suffixes, no per-endpoint mapping table to keep in sync, and a field rename can never orphan a sort value. |
@@ -88,7 +91,7 @@ re-litigate them.
 | **R9** | **A writable field accepts the values the same field returns.** Where a write is really a command (`status: "resumed"`), it belongs in a differently-named key (`action`), not in the read field's name. |
 | **R10** | **Always emit the key.** Unknown/absent values are `null`, not "field omitted" — a client should never have to distinguish "absent" from "zero" by probing. |
 | **R11** | **Group by quantity, not by scope.** A sub-object earns its place when it groups *different* quantities (`sources`, `progress`, `media`). One quantity split by time window does not: the window belongs in the key (`uploaded_bytes_session` / `uploaded_bytes_total`), not in a wrapper (`xfer.session`). This is why `sources.total` stays nested below while `xfer`, `requests` and `accepts` are flattened. |
-| **R12** | **One word for the remote party: `client`.** The API says `client` everywhere — `/clients`, `client_ecid`, `client_added`, `…/{hash}/clients`, `/clients/{ecid}/messages`. **`peer` is not used at all**, in a key, a path or an enum value. **`source` is not a synonym for it**: a source is a client *in a role with respect to one file* — one that can serve that file to us — so it survives only where that relation is what is being counted or described (`sources.total`, `complete_source_count`, `source_origin`, `source_ecids`). Renaming those to `clients.*` would make them lie: a file's clients include the ones downloading **from** us, which its sources do not. The rule governs the **contract** — keys, paths, enum values — and the reference prose that explains it; Web UI labels are free to mirror the desktop's wording, where the Shared Files panel is called *Peers*. |
+| **R12** | **One word for the remote party: `client`.** The API says `client` everywhere — `/clients`, `client_ecid`, `client_added`, `…/{hash}/clients`, `/clients/{ecid}/messages`. **`peer` is not used at all**, in a key, a path or an enum value. **`source` is not a synonym for it**: a source is a client *in a role with respect to one file* — one that can serve that file to us — so it survives only where that relation is what is being counted or described (`sources.total`, `sources.complete`, `source_origin`, `source_ecids`). Renaming those to `clients.*` would make them lie: a file's clients include the ones downloading **from** us, which its sources do not. The rule governs the **contract** — keys, paths, enum values — and the reference prose that explains it; Web UI labels are free to mirror the desktop's wording, where the Shared Files panel is called *Peers*. |
 
 ## 1. Renames
 
@@ -108,14 +111,12 @@ unchanged in the `download_added` / `download_updated` SSE payloads
 | `progress.percent` | *(keep)* | but document the 0–100 range explicitly |
 | `progress.parts[].state: "incomplete"` | `"pending"` | it means "we lack it, a source has it" |
 | `progress.parts[].state: "missing"` | `"unavailable"` | it means "we lack it and no source has it" |
-| `priority_auto` | `is_priority_auto` | R4 |
-| `a4af_auto` | `is_a4af_auto` | R4 |
 | `category` | `category_index` | a bare integer named after a string-ish concept; it is the index into `GET /categories` |
 | `hashing_progress` | `hashed_part_count` | **the current name lies** — it is a part count, not a percentage: `EC_TAG_PARTFILE_HASHED_PART_COUNT` (`Refresher.cpp:587`), and `State.h:166` comments "parts hashed so far; 0 = idle". On the list as well as the detail object, so the SSE payload moves with it. **Emit `parts_total_count` beside it on the list rows too** (today `part_count` is detail-only): a rising integer with no total next to it is not renderable, and a progress bar fed it directly shows 3% for three parts of a hundred and 300% for three hundred of a thousand |
 | `last_seen_complete` | `last_seen_complete_at` | R3 |
 | `last_changed` | `last_received_at` | R3, **and the current name is wrong** — it is `EC_TAG_PARTFILE_LAST_RECV` (`Refresher.cpp:574`), the last time data arrived |
 | `download_active_time` | `active_seconds` | R2 |
-| `remaining_time` | `eta_seconds` | R2. It is already `null` when there is no ETA, so only the name moves |
+| `remaining_time` | `remaining_seconds` | R2. **Not** `eta_seconds`: "ETA" names an arrival *instant*, but this is the seconds still remaining — a duration. It is already `null` when there is none, so only the name moves |
 | `available_part_count` / `part_count` | `parts_available_count` / `parts_total_count` | R5, and the pairing is currently invisible — `parts_available_count` is the parts at least one source can serve |
 | `lost_to_corruption` | `lost_to_corruption_bytes` | R2 |
 | `gained_by_compression` | `gained_by_compression_bytes` | R2 |
@@ -126,8 +127,8 @@ unchanged in the `download_added` / `download_updated` SSE payloads
 | `queued_count` | `upload_queue_count` | count of clients queued to download this file *from us* |
 | `comment` / `rating` | `my_comment` / `my_rating` | they collide with `comments[].comment` / `.rating`, which are *other clients'* |
 | `media.length_s` | `media.duration_seconds` | R2; `length` also collides with the file's byte size |
-| `media.bitrate` | `media.bitrate_kbits` | R2 — the unit exists nowhere in the code, and this one really is kilo**bits**: `ParseBitrateKbps` (`MediaProbe.cpp:434-450`) divides ffprobe's bits/second by **1000**, so it cannot borrow the API's `_kbps` = KiB/s spelling |
-| `kad_comment_search_running` | `is_kad_comment_lookup_running` | R4; "search" here is a Kad *notes* lookup, not a file search. **Three writers carry this key**, not one: the download object, `GET /downloads/{hash}/comments` (`Api.cpp:4302`) and the search result (`SearchJson.cpp:115`). A rename that misses one leaves the Web UI polling a key that stopped existing |
+| `media.bitrate` | `media.bitrate_kbits` | R2 — the unit exists nowhere in the code, and this one really is kilo**bits**: `ParseBitrateKbps` (`MediaProbe.cpp:462`) divides ffprobe's bits/second by **1000**, so it cannot borrow the API's `_kbps` = KiB/s spelling |
+| `kad_comment_search_running` | `kad_comment_lookup_running` | "search" here is a Kad *notes* lookup, not a file search. **Three writers carry this key**, not one: the download object, `GET /downloads/{hash}/comments` (`Api.cpp:4302`) and the search result (`SearchJson.cpp:115`). A rename that misses one leaves the Web UI polling a key that stopped existing |
 | `hash`, `name`, `ed2k_link`, `status`, `priority`, `speed_bps`, `aich_hash` | *(keep)* | reviewed: rule-compliant. `aich` stays under R8 — the desktop shows the user "AICH info" in the shared-files context menu (`SharedFilesCtrl.cpp:209`) — and `aich_hash: ""` before the hashset exists is the one R10 fix on this set |
 | `media.codec` / `.artist` / `.album` / `.title` | *(keep)* | reviewed: rule-compliant; only the two unit-bearing members of `media` move |
 
@@ -137,8 +138,6 @@ Sub-resources of a download:
 |---|---|---|
 | `GET .../comments` | `count` | `total` (R6 — every other collection says `total`). The `comments_updated` SSE payload carries the same key (`EventDiff.cpp:142`) and moves with it |
 | `GET .../filenames` | `filenames[].name` | `filenames[].filename`, and `filenames[].count` → `filenames[].source_count` |
-| `POST .../a4af` reply (`WriteA4afObject`, `Api.cpp:4448`) | `a4af_auto` | `is_a4af_auto` (R4) — the same flag as on the download detail object, so it moves with it. `source_ecids` beside it is already right |
-| `POST .../a4af` | `action` values `swap_this`, `swap_others` | keep the values. `swap_this_auto` has **already** been moved out (it is now rejected here; the flag is set idempotently via `PATCH /downloads/{hash} {"a4af_auto": …}`) — the remaining rename is only `a4af_auto` → `is_a4af_auto` on that PATCH, tracked above |
 
 Write side:
 
@@ -167,9 +166,7 @@ never updates.
 | `remote_queue_rank` | `remote_queue_position` | the mirror image — our place in **their** queue; `rank` and `position` were two words for one thing. (The `0xffff`-full-queue sentinel already emits `null` via `WriteIntOrNull`; only the rename is left.) |
 | `score` | `upload_queue_score` | score of what, on which side |
 | `dl_up_modifier` | `credit_ratio` | unguessable abbreviation; it is the credit-system modifier applied to this client (`CUpDownClient::GetScoreRatio()`, `State.h:477`), which the desktop labels "DL/UP modifier". `credit_ratio_modifier` was the other candidate; `credit_ratio` wins on R5 — it is a ratio, not a count of modifiers |
-| `friend_slot` | `has_friend_slot` | R4, and it is easy to misread as `is_friend` |
-| `view_shared_disabled` | `can_browse_shared_files` **(inverted)** | R4 — a negated boolean forces `disabled == false` at every call site |
-| `high_id` | `is_high_id` | R4 |
+| `view_shared_disabled` | `shared_files_browsable` **(inverted)** | invert the negated boolean — a negated field forces `disabled == false` at every call site; the positive form reads directly, no prefix (R4) |
 | `user_id_hybrid` | `ed2k_user_id` | R8 — "hybrid" is an eDonkey-encoding detail |
 | `obfuscation_status` (clients) / `obfuscation` (known_clients) | `obfuscation_state` on both | R6; `_state` matches the sibling `upload_state` / `download_state` / `ident_state` |
 | `mod_version` | `client_mod_name` | it is the client's mod string, not a version |
@@ -177,17 +174,17 @@ never updates.
 | `available_parts` | `parts_offered_count` | R5; deliberately *not* `parts_available_count` — that name belongs to the download object, where it means "parts any source can serve"; this one is the parts **this** client holds |
 | `part_progress_percent` | *(keep)* | reviewed: rule-compliant |
 | `version` (known_clients) | `software_version` | R6 — `/clients` calls the identical value `software_version` |
-| `online` (known_clients) | `is_online` | R4 |
 | `sessions` (known_clients) | `session_count` | R5 |
 | `first_seen` / `last_seen` | `first_seen_at` / `last_seen_at` | R3 |
-| `is_friend`, `user_hash`, `server_ip`, `server_port`, `server_name`, `kad_port`, `country_code`, `software`, `upload_state`, `download_state`, `ident_state`, `source_origin`, `upload_speed_bps`, `download_speed_bps`, the four `*_file_name` / `*_file_hash` keys | *(keep)* | reviewed: rule-compliant |
+| `is_friend` | `friend` | drop the `is_` prefix (R4) — the only prefixed key on the whole surface today; the JSON value carries the type |
+| `user_hash`, `server_ip`, `server_port`, `server_name`, `kad_port`, `country_code`, `software`, `upload_state`, `download_state`, `ident_state`, `source_origin`, `upload_speed_bps`, `download_speed_bps`, the four `*_file_name` / `*_file_hash` keys | *(keep)* | reviewed: rule-compliant |
 | `country_code: ""` | `null` when unresolved | R10, same as on `/servers` |
 
-The two per-file client routes add three keys to the same object:
+The two per-file client routes add three keys to the same object — `a4af`, `role`
+and a `parts` array; only `role` is renamed:
 
 | current | new | why |
 |---|---|---|
-| `a4af` (bool) | `is_a4af` | R4 — a bare acronym holding a boolean, beside `role`, which is a string |
 | `role` values `source` / `peer` / `both` / `none` | `downloading_from` / `uploading_to` / `both` / `none` | R12 — `peer` as a role value is the **only contract-level `peer` left outside `/chats`** (`Api.cpp:3975`, documented at `REFERENCE.md:836`), and paired against `source` it is not even the same axis (one names a relation to the file, the other the entity). Naming both roles by direction says exactly what the row is: we pull this file from that client, or it pulls it from us |
 | `parts` (array of bool, behind `?include_parts=true`) | *(keep)* | reviewed: the caller opted into it, so its absence is an answer, not a missing value |
 
@@ -212,17 +209,15 @@ The base fields ship in the `shared_*` SSE payloads (`ToJsonSharedEvent`,
 | `requests.session` / `requests.total` | `request_count_session` / `request_count_total` | R5/R11 |
 | `accepts.session` / `accepts.total` | `accepted_request_count_session` / `accepted_request_count_total` | R5/R11 — `accepts` is a verb doing duty as a plural noun |
 | **`uploading`** | **`uploading_client_count`** | **the single worst name on the surface**: it reads as a boolean and holds an integer. R12 — clients, not peers |
-| `complete_sources` | `complete_source_count` | R5. Note the same quantity is `sources.complete` on a search result (`SearchJson.cpp`) — R6 tolerates the divergence only because the search object nests a whole `sources` group and this one does not; the reference has to say so, or it reads as drift |
-| `complete_sources_range.low` / `.high` | `complete_source_count_min` / `_max`, **flattened** — the wrapper object earns nothing once the keys say `min`/`max` | R6 with the above |
+| `complete_sources` | `sources.complete` | **R6 over R11, deliberately** — the identical quantity is `sources.complete` on a search result (`SearchJson.cpp`), so nesting it here gives one access path for "complete sources" across both endpoints instead of `complete_source_count` here and `sources.complete` there. This *does* wrap a single quantity on `/shared`, which R11 on its own would flatten; the call is that `sources` is a **recurring, named group** elsewhere (downloads carry total/transferring/a4af/unavailable, search carries total/complete), so a client reading `sources.complete` generically works on every endpoint that has the concept. Cross-endpoint predictability is judged to beat R11's anti-wrapping default here — the reverse of the earlier flat choice — and the reference must record it as a stated exception to R11 |
+| `complete_sources_range.low` / `.high` | `sources.complete_min` / `sources.complete_max` | grouped under the same `sources` object — it is that count's estimated range, so it belongs beside `sources.complete` |
 | `last_upload` | `last_upload_at` | R3 |
 | `shared_since` | `shared_since_at` | R3 |
 | `hashing_progress` | `hashed_part_count` | R6 — the same rename as on the download object; here it is fed through `SharedHashingProgress()` so a shared partfile reads correctly, and it is a list-level field, so the SSE payload moves with it |
-| `priority_auto` | `is_priority_auto` | R4 |
-| `share_ratio` | `upload_ratio` | it is `uploaded_bytes_total / size_bytes`; "share ratio" reads as a BitTorrent seed ratio |
+| `share_ratio` | `upload_ratio` | it is `uploaded_bytes_total / size_bytes`, an upload figure, so it joins the `upload`-family keys the rest of the object already uses (`uploaded_bytes_*`, `upload_queue_count`); "share" is a third verb for the same act |
 | `part_count` | `parts_total_count` | R6 — the download object's identical field is renamed the same way |
 | `parts` (detail; `[{sources}]`) | *(keep the placement and the shape)* — but **emit `null`** instead of omitting the key when no availability data has been decoded yet (R10) | the divergence from the download side is correct: `progress` is meaningless for a complete share, and the download's `{state, sources}` encodes *local* completeness, which would invite a renderer that lies about a shared file. Two shapes because they answer two questions. `null` still keeps "no data yet" distinguishable from "no sources for any part" |
 | `path` | `directory` | R6 with the download object — it is the same value for the same file, and it is always a directory |
-| `incomplete` | `is_incomplete` | R4 |
 | `queued_count` | `upload_queue_count` | R6 with the download object |
 | `comment` / `rating` | `my_comment` / `my_rating` | R6 with the download object |
 | `media.length_s` / `media.bitrate` | `media.duration_seconds` / `media.bitrate_kbits` | R2 |
@@ -232,7 +227,6 @@ The base fields ship in the `shared_*` SSE payloads (`ToJsonSharedEvent`,
 
 | current | new | why |
 |---|---|---|
-| `directories[].recursive` | `directories[].is_recursive` | R4 |
 | `directories[].path` | *(keep)* | a share **root** is a configured path, not the directory a file lives in; the two `path` → `directory` renames above are about a file's location. Say this in the reference so the divergence reads as a decision |
 | `DELETE /share_directories?path=` | body `{"path": …}` | a query-string selector on a collection URL (`Api.cpp:9534`): forgetting it reads as "delete every share root". A body on `DELETE` is already the house style — `DELETE /downloads` takes `{"hashes": [...]}` |
 | `rejected[].reason` values `not_readable` / `not_found` | *(keep)* | clear |
@@ -244,13 +238,13 @@ payloads (`EventDiff.cpp:197`).
 
 | current | new | why |
 |---|---|---|
-| `users` / `max_users` | `user_count` / `max_user_count` | R5. They are self-explanatory in isolation, but the cost of keeping them is that they become the exception once `/shared` reports `complete_source_count`, `/clients` `session_count` and `/downloads` `upload_queue_count`: a consumer can no longer tell from a key whether a bare plural is a count or a list |
+| `users` / `max_users` | `user_count` / `max_user_count` | R5. They are self-explanatory in isolation, but the cost of keeping them is that they become the exception once `/shared` reports `uploading_client_count`, `/clients` `session_count` and `/downloads` `upload_queue_count`: a consumer can no longer tell from a key whether a bare plural is a count or a list |
 | `files` | `file_count` | R5, same reasoning — and it disambiguates against the rest of the API, not just against its `soft_file_limit` / `hard_file_limit` neighbours |
-| `static` | `is_static` | R4, plus: `static` is a reserved word in C++, Java, C# and TypeScript-adjacent codegen, so any generated client has to mangle it |
+| `static` | `permanent` | booleans carry no prefix (R4), but `static` cannot stay bare — it is a reserved word in C++, Java, C# and TypeScript-adjacent codegen, so any generated client has to mangle it. `permanent` is the plain adjective for a manually-added server that is never purged |
 | `address` (string `"ip:port"`) with no `ip` | add `ip`, keep `address` and `port` | the `ip:port` URL form needs the IP, so every client re-parses `address` today |
 | `country_code: ""` | `null` when unresolved | R10 |
 | `soft_file_limit`, `hard_file_limit`, `failed_count`, `ping_ms`, `ecid`, `priority`, `description`, `version` | *(keep)* | reviewed: rule-compliant. `0` on the two limits means "not reported yet", which the reference already documents |
-| `tcp_flags.*`, `udp_flags.*` (bare booleans: `compression`, `unicode`, `large_files`, `new_tags`, `type_tag_integer`, …) | *(keep)* | R4's parent-qualifies carve-out, the same one R5 grants `sources.total`: the object is called `tcp_flags`, so every member reads as a flag without an `is_`/`supports_` prefix. Do **not** prefix them one at a time. Shared table at `ServerFlagNames.h`, so REST and SSE cannot drift |
+| `tcp_flags.*`, `udp_flags.*` (bare booleans: `compression`, `unicode`, `large_files`, `new_tags`, `type_tag_integer`, …) | *(keep)* | the object is called `tcp_flags`, so every member already reads as a flag; leave them bare (R4). Shared table at `ServerFlagNames.h`, so REST and SSE cannot drift |
 | `POST /servers_update` body `servers_url`, `POST /kad/update` body `nodes_url`, `POST /ipfilter/update` body `ipfilter_url` | `url` on all three | R6 — three `*/update` endpoints, three spellings of "the URL to fetch the list from", each repeating a noun the path already carries. All three go through one handler with a per-endpoint `spec.field` (`Api.cpp:3788`), so this is one line per spec |
 
 ### 1.5 Categories
@@ -261,9 +255,27 @@ payloads (`EventDiff.cpp:197`).
 |---|---|---|
 | `index` | *(keep the key)* | but document loudly that it is **positional and renumbered on delete** — `DELETE /categories/{index}` already has to shift every download's category to compensate |
 | `path` | `save_path` | ambiguous next to `directories.incoming`; it is where finished files in this category land |
-| `color` (bare uint32) | `color` as `"#rrggbb"` | a 24-bit value delivered as a decimal integer, with the code accepting the full uint32 range |
+| `color` (bare uint32) | `color` as `"#rrggbb"` | a 24-bit value delivered as a decimal integer. **Mind the byte order:** the core packs it as `0x00BBGGRR` — red in the *low* byte (`CMuleColour(unsigned long)`, `MuleColour.h:84`) — and ignores the top byte, so a naive hex-print of the integer yields `#bbggrr`, reversed. Unpack/repack per the code note below, not `printf("#%06x")` |
 | synthesized index-0 row | give it real values | when the daemon sends no index-0 category the handler fabricates one with `name: ""`, `path: ""`, `color: 0`, `priority: "low"` and serves it as if it were real (`CategoriesWithDefault`, `Api.cpp:5625`); the docs claim `"All"` / `"normal"` (`REFERENCE.md:1845-1850`) |
 | `priority` write enum | accept what the read enum returns | R9 — reads can return `very_low` and `release`, writes reject them (documented at `REFERENCE.md:1874`) |
+
+The `color` format change is not a pure rename — it touches the serializer
+(`Api.cpp:5648`) and the body parser (`Api.cpp:9992`), and both have to unpack
+and repack around the `0x00BBGGRR` layout (red in the low byte); a plain hex
+print/parse is wrong:
+
+```cpp
+// serialize — was: w.ValueInt(static_cast<int64_t>(c.color));
+const unsigned r =  c.color        & 0xFF;
+const unsigned g = (c.color >>  8) & 0xFF;
+const unsigned b = (c.color >> 16) & 0xFF;
+w.ValueString(wxString::Format(wxT("#%02x%02x%02x"), r, g, b));
+
+// parse — replace the is<double>() / uint32-range branch with a "#rrggbb"
+// string check (reject anything not /^#[0-9a-fA-F]{6}$/ with `bad_request`),
+// then repack into the same low-byte-red layout the core reads:
+//   out.color = r | (g << 8) | (b << 16);
+```
 
 ### 1.6 Search
 
@@ -281,7 +293,7 @@ renames land once; `HandleSearchList` (`Api.cpp:7722`) hand-writes the
 | `POST /search` body `file_type`, `extension` | *(keep)* | reviewed: rule-compliant |
 | `results[].size` | `size_bytes` | R2 |
 | `results[].sources.total` / `.complete` | *(keep)* | R5/R6 — same shape as the download object's `sources` |
-| `results[].already_have` | `is_already_downloaded` | R4 |
+| `results[].already_have` | `already_downloaded` | `have` reads as the wire verb; `downloaded` is the state, and no prefix (R4) |
 | `results[].type` | `file_type` | R6 — `POST /search`'s own body already spells this filter `file_type` (`Api.cpp:10292`), so the rename aligns request and response rather than inventing a name. `/shared/{hash}` derives its `file_type` from the *same* call (`GetFiletypeByName(name, translated=false)`, lowercased), so these are one enum under two key names; next to a `media` object a bare `type` also reads as a MIME type. The two key names already draw from one shared token function (`FileTypeToken`, `Refresher.cpp`); only the two spellings differ |
 | `results[].rating` | *(keep)* | but document `0` = *unrated*, not "rated zero" |
 | `results[].comments[].username` / `.filename` / `.rating` / `.comment` | *(keep)* | reviewed: rule-compliant, and the identical object ships on `GET /downloads/{hash}/comments` and in the `comments_updated` SSE payload — three copies of one shape, so any change to it moves in all three |
@@ -289,7 +301,7 @@ renames land once; `HandleSearchList` (`Api.cpp:7722`) hand-writes the
 | `results[].directory` | *(keep)* | reviewed: rule-compliant, and already the `sort` key |
 | `results[].media.length_s` / `.bitrate` | `.duration_seconds` / `.bitrate_kbits` | R2 |
 | `results[].children[]` | `results[].alternate_names[]` | `children` is tree vocabulary for what the code calls same-hash/same-size hits advertised under different filenames (`State.h:873-875`) — there is no hierarchy, only one file seen under several names. Each entry's `hash` is by construction the parent's, so it can go |
-| `results[].kad_comment_search_running` | `is_kad_comment_lookup_running` | R4/R6 — see §1.1, three writers |
+| `results[].kad_comment_search_running` | `kad_comment_lookup_running` | R6 — see §1.1, three writers; "search" is a Kad notes lookup |
 | `progress.percent` | *(keep)* | 0–100, document it |
 | `search_progress` SSE `results` | `result_count` | R5/R6 — a plural key holding an integer, while `results` is an array everywhere else, and `GET /search` already calls the same number `result_count` |
 
@@ -301,14 +313,11 @@ renames land once; `HandleSearchList` (`Api.cpp:7722`) hand-writes the
 
 | endpoint | current | new | why |
 |---|---|---|---|
-| `/friends` | `online` | `is_online` | R4/R6 — `/known_clients` and `/chats` get the same rename |
-| `/friends` | `friend_slot` | `has_friend_slot` | R4/R6 — same field, same rename as on the client object |
 | `/friends` | `ip: ""`, `client_ecid: 0` | `null` | R10 — same sentinel cleanup as `/servers` and `/clients` |
 | `/chats`, `/chats/{peer}`, `/chats/{peer}/messages` | the `peer` key and the `{peer}` path segment | `client_address`, `/chats/{client_address}` | R12 — `peer` is the third word for the thing the API calls a client, and it is the *address* form of it (it has to be: a chat can address a client that is offline and has no ECID). `client_ecid` sits beside it for the online case. Six sites carry the key: the chat object (`Api.cpp:5733`), the messages envelope (`Api.cpp:6007`), the send reply (`Api.cpp:6080`), the close reply (`Api.cpp:6189`), and the `chat_message` / `chat_session_closed` SSE payloads (`EventDiff.cpp:629`, `EventDiff.cpp:635`) |
 | `/chats` | `last_msg_id` | `last_message_id` | R6 — the same object spells it out twice over (`message_count`, `last_message_at`, `last_message`); only the id is abbreviated. The messages envelope carries the same key |
 | `/chats/{…}/messages` | query `since_id` | `since_message_id` | same concept as above; `id` alone does not say of what |
 | `/chats` | `messages[].timestamp`, `chat_message` SSE `message.timestamp` | `sent_at` | R3 — every other time in the API is `_at`, and "timestamp" names the type, not the event |
-| `/chats` | `online` | `is_online` | R4/R6 |
 | `/chats` | `client_ecid: 0`, `friend_ecid: 0` | `null` when offline / not a friend | R10 |
 | `/chats` | `last_message` (omitted when the session has none), `last_message_at: 0` | always emit; `null` when there is no message | R10 |
 | `/chats` | `direction` (`in`/`out`), `message_count`, `name`, `ip`, `port` | *(keep)* | reviewed: rule-compliant |
@@ -323,7 +332,6 @@ renames land once; `HandleSearchList` (`Api.cpp:7722`) hand-writes the
 | current | new | why |
 |---|---|---|
 | `ed2k.connected_since`, `kad.connected_since` (both on `/status` and on `/kad`) | `connected_since_at` | R3 |
-| `ed2k.high_id` | `ed2k.is_high_id` | R4/R6 — the client object's `high_id` becomes `is_high_id` in §1.2; this is the same predicate about ourselves |
 | `ed2k.network.users` / `.files`, `kad.network.users` / `.files` / `.nodes` | `user_count` / `file_count` / `node_count` | R5/R6 — `network` names the scope, not the thing counted, so the carve-out does not apply, and `/servers` reports the same two quantities as `user_count` / `file_count`. One helper (`WriteKadNetworkObject`) serves `/status` and `/kad`, so the Kad triplet is one edit |
 | `kad.indexed.load` | `kad.indexed.load_percent` | R2 — a 0–100 value with no unit in the name. The word `load` is the daemon's and the desktop's, which the suffix preserves |
 | `kad.buddy.status` | `kad.buddy.state` | every other connection enum in the API (`ed2k.state`, `kad.state`, the top-level `state` on the same object) is `state` |
@@ -404,26 +412,6 @@ reference.
 | `geoip.last_update_result` | `geoip.last_update_status` + a documented value set (it is a free-form string today) |
 | `geoip.update_now` | move it out: it is an **action** modelled as a write-only boolean → `POST /geoip/update`, matching `POST /servers_update` and `POST /kad/update` |
 
-**Bare-adjective boolean preferences.** R4 also catches roughly two dozen rows
-the table above does not name individually — `connection.autoconnect`,
-`connection.proxy_enabled`'s siblings `proxy_auth`, `directories.follow_symlinks`
-/ `share_hidden`, `files.create_sparse_files` / `preallocate_full_file_size` /
-`prioritize_first_last_chunks` / `add_new_downloads_paused` /
-`new_downloads_auto_priority` / `new_shared_files_auto_priority` /
-`stop_on_low_disk_space`, `security.ipfilter_clients` / `ipfilter_servers` /
-`ipfilter_include_lan_ips` / `ipfilter_auto_update` / `obfuscation_requested` /
-`obfuscation_required` / `reject_spoofed_source_ips`,
-`servers.autoconnect_static_servers_only` / `manual_servers_high_priority` /
-`update_list_from_server` / `update_list_from_client`,
-`message_filter.accept_from_friends_only` / `accept_from_known_clients_only` /
-`filter_all_messages` / `filter_comments`, `geoip.auto_update`. Decide once and
-state it in the reference: either every boolean preference takes a predicate form
-(`*_enabled` for a switch, `is_*`/`has_*` otherwise), or preferences are exempt
-because each row mirrors a desktop checkbox label. **Recommended: exempt them**,
-and confine R4 in this category to the rows above, where the name is wrong for a
-reason other than its grammar. Renaming two dozen switches whose current names
-already read as the checkbox they toggle buys nothing and doubles the diff.
-
 **Four "where do I fetch this list from" URLs, four shapes** — `servers.update_url`,
 `kademlia.update_url`, `security.ipfilter_update_url`, `ip2country.custom_url`.
 Settle on `<thing>_update_url`, with the `<thing>_` prefix only where the category
@@ -450,8 +438,6 @@ never held against R1–R12. Reviewed here.
 | current | new | why |
 |---|---|---|
 | `status` | *(keep)* | the constant `"ok"`; it is the liveness answer, and a probe reading the status code does not need it to say more |
-| `ec_connected` | `is_ec_connected` | R4 — a bare past participle holding a boolean. The identical key on `GET /status` moves with it (§1.8 marks it *(keep)*; this supersedes that row — one concept, one spelling, R6) |
-| `snapshot` | `has_snapshot` | R4, and the bare noun reads as *the snapshot itself*, which is what a caller might reasonably expect the key to contain. It is "a first refresher tick has landed" |
 
 `POST /shared/media/refresh` and `POST /shared/{hash}/media/refresh`
 (`SendMediaRefresh`, `Api.cpp:9585`):
@@ -473,8 +459,7 @@ never held against R1–R12. Reviewed here.
 | `version.name` | `service` | "name" of what? It is the constant `"amuleapi"` |
 | `version.amule_version` | `amuleapi_version` | **actively misleading** — it is the `VERSION` the *amuleapi binary* was built from, which need not match the aMule daemon it is talking to; `daemon_version` beside it is that one |
 | `version.api_version: "v0"` | `"v1"` | a *value* naming the API version. The final prefix-flip commit has to change it, or the endpoint reports `v0` from under `/api/v1/` |
-| `version.update.update_available` | `update.is_available` | R4, stutters inside its own object |
-| `version.update.checked` | `update.has_been_checked` | R4 |
+| `version.update.update_available` | `update.available` | it stutters inside its own object (`update.update_available`); no prefix (R4) |
 | `version.update.last_checked` | `update.last_checked_at` | R3 |
 | `version.update.latest_version: ""` | `null` before a check completes | R10 — its two siblings on the same object already emit `null` (`Api.cpp:2018`) |
 | `version.update.check_enabled` | *(keep)* | reviewed: rule-compliant |
@@ -513,7 +498,7 @@ Names only — the query-parameter renames still open.
 
 | endpoint | current | new / fix |
 |---|---|---|
-| every list endpoint | `sort=size` / `progress` / `speed` / `ping` / `users` / `files` / `sessions` / `total_uploaded` / `total_downloaded` / `first_seen` / `last_seen` / `sources` / `online` | R7: each becomes the response key it orders by, after that key's own rename — `size_bytes`, `progress.percent`, `speed_bps`, `ping_ms`, `user_count`, `file_count`, `session_count`, `uploaded_bytes_total`, `downloaded_bytes_total`, `first_seen_at`, `last_seen_at`, `sources.total`, `is_online`. `sort=name`, `status`, `software`, `rating`, `directory`, `last_message_at` are already the key and do not move |
+| every list endpoint | `sort=size` / `progress` / `speed` / `ping` / `users` / `files` / `sessions` / `total_uploaded` / `total_downloaded` / `first_seen` / `last_seen` / `sources` | R7: each becomes the response key it orders by, after that key's own rename — `size_bytes`, `progress.percent`, `speed_bps`, `ping_ms`, `user_count`, `file_count`, `session_count`, `uploaded_bytes_total`, `downloaded_bytes_total`, `first_seen_at`, `last_seen_at`, `sources.total`. `sort=name`, `status`, `software`, `rating`, `directory`, `last_message_at`, `online` are already the key and do not move |
 | `GET /clients` | `filter=uploads` / `downloads` / `active` | `activity=uploading` / `downloading` / `active` — "filter" names the mechanism, not the axis, and the values are plural nouns for what are client states |
 | `POST /auth/login`, `PATCH /auth/passwords` | `type=bearer` | `include_token=true` |
 
@@ -559,6 +544,10 @@ does not inflate the number:
 | curl test suite | **79**, across 33 of the 41 scripts |
 | C++ unit tests | **56**, across 9 of the 43 files |
 
+These figures predate the R4 no-prefix revision — which dropped ~a dozen boolean
+renames and retargeted a few others — so treat the **137** and the per-area
+counts as an approximate upper bound, to re-grep before staging.
+
 So this is not a serializer-only change, and a big-bang commit would be
 unreviewable. Stage it **one resource at a time** — downloads, then clients,
 then shared, then servers, then categories, then friends/chats, then
@@ -578,6 +567,9 @@ leaves the UI reading a key the API stopped emitting.
 - [ ] `docs/api/REFERENCE.md` opens with the R1–R12 rules and states the unit
       conventions (`_bps` = bytes/second, `_kbps` = KiB/s, `_at` = unix seconds,
       `_percent` = 0–100) once, in one place.
+- [ ] No response key, path segment or enum value carries an `is_`/`has_`/`can_`
+      prefix (R4) — the sole one today, `is_friend`, becomes `friend`; `static`
+      becomes `permanent` because it cannot stay bare.
 - [ ] Every `sort` value is spelled exactly like the response key it orders by
       (R7), so the reference needs no per-endpoint mapping table.
 - [ ] `internal` no longer exists as a code distinct from `internal_error`, and
