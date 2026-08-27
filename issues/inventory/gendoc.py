@@ -312,16 +312,17 @@ Every list endpoint goes through `ListResponse` / `ListResponseFromPtrsUnlocked`
 { "<plural_key>": [ … ], "total": 0, "offset": 0, "limit": 0 }
 ```
 
-`total` is the pre-slice count; `limit` echoes the requested limit, or the
-number of returned rows when no `limit` was sent. `WritePageMeta`,
+`total` is the pre-slice count; `limit` always echoes the effective page size —
+the requested `limit`, or the default 100 when none was sent. `WritePageMeta`,
 
 Shared query parameters (`ParseListParams`, `Api.cpp:2999`) on those
 endpoints:
 
 | Param | Type | Rules |
 |---|---|---|
-| `limit` | integer | ≤ 9 digits, clamped to **500**; bad value → `400` `` `limit` must be a non-negative integer`` |
-| `offset` | integer | ≤ 9 digits; bad value → `400` `` `offset` must be a non-negative integer`` |
+| `limit` | integer | 0–1000000000; default **100** when absent (out-of-range is rejected, not clamped); bad value → `400` `` `limit` must be an integer between 0 and 1000000000`` |
+| `offset` | integer | 0–1000000000; bad value → `400` `` `offset` must be an integer between 0 and 1000000000`` |
+| `after` | string | Keyset anchor: return rows after this value of the identity `sort` column. Ascending only — rejected with `order=desc`; needs a `sort` field that identifies a row, else `400`. |
 | `sort` | string | must be one of the endpoint's sortable fields ([Appendix D](#appendix-d--sortable-fields-per-list-endpoint)); unknown → `400` ``unknown `sort` field for this endpoint`` |
 | `order` | `asc` \\| `desc` | anything else → `400` `` `order` must be "asc" or "desc"`` |
 
@@ -329,11 +330,11 @@ Sorting is a stable sort over the whole set, then the window is sliced.
 
 ### Bulk mutation envelope
 
-Four routes answer with a per-item result list (`BulkResultsResponse`,
-`Api.cpp:4153`): `POST /downloads`, `PATCH /downloads`, `DELETE /downloads` and
-`PATCH /shared`. Other multi-item mutations have their own shapes —
-`POST /downloads_clear_completed` answers `{ok, cleared, cleared_hashes}` and the
-`/share_directories` writes answer `{ok, rejected[]}`.
+Five routes answer with a per-item result list (`BulkResultsResponse`,
+`Api.cpp:4153`): `POST /downloads`, `PATCH /downloads`, `DELETE /downloads`,
+`PATCH /shared` and `POST /downloads_clear_completed` (one `{id, ok}` per cleared
+hash). The `/share_directories` writes have their own shape: they answer with the
+applied root list, `{directories: [{path, recursive}]}`.
 
 ```json
 { "results": [ { "id": "<hash|link>", "ok": true },
@@ -596,7 +597,7 @@ ep("GET, HEAD", "/api/v0/version", "HandleVersion",
 ep("POST", "/api/v0/version/check", "HandleVersionCheck",
    "Ask the daemon to run its new-version check now. Asynchronous: the result "
    "lands on a later `GET /api/v0/version`.",
-   success="`202 Accepted` — `{\"status\": \"started\"}`",
+   success="`202 Accepted` — no body",
    notes=["Gated on the daemon reporting the check as available *and* "
           "`general.check_new_version` being on; otherwise `409 update_check_unavailable`.",
           "The daemon's own throttle surfaces as `429 update_check_throttled`; the "
@@ -637,16 +638,13 @@ Headers: `Set-Cookie: amuleapi_token=<jwt>; HttpOnly; SameSite=Strict; Path=/api
 
 ep("POST", "/api/v0/auth/logout", "HandleLogout",
    "Revoke the calling session's `jti` and clear the cookie.",
-   resp="""**Response body**
-
-```json
-{ "ok": true }
-```
+   success="`204 No Content`",
+   resp="""**Response body**: none.
 
 Headers: a `Set-Cookie` that expires `amuleapi_token`.""",
    notes=["Deliberately soft: it extracts the bearer/cookie token itself instead "
           "of calling `Authenticate`, and an already-revoked or expired token "
-          "still gets `200` — logging out twice is not an error.",
+          "still gets `204` — logging out twice is not an error.",
           "Repeated `401`s here still feed the generic per-IP auth limiter."])
 
 ep("GET, HEAD", "/api/v0/auth/session", "HandleSession",
@@ -716,7 +714,8 @@ ep("GET, HEAD", "/api/v0/kad", "HandleKad",
 
 ep("POST", "/api/v0/networks/connect", "HandleNetworksConnect",
    "Connect ed2k, Kad, or both.",
-   success="`202 Accepted` — `{\"ok\": true, \"message\": \"…\"}`",
+   success="`202 Accepted` — `{\"message\": \"…\"}` (the daemon's status message, "
+   "omitted when it returns none)",
    body=[("network", "`ed2k` \\| `kad` \\| `both`", "no", "Default `both`. "
           "`ed2k` → `EC_OP_SERVER_CONNECT`, `kad` → `EC_OP_KAD_START`, "
           "`both` → `EC_OP_CONNECT`.")],
@@ -727,20 +726,22 @@ ep("POST", "/api/v0/networks/connect", "HandleNetworksConnect",
 
 ep("POST", "/api/v0/networks/disconnect", "HandleNetworksDisconnect",
    "Disconnect ed2k, Kad, or both.",
-   success="`200 OK` — `{\"ok\": true, \"message\": \"…\"}`",
+   success="`200 OK` — `{\"message\": \"…\"}` (the daemon's status message, "
+   "omitted when empty)",
    body=[("network", "`ed2k` \\| `kad` \\| `both`", "no", "Default `both`.")],
    errors_from=["SimpleConnControlOp", "ParseJsonObjectBody"])
 
 ep("POST", "/api/v0/kad/bootstrap", "HandleKadBootstrap",
    "Bootstrap Kad from one known contact.",
-   success="`202 Accepted` — `{\"ok\": true, \"ip\": <uint32>, \"port\": <int>}`",
+   success="`202 Accepted` — `{\"ip\": \"<dotted-quad>\", \"port\": <int>}` "
+   "(echoes the parsed contact)",
    body=[("ip", "string \\| number", "yes", "Dotted-quad IPv4, or a host-order uint32."),
          ("port", "number", "yes", "0–65535.")],
    errors_from=["ParseJsonObjectBody"])
 
 ep("POST", "/api/v0/kad/update", "HandleKadUpdateFromUrl",
    "Tell the daemon to fetch `nodes.dat` from a URL.",
-   success="`202 Accepted` — `{\"ok\": true, \"nodes_url\": \"<effective url>\"}`",
+   success="`202 Accepted` — no body",
    body=[("nodes_url", "string", "no", "`http://` or `https://` URL. When omitted, "
           "the configured `kademlia.nodes_url` preference is used; if no "
           "preference snapshot exists yet, that fallback is a `503`.")],
@@ -752,12 +753,13 @@ ep("POST", "/api/v0/kad/update", "HandleKadUpdateFromUrl",
 
 ep("POST", "/api/v0/ipfilter/reload", "HandleIpfilterReload",
    "Reload the IP filter from disk (the Security page's *Reload List*).",
-   success="`200 OK` — `{\"ok\": true, \"message\": \"…\"}`",
+   success="`202 Accepted` — `{\"message\": \"…\"}` (the daemon's status message, "
+   "omitted when empty)",
    errors_from=["SimpleConnControlOp"])
 
 ep("POST", "/api/v0/ipfilter/update", "HandleIpfilterUpdate",
    "Fetch an IP-filter list from a URL (the Security page's *Update now*).",
-   success="`202 Accepted` — `{\"ok\": true, \"ipfilter_url\": \"<effective url>\"}`",
+   success="`202 Accepted` — no body",
    body=[("ipfilter_url", "string", "no", "`http://` or `https://` URL; falls back "
           "to the `security.ipfilter_update_url` preference when omitted.")],
    errors_from=["ResolveFetchUrl", "UrlFetchOp"])
@@ -778,9 +780,11 @@ DL_LIST["progress"] = {"percent": "number"}
 
 ep("GET, HEAD", "/api/v0/downloads", "HandleDownloads",
    "The transfer queue. Completed entries are filtered out by default.",
-   query=[("include_completed", "`1` \\| `true` \\| `yes`", "Include entries whose "
-           "`status` is `completed` (they live in the daemon's *awaiting clear* "
-           "list). Any other value means false.")],
+   query=[("status", "`active` \\| `all` \\| `completed`", "Which part of the queue "
+           "to list. `active` (default) hides completed entries; `completed` shows "
+           "only those (they live in the daemon's *awaiting clear* list); `all` "
+           "shows both. Any other value is a `400`. The retired `include_completed` "
+           "flag is rejected with a `400` naming this replacement.")],
    resp={"downloads": [DL_LIST], "total": "uint", "offset": "uint", "limit": "uint"},
    notes=["List rows omit `progress.parts` and the detail-only fields; read "
           "`GET /api/v0/downloads/{hash}` for those.",
@@ -791,9 +795,9 @@ ep("GET, HEAD", "/api/v0/downloads", "HandleDownloads",
 ep("POST", "/api/v0/downloads", "HandleDownloadAdd",
    "Add one or more ed2k links.",
    success="`202 Accepted` (bulk envelope; `207` on a mixed result, `503` when every item failed)",
-   body=[("ed2k_link", "string", "either", "A single `ed2k://` link."),
-         ("links", "array of strings", "either", "Several `ed2k://` links. Mutually "
-          "exclusive with `ed2k_link`; at least one entry."),
+   body=[("links", "array of strings", "yes", "One or more `ed2k://` links; at "
+          "least one entry. A single link is `{\"links\": [\"ed2k://...\"]}` — the "
+          "old singular `ed2k_link` is rejected with a `400`."),
          ("category", "number", "no", "Category index, 0–255. Default 0.")],
    resp="""**Response body** — the [bulk envelope](#bulk-mutation-envelope); `id` is
 the submitted link.""",
@@ -835,14 +839,9 @@ ep("POST", "/api/v0/downloads_clear_completed", "HandleDownloadsClearCompleted",
    "*awaiting clear* staging list. Does **not** delete anything from disk.",
    body=[("hash", "string", "no", "Clear one entry. Omit the body (or the field) to "
           "clear every completed entry in one EC roundtrip.")],
-   resp="""**Response body**
-
-```json
-{ "ok": true, "cleared": "int", "cleared_hashes": ["string"] }
-```
-
-An empty completed list is a `200` with `cleared: 0`, so a no-op stays
-distinguishable from a daemon rejection.""",
+   resp="""**Response body** — the [bulk envelope](#bulk-mutation-envelope); `id` is
+the cleared hash. An empty completed list is a `200` with an empty `results`
+array, so a no-op stays distinguishable from a daemon rejection.""",
    errors_from=["ParseJsonObjectBody"],
    notes=["Unknown body keys are ignored on purpose, so adding a flag later cannot "
           "break older clients.",
@@ -885,12 +884,9 @@ ep("PATCH", "/api/v0/downloads/{hash}", "HandleDownloadPatch",
 
 ep("DELETE", "/api/v0/downloads/{hash}", "HandleDownloadDelete",
    "Cancel and remove one active download (partfile deleted by the daemon).",
+   success="`204 No Content`",
    path_params=[("hash", "32-char hex MD4.")],
-   resp="""**Response body**
-
-```json
-{ "ok": true, "hash": "string" }
-```""",
+   resp="""**Response body**: none.""",
    notes=["A `completed` entry is refused with `409 completed_use_clear_completed`: "
           "the only EC op that touches the completed staging list is "
           "`EC_OP_CLEAR_COMPLETED`, and it does not delete the file from `Incoming`."])
@@ -905,7 +901,7 @@ ep("GET, HEAD", "/api/v0/downloads/{hash}/comments", "HandleDownloadComments",
 
 ep("POST", "/api/v0/downloads/{hash}/comments", "HandleDownloadCommentsKadSearch",
    "Trigger an on-demand Kad NOTES lookup for this file.",
-   success="`202 Accepted` — `{\"status\": \"kad_search_started\"}`",
+   success="`202 Accepted` — no body",
    path_params=[("hash", "32-char hex MD4.")],
    notes=["Admin-only even though it reads: it drives an unbounded Kad lookup on "
           "the daemon (~45 s).",
@@ -980,7 +976,8 @@ ep("GET, HEAD", "/api/v0/clients/{ecid}", "HandleClientDetail",
 ep("POST", "/api/v0/clients/{ecid}/shared_files", "HandleClientBrowse",
    "Browse (*View Files*) a peer's share. Starts an asynchronous browse and "
    "returns the `search_id` its results will arrive under.",
-   auth="ADMIN", success="`202 Accepted` — `{\"ok\": true, \"search_id\": <int>}`",
+   auth="ADMIN", success="`202 Accepted` — the created search's list row (same "
+   "shape as `GET /search` rows); `Location: /api/v0/search/{search_id}`",
    path_params=[("ecid", "EC connection id of a connected peer.")],
    errors_from=["HandleBrowse"],
    notes=["Delegates to the shared `HandleBrowse` (`Api.cpp:9638`), which is where "
@@ -1001,8 +998,8 @@ ep("POST", "/api/v0/clients/{ecid}/messages", "HandleClientMessageSend",
    resp="""**Response body**
 
 ```json
-{ "ok": true, "peer": "<ip>:<port>",
-  "message": { "id": "int", "direction": "out", "text": "string", "timestamp": "int" } }
+{ "peer": "<ip>:<port>",
+  "message": { "id": "int", "direction": "out", "text": "string" } }
 ```""",
    notes=["Only reaches a peer the daemon has a live connection to. Use "
           "`POST /api/v0/friends/{ecid}/messages` to reach an offline friend."])
@@ -1041,7 +1038,8 @@ ep("PATCH", "/api/v0/shared", "HandleSharedBulkPatch",
 
 ep("POST", "/api/v0/shared_reload", "HandleSharedReload",
    "Ask the daemon to re-walk every configured share root.",
-   success="`202 Accepted` — `{\"ok\": true, \"message\": \"…\"}`",
+   success="`202 Accepted` — `{\"message\": \"…\"}` (the daemon's status message, "
+   "omitted when empty)",
    errors_from=["SimpleConnControlOp"],
    notes=["Literally *accepted*: `amuled` schedules the walk and answers "
           "immediately (it starts on its next `Process()` tick). Repeated calls "
@@ -1056,7 +1054,7 @@ ep("POST", "/api/v0/shared/media/refresh", "HandleSharedMediaRefresh",
    resp="""**Response body**
 
 ```json
-{ "ok": true, "scope": "string", "queued": "int" }
+{ "scope": "string", "queued": "int" }
 ```
 
 `202`, not `200`: `amuled` queues the probes on its media-probe worker and
@@ -1090,11 +1088,10 @@ ep("PUT", "/api/v0/share_directories", "HandleSharedDirectoriesPut",
    resp="""**Response body**
 
 ```json
-{ "ok": true, "rejected": [ { "path": "string", "reason": "string" } ] }
+{ "directories": [ { "path": "string", "recursive": "bool" } ] }
 ```
 
-`rejected` carries the roots `amuled` declined (missing, unreadable, …); the
-apply itself still succeeds for the rest.""",
+The applied share-root list, re-read from the daemon after the write.""",
    errors_from=["ApplySharedDirs", "ParseJsonObjectBody"])
 
 ep("POST", "/api/v0/share_directories", "HandleSharedDirectoriesAdd",
@@ -1102,7 +1099,7 @@ ep("POST", "/api/v0/share_directories", "HandleSharedDirectoriesAdd",
    body=[("path", "string", "yes", "Non-empty. Compared verbatim against the "
           "existing roots — POSIX and Windows spellings are both accepted as-is."),
          ("recursive", "bool", "no", "Default `false`.")],
-   resp="""**Response body** — same `{ "ok", "rejected" }` shape as the `PUT`.""",
+   resp="""**Response body** — same `{ "directories": [...] }` shape as the `PUT`.""",
    errors_from=["ApplySharedDirs", "ParseJsonObjectBody"],
    notes=["Read-modify-write under a process-wide mutex: the current list is "
           "fetched from the daemon, edited, and applied whole."])
@@ -1111,7 +1108,7 @@ ep("DELETE", "/api/v0/share_directories", "HandleSharedDirectoriesDelete",
    "Remove one share root.",
    query=[("path", "string", "**Required.** The root to remove, matched exactly. "
            "Unknown path → `404 not_found`.")],
-   resp="""**Response body** — same `{ "ok", "rejected" }` shape as the `PUT`.""",
+   resp="""**Response body** — same `{ "directories": [...] }` shape as the `PUT`.""",
    errors_from=["ApplySharedDirs"],
    notes=["The target is a query parameter, not a body field, so the request "
           "carries no body."])
@@ -1146,7 +1143,7 @@ ep("PATCH", "/api/v0/shared/{hash}", "HandleSharedPatch",
 
 ep("POST", "/api/v0/shared/{hash}/verify", "HandleSharedVerify",
    "Re-hash a completed shared file against its on-disk data.",
-   success="`202 Accepted` — `{\"ok\": true}`",
+   success="`202 Accepted` — no body",
    path_params=[("hash", "32-char hex MD4 of a completed shared file.")],
    notes=["A partfile is refused with `409 partfile_unsupported`: the daemon's "
           "hashing task bails out on `IsPartFile()` but still answers `NOOP`, "
@@ -1160,7 +1157,7 @@ ep("POST", "/api/v0/shared/{hash}/media/refresh", "HandleSharedMediaRefreshOne",
    resp="""**Response body**
 
 ```json
-{ "ok": true, "scope": "string", "queued": "int" }
+{ "scope": "string", "queued": "int" }
 ```
 
 `202`, not `200`: `amuled` queues the probes on its media-probe worker and
@@ -1211,7 +1208,7 @@ ep("GET, HEAD", "/api/v0/servers", "HandleServers",
 
 ep("POST", "/api/v0/servers", "HandleServerAdd",
    "Add a server by address.",
-   success="`201 Created` — `{\"ok\": true, \"address\": \"host:port\"}`",
+   success="`202 Accepted` — no body",
    body=[("address", "string", "yes", "`host:port`. The colon must be present and "
           "not at either end."),
          ("name", "string", "no", "Display name; omitted means the daemon uses "
@@ -1220,7 +1217,7 @@ ep("POST", "/api/v0/servers", "HandleServerAdd",
 
 ep("POST", "/api/v0/servers_update", "HandleServerUpdateFromUrl",
    "Tell the daemon to fetch `server.met` from a URL.",
-   success="`202 Accepted` — `{\"ok\": true, \"servers_url\": \"<effective url>\"}`",
+   success="`202 Accepted` — no body",
    body=[("servers_url", "string", "yes", "`http://` or `https://` URL. Required — "
           "unlike the Kad and IP-filter variants there is no configured fallback.")],
    errors_from=["ResolveFetchUrl", "UrlFetchOp"],
@@ -1229,14 +1226,14 @@ ep("POST", "/api/v0/servers_update", "HandleServerUpdateFromUrl",
 
 ep("POST", "/api/v0/servers/{ecid}/connect", "HandleServerConnect",
    "Connect to one server.",
-   success="`202 Accepted` — `{\"ok\": true, \"ecid\": <int>}`",
+   success="`202 Accepted` — no body",
    path_params=[("ecid", "The server's EC id. To address a server by "
                  "`<ip>:<port>` use `/servers/by-address/{address}/connect`.")])
 
 ep("POST", "/api/v0/servers/by-address/{address}/connect",
    "HandleServerConnectByAddress",
    "Connect to one server, addressed by `<ip>:<port>` instead of by ECID.",
-   success="`202 Accepted` — `{\"ok\": true, \"ecid\": <int>}`",
+   success="`202 Accepted` — no body",
    path_params=[("address", "`<ip>:<port>`, matched against the server list. "
                  "Unknown address → `404 not_found`.")],
    errors_from=["ResolveServerEcid", "HandleServerConnect"],
@@ -1244,7 +1241,7 @@ ep("POST", "/api/v0/servers/by-address/{address}/connect",
 
 ep("PATCH", "/api/v0/servers/{ecid}", "HandleServerPatch",
    "Set a server's priority and/or its static flag.",
-   success="`200 OK` — `{\"ok\": true, \"ecid\": <int>}`",
+   success="`200 OK` — the full server object (same shape as `GET /servers` rows)",
    path_params=[("ecid", "Server EC id.")],
    body=[("priority", "`low` \\| `normal` \\| `high`", "no", ""),
          ("static", "bool", "no", "")],
@@ -1255,14 +1252,15 @@ ep("PATCH", "/api/v0/servers/{ecid}", "HandleServerPatch",
 
 ep("DELETE", "/api/v0/servers/{ecid}", "HandleServerDelete",
    "Remove one server from the list.",
-   success="`200 OK` — `{\"ok\": true, \"ecid\": <int>}`",
+   success="`204 No Content`",
    path_params=[("ecid", "Server EC id.")])
 
 ep("PATCH, DELETE", "/api/v0/servers/by-address/{address}",
    "HandleServerPatchByAddress",
    "The `PATCH` and `DELETE` above, addressed by `<ip>:<port>` instead of by "
    "ECID. Same bodies, same responses.",
-   success="`200 OK` — `{\"ok\": true, \"ecid\": <int>}`",
+   success="`PATCH` → `200 OK` — the full server object; "
+   "`DELETE` → `204 No Content`",
    path_params=[("address", "`<ip>:<port>`. Unknown address → `404 not_found`.")],
    body=[("priority", "`low` \\| `normal` \\| `high`", "no", "`PATCH` only."),
          ("static", "bool", "no", "`PATCH` only.")],
@@ -1282,13 +1280,12 @@ ep("GET, HEAD", "/api/v0/friends", "HandleFriends",
 
 ep("POST", "/api/v0/friends", "HandleFriendAdd",
    "Add a friend, either from a live connection or from raw contact details.",
-   success="`201 Created` — the created friend object",
+   success="`202 Accepted` — no body",
    body=[("client_ecid", "number", "either", "ECID of a currently connected peer."),
          ("ip", "string", "either", "Dotted-quad IPv4 (manual form)."),
          ("port", "number", "either", "TCP port (manual form)."),
          ("user_hash", "string", "no", "32-char hex user hash (manual form)."),
          ("name", "string", "no", "Display name (manual form).")],
-   shape_from="WriteFriendObject",
    errors_from=["ParseJsonObjectBody"],
    notes=["`client_ecid` and the `ip`/`port`/`user_hash`/`name` form are mutually "
           "exclusive — sending both is a `400`."])
@@ -1302,12 +1299,13 @@ ep("PATCH", "/api/v0/friends/{ecid}", "HandleFriendPatch",
 
 ep("DELETE", "/api/v0/friends/{ecid}", "HandleFriendRemove",
    "Remove a friend.",
-   success="`200 OK` — `{\"ok\": true, \"ecid\": <int>}`",
+   success="`204 No Content`",
    path_params=[("ecid", "Friend record EC id.")])
 
 ep("POST", "/api/v0/friends/{ecid}/shared_files", "HandleFriendBrowse",
    "Browse a friend's share.",
-   auth="ADMIN", success="`202 Accepted` — `{\"ok\": true, \"search_id\": <int>}`",
+   auth="ADMIN", success="`202 Accepted` — the created search's list row (same "
+   "shape as `GET /search` rows); `Location: /api/v0/search/{search_id}`",
    path_params=[("ecid", "Friend record EC id.")],
    errors_from=["HandleBrowse"],
    notes=["Same delegation as the client form: the work is in `HandleBrowse` "
@@ -1326,8 +1324,8 @@ ep("POST", "/api/v0/friends/{ecid}/messages", "HandleFriendMessageSend",
    resp="""**Response body** — same shape as the other send forms:
 
 ```json
-{ "ok": true, "peer": "<ip>:<port>",
-  "message": { "id": "int", "direction": "out", "text": "string", "timestamp": "int" } }
+{ "peer": "<ip>:<port>",
+  "message": { "id": "int", "direction": "out", "text": "string" } }
 ```""",
    notes=["This is the form that reaches an **offline** friend — the daemon opens "
           "the connection."])
@@ -1368,13 +1366,13 @@ ep("POST", "/api/v0/chats/{peer}/messages", "HandleChatSend",
    resp="""**Response body**
 
 ```json
-{ "ok": true, "peer": "<ip>:<port>",
-  "message": { "id": "int", "direction": "out", "text": "string", "timestamp": "int" } }
+{ "peer": "<ip>:<port>",
+  "message": { "id": "int", "direction": "out", "text": "string" } }
 ```""")
 
 ep("DELETE", "/api/v0/chats/{peer}", "HandleChatClose",
    "Close a conversation and drop its stored messages.",
-   success="`200 OK` — `{\"ok\": true, \"peer\": \"<ip>:<port>\"}`",
+   success="`204 No Content`",
    path_params=[("peer", "`<ip>:<port>`.")],
    notes=["Publishes `chat_session_closed` to SSE subscribers."])
 
@@ -1395,7 +1393,7 @@ ep("GET, HEAD", "/api/v0/categories", "HandleCategories",
 
 ep("POST", "/api/v0/categories", "HandleCategoryCreate",
    "Create a category.",
-   success="`201 Created` — `{\"ok\": true, \"name\": \"…\", \"index\": <int>}`",
+   success="`202 Accepted` — no body",
    body=[("name", "string", "yes", "Non-empty."),
          ("path", "string", "no", "Incoming directory for this category."),
          ("comment", "string", "no", ""),
@@ -1427,7 +1425,7 @@ ep("PATCH", "/api/v0/categories/{index}", "HandleCategoryUpdate",
 
 ep("DELETE", "/api/v0/categories/{index}", "HandleCategoryDelete",
    "Delete a category.",
-   success="`200 OK` — `{\"ok\": true, \"index\": <int>}`",
+   success="`204 No Content`",
    path_params=[("index", "uint8, 0–255.")],
    notes=["Categories are positional: deleting one shifts every higher index down "
           "by one. The cached downloads are re-mapped in the same operation "
@@ -1607,7 +1605,8 @@ ep("GET, HEAD", "/api/v0/search", "HandleSearchList",
 ep("POST", "/api/v0/search", "HandleSearchStart",
    "Start a search. The daemon allocates the `search_id` everything else is "
    "addressed by.",
-   success="`202 Accepted` — `{\"ok\": true, \"search_id\": <int>, \"query\": \"…\"}`",
+   success="`202 Accepted` — the created search's list row (same shape as "
+   "`GET /search` rows); `Location: /api/v0/search/{search_id}`",
    body=[("query", "string", "yes", "Non-empty."),
          ("type", "`local` \\| `global` \\| `kad`", "no", "Default `global`."),
          ("file_type", "string", "no", "aMule file-type label."),
@@ -1651,7 +1650,7 @@ ep("GET, HEAD", "/api/v0/search/{id}/results", "HandleSearchResults",
 
 ep("POST", "/api/v0/search/{id}/stop", "HandleSearchStop",
    "Stop a running search but keep its results readable.",
-   success="`200 OK` — `{\"ok\": true}`",
+   success="`204 No Content`",
    path_params=[("id", "Positive decimal `search_id`.")],
    errors_from=["RequireSearch", "SendSearchOp"],
    notes=["Siblings are untouched — the daemon is addressed with this id only."])
@@ -1659,7 +1658,7 @@ ep("POST", "/api/v0/search/{id}/stop", "HandleSearchStop",
 ep("POST", "/api/v0/search/{id}/more", "HandleSearchMore",
    "Ask a running **Kad** search to widen its result frontier (the desktop's "
    "*More* button).",
-   success="`202 Accepted` — `{\"ok\": true}`",
+   success="`202 Accepted` — no body",
    path_params=[("id", "Positive decimal `search_id`.")],
    errors_from=["RequireSearch", "SendSearchOp"],
    notes=["Rejected with `400` for a non-Kad search and for a search that has "
@@ -1681,7 +1680,7 @@ ep("DELETE", "/api/v0/search/{id}", "HandleSearchClose",
 
 ep("POST", "/api/v0/search/results/{hash}/download", "HandleSearchDownload",
    "Download one search result.",
-   success="`202 Accepted` — `{\"ok\": true, \"hash\": \"…\", \"category\": <int>}`",
+   success="`202 Accepted` — no body",
    path_params=[("hash", "32-char hex MD4 of the result, case-insensitive.")],
    body=[("category", "number", "no", "0–255, default 0."),
          ("ecid", "number", "no", "Pick one grouped child (from a result's "
@@ -1704,7 +1703,7 @@ ep("GET, HEAD", "/api/v0/search/results/{hash}/comments", "HandleSearchComments"
 
 ep("POST", "/api/v0/search/results/{hash}/comments", "HandleSearchCommentsKadSearch",
    "Trigger a Kad NOTES lookup for one search result.",
-   success="`202 Accepted` — `{\"status\": \"kad_search_started\"}`",
+   success="`202 Accepted` — no body",
    path_params=[("hash", "32-char hex MD4 of the result.")])
 
 # ------------------------------------------------------------------ Events
@@ -1882,7 +1881,7 @@ prefix before the first `_`, mapped by the resolver in `DispatchEvents`
 | `status_changed` | `status` | the nested `GET /status` envelope | `EmitDiffsAndUpdate`, `EventDiff.cpp` |
 | `log_appended` | `logs` | the appended log lines | `EmitDiffsAndUpdate`, `EventDiff.cpp` |
 | `search_result_added` | `search` | one search result (same writer as `GET /search/{id}/results`) | `EmitDiffsAndUpdate`, `EventDiff.cpp` |
-| `search_progress` | `search` | `{search_id, state, kind, percent, result_count}` | `EmitDiffsAndUpdate`, `EventDiff.cpp` |
+| `search_progress` | `search` | `{search_id, state, kind, percent, results}` | `EmitDiffsAndUpdate`, `EventDiff.cpp` |
 | `search_closed` | `search` | `{search_id}` | `EmitDiffsAndUpdate`, `EventDiff.cpp` |
 | `chat_message` | `chats` | one chat message object | `PublishChatEvents`, `EventDiff.cpp` |
 | `chat_session_closed` | `chats` | `{"peer": "<ip>:<port>"}` | `PublishChatEvents`, `EventDiff.cpp` |

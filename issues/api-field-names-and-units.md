@@ -22,8 +22,7 @@ turns up a consistent set of problems:
   `partmet_id`, `mmap`, `secident`, `core_tweaks`, `ip2country`, `raw`, `enum`.
 - **Fields nobody can decode without reading C++:** `dl_up_modifier`,
   `saved_by_ich`, `upnp_tcp_port`, `start_next_paused`, `hashing_progress`
-  (a part *count*, not a percentage), `core_tweaks.kad_reask_ms` (silently
-  quantised to whole minutes).
+  (a part *count*, not a percentage).
 - **Three words for the remote party:** `client`, `peer` and `source`, used
   interchangeably in keys, paths, enum values and prose.
 
@@ -32,37 +31,33 @@ Web UI in `src/webapi/static` and the curl tests in
 `unittests/curl-tests/amuleapi` are the only callers — so this is the moment to
 fix the names in place, in one pass, before anything external depends on them.
 
-Observed at commit `c80a7627a`. Line numbers are from that tree; the writer
-function names are the durable reference. This file absorbed an earlier,
-narrower write-up that covered only the units and the duplicate names (§1's
-`_bytes` / `_seconds` / `_at` suffixes, the `bps` question in R2, `uploading`,
-`hashing_progress`, `xfer`, `count`/`total`, `exp`/`expires_at`, and the
-internal vocabulary now handled by R8) — everything it argued is below.
+Written against commit `c80a7627a` and re-verified against `43c1dad16`. The
+inline `File.cpp:NNN` references are from the original tree and have drifted a
+little since; the **writer/serializer function names are the durable reference**
+(and `issues/inventory/API_INVENTORY.md`, regenerated at `43c1dad16`, carries
+the current line for each). This file absorbed an earlier, narrower write-up
+that covered only the units and the duplicate names (§1's `_bytes` / `_seconds`
+/ `_at` suffixes, the `bps` question in R2, `uploading`, `hashing_progress`,
+`xfer`, `count`/`total`, `exp`/`expires_at`, and the internal vocabulary now
+handled by R8) — everything it argued is below.
 
 **Bugs and design defects are tracked separately.** This file is names only.
-What the second pass found that is *wrong* rather than badly spelled is in
-[`api-protocol-and-correctness-bugs.md`](api-protocol-and-correctness-bugs.md)
-(ten defects), and what is merely inconsistent is in
-[`api-design-inconsistencies.md`](api-design-inconsistencies.md) (nine). The
-three files share one pass: the renames below rewrite the same serializers those
-two ask to change, so landing them apart touches every writer twice.
+What is *wrong* rather than badly spelled is in
+[`api-protocol-and-correctness-bugs.md`](api-protocol-and-correctness-bugs.md),
+and what is merely inconsistent is in
+[`api-design-inconsistencies.md`](api-design-inconsistencies.md). The three
+files share one pass: the renames below rewrite the same serializers those two
+ask to change, so landing them apart touches every writer twice.
 
-**Already landed since the audit**, so the tables below no longer list them:
-the omitted-vs-null pass on the download and shared objects (`remaining_time`,
-`last_seen_complete`, `last_upload`, `shared_since` are `null`, not `-1` / `0`),
-one bulk envelope for every multi-item mutation, the list envelope and the
-shared list params on `/categories` and `/search`, the four collection actions
-moved to their own top-level paths (`/downloads_clear_completed`,
-`/shared_reload`, `/share_directories`, `/servers_update`), the address-keyed
-server routes, a complete error-code catalog, and one validation policy for
-every query parameter (`400` on anything unparseable or out of range, no silent
-clamping). What is left below is the naming itself.
+The tables below list only the renames still open. Everything the earlier passes
+resolved — the omitted-vs-null convention, the bulk/list envelopes, the
+collection-action paths, the error-code catalog, and the handful of renames that
+did land (`firewalled_tcp`, `lan_mode`, the three `core_tweaks.*_minutes`,
+`?status=`) — is gone from here.
 
-This issue is **naming and shape only**. No new data is read from the daemon and
-no EC change is required; every rename is a key string in a serializer, a parser
-branch, a JS property and a doc line. The single exception is the three
-`core_tweaks.*_ms` preferences, whose wire value converts from milliseconds to
-minutes in the amuleapi layer (§1.9) — still no EC change.
+This issue is **naming only**. No new data is read from the daemon and no EC
+change is required; every rename is a key string in a serializer, a parser
+branch, a JS property and a doc line.
 
 **The result ships as `/api/v1/`.** `docs/api/REFERENCE.md:5` promises that
 *"`/api/v0/` is frozen against any backwards-incompatible change"*, and this
@@ -120,7 +115,7 @@ unchanged in the `download_added` / `download_updated` SSE payloads
 | `last_seen_complete` | `last_seen_complete_at` | R3 |
 | `last_changed` | `last_received_at` | R3, **and the current name is wrong** — it is `EC_TAG_PARTFILE_LAST_RECV` (`Refresher.cpp:574`), the last time data arrived |
 | `download_active_time` | `active_seconds` | R2 |
-| `remaining_time` | `eta_seconds` | R2. It is already `null` when there is no ETA (the R10 pass landed), so only the name moves |
+| `remaining_time` | `eta_seconds` | R2. It is already `null` when there is no ETA, so only the name moves |
 | `available_part_count` / `part_count` | `parts_available_count` / `parts_total_count` | R5, and the pairing is currently invisible — `parts_available_count` is the parts at least one source can serve |
 | `lost_to_corruption` | `lost_to_corruption_bytes` | R2 |
 | `gained_by_compression` | `gained_by_compression_bytes` | R2 |
@@ -143,16 +138,14 @@ Sub-resources of a download:
 | `GET .../comments` | `count` | `total` (R6 — every other collection says `total`). The `comments_updated` SSE payload carries the same key (`EventDiff.cpp:142`) and moves with it |
 | `GET .../filenames` | `filenames[].name` | `filenames[].filename`, and `filenames[].count` → `filenames[].source_count` |
 | `POST .../a4af` reply (`WriteA4afObject`, `Api.cpp:4448`) | `a4af_auto` | `is_a4af_auto` (R4) — the same flag as on the download detail object, so it moves with it. `source_ecids` beside it is already right |
-| `POST .../a4af` | `action` values `swap_this`, `swap_this_auto`, `swap_others` | keep the values; move `swap_this_auto` out — it toggles the persistent flag that is readable as `is_a4af_auto`, so it belongs in `PATCH /downloads/{hash} {"is_a4af_auto": true}` (and being a *toggle* rather than a set, it is not idempotent today) |
+| `POST .../a4af` | `action` values `swap_this`, `swap_others` | keep the values. `swap_this_auto` has **already** been moved out (it is now rejected here; the flag is set idempotently via `PATCH /downloads/{hash} {"a4af_auto": …}`) — the remaining rename is only `a4af_auto` → `is_a4af_auto` on that PATCH, tracked above |
 
 Write side:
 
 | current | new | why |
 |---|---|---|
 | `PATCH /downloads` and `PATCH /downloads/{hash}` body `status` (`paused`/`resumed`/`stopped`) | `action` (`pause`/`resume`/`stop`) | R9 — `resumed` is never a value `status` returns, and the read enum has 11 values the write side rejects: `DownloadStatusName` (`Refresher.cpp:314`) returns `completed`, `completing`, `stopped`, `downloading`, `waiting`, `hashing`, `erroneous`, `insufficient_disk`, `paused`, `allocating`, `unknown` |
-| `POST /downloads` body `ed2k_link` + `links` | `links` only | two spellings of one input; the argument is in [`api-design-inconsistencies.md`](api-design-inconsistencies.md) §3, the rename lands here |
 | `category` in every body that carries one — `POST /downloads`, both `PATCH` forms, `POST /search/results/{hash}/download` | `category_index` | R6 with the read side |
-| `DELETE /downloads/{hash}` response `{ok, hash}` | see §3.1 | |
 
 ### 1.2 Clients — `GET /clients`, `GET /clients/{ecid}`, `GET /known_clients`, `GET /downloads/{hash}/clients`, `GET /shared/{hash}/clients`
 
@@ -171,7 +164,7 @@ never updates.
 | `xfer.down_total` | `downloaded_bytes_total` | |
 | `known_clients.total_uploaded` / `total_downloaded` | `uploaded_bytes_total` / `downloaded_bytes_total` | R6 — same quantity as above, different name today |
 | `queue_waiting_position` | `upload_queue_position` | it is this client's place in **our** upload queue — same `upload_*` prefix as `upload_state` and the renamed `upload_queue_score`, so the side is readable without pronouns |
-| `remote_queue_rank` | `remote_queue_position` | the mirror image — our place in **their** queue; `rank` and `position` were two words for one thing. The core substitutes `0xffff` when the remote queue is full (`ECSpecialCoreTags.cpp:425`): document that sentinel or emit `null` (R10) |
+| `remote_queue_rank` | `remote_queue_position` | the mirror image — our place in **their** queue; `rank` and `position` were two words for one thing. (The `0xffff`-full-queue sentinel already emits `null` via `WriteIntOrNull`; only the rename is left.) |
 | `score` | `upload_queue_score` | score of what, on which side |
 | `dl_up_modifier` | `credit_ratio` | unguessable abbreviation; it is the credit-system modifier applied to this client (`CUpDownClient::GetScoreRatio()`, `State.h:477`), which the desktop labels "DL/UP modifier". `credit_ratio_modifier` was the other candidate; `credit_ratio` wins on R5 — it is a ratio, not a count of modifiers |
 | `friend_slot` | `has_friend_slot` | R4, and it is easy to misread as `is_friend` |
@@ -182,7 +175,7 @@ never updates.
 | `mod_version` | `client_mod_name` | it is the client's mod string, not a version |
 | `os_info` | `reported_os` | untrusted, client-reported, frequently empty — the name should not promise more |
 | `available_parts` | `parts_offered_count` | R5; deliberately *not* `parts_available_count` — that name belongs to the download object, where it means "parts any source can serve"; this one is the parts **this** client holds |
-| `part_progress_percent` | *(keep)* | reviewed: rule-compliant. Its R10 defect — omitted when not computable — is in [`api-design-inconsistencies.md`](api-design-inconsistencies.md) §1 |
+| `part_progress_percent` | *(keep)* | reviewed: rule-compliant |
 | `version` (known_clients) | `software_version` | R6 — `/clients` calls the identical value `software_version` |
 | `online` (known_clients) | `is_online` | R4 |
 | `sessions` (known_clients) | `session_count` | R5 |
@@ -289,7 +282,7 @@ renames land once; `HandleSearchList` (`Api.cpp:7722`) hand-writes the
 | `results[].size` | `size_bytes` | R2 |
 | `results[].sources.total` / `.complete` | *(keep)* | R5/R6 — same shape as the download object's `sources` |
 | `results[].already_have` | `is_already_downloaded` | R4 |
-| `results[].type` | `file_type` | R6 — `POST /search`'s own body already spells this filter `file_type` (`Api.cpp:10292`), so the rename aligns request and response rather than inventing a name. `/shared/{hash}` derives its `file_type` from the *same* call (`GetFiletypeByName(name, translated=false)`, lowercased), so these are one enum under two key names; next to a `media` object a bare `type` also reads as a MIME type. The two copies of the helper behind it are a separate cleanup — [`api-design-inconsistencies.md`](api-design-inconsistencies.md) §7 — but they land with this rename, since both spell the token set |
+| `results[].type` | `file_type` | R6 — `POST /search`'s own body already spells this filter `file_type` (`Api.cpp:10292`), so the rename aligns request and response rather than inventing a name. `/shared/{hash}` derives its `file_type` from the *same* call (`GetFiletypeByName(name, translated=false)`, lowercased), so these are one enum under two key names; next to a `media` object a bare `type` also reads as a MIME type. The two key names already draw from one shared token function (`FileTypeToken`, `Refresher.cpp`); only the two spellings differ |
 | `results[].rating` | *(keep)* | but document `0` = *unrated*, not "rated zero" |
 | `results[].comments[].username` / `.filename` / `.rating` / `.comment` | *(keep)* | reviewed: rule-compliant, and the identical object ships on `GET /downloads/{hash}/comments` and in the `comments_updated` SSE payload — three copies of one shape, so any change to it moves in all three |
 | `searches[].query`, `searches[].state`, `searches[].client_ecid`, `searches[].result_count` | *(keep)* | reviewed: rule-compliant; only `search_id` and `kind` move, above |
@@ -299,7 +292,6 @@ renames land once; `HandleSearchList` (`Api.cpp:7722`) hand-writes the
 | `results[].kad_comment_search_running` | `is_kad_comment_lookup_running` | R4/R6 — see §1.1, three writers |
 | `progress.percent` | *(keep)* | 0–100, document it |
 | `search_progress` SSE `results` | `result_count` | R5/R6 — a plural key holding an integer, while `results` is an array everywhere else, and `GET /search` already calls the same number `result_count` |
-| `POST /search/results/{hash}/comments` and `POST /downloads/{hash}/comments`, both answering `{"status": "kad_search_started"}` | *(see design §6)* | a response shape, not a name — [`api-design-inconsistencies.md`](api-design-inconsistencies.md) §6 owns it, together with `POST /version/check` |
 
 ### 1.7 Friends and chats
 
@@ -333,8 +325,6 @@ renames land once; `HandleSearchList` (`Api.cpp:7722`) hand-writes the
 | `ed2k.connected_since`, `kad.connected_since` (both on `/status` and on `/kad`) | `connected_since_at` | R3 |
 | `ed2k.high_id` | `ed2k.is_high_id` | R4/R6 — the client object's `high_id` becomes `is_high_id` in §1.2; this is the same predicate about ourselves |
 | `ed2k.network.users` / `.files`, `kad.network.users` / `.files` / `.nodes` | `user_count` / `file_count` / `node_count` | R5/R6 — `network` names the scope, not the thing counted, so the carve-out does not apply, and `/servers` reports the same two quantities as `user_count` / `file_count`. One helper (`WriteKadNetworkObject`) serves `/status` and `/kad`, so the Kad triplet is one edit |
-| `kad.firewalled` | `kad.firewalled_tcp` | its sibling is `firewalled_udp`; a bare `firewalled` beside it reads as "firewalled overall" |
-| `kad.in_lan_mode` | `kad.is_in_lan_mode` | R4 — a boolean matching none of the predicate forms |
 | `kad.indexed.load` | `kad.indexed.load_percent` | R2 — a 0–100 value with no unit in the name. The word `load` is the daemon's and the desktop's, which the suffix preserves |
 | `kad.buddy.status` | `kad.buddy.state` | every other connection enum in the API (`ed2k.state`, `kad.state`, the top-level `state` on the same object) is `state` |
 | `kad.indexed.{sources,keywords,notes}`, `kad.node_id`, `kad.public_ip`, `kad.buddy.{ip,port}`, `speeds.*`, `disk.*`, `queue.*`, `ec_connected` | *(keep)* | reviewed: rule-compliant. `indexed.*` is the daemon's and the desktop panel's vocabulary |
@@ -357,29 +347,25 @@ tag names.
 | `ip2country` | `geoip` | the rest of the API says GeoIP (`country_code`, `/flags/{code}.png`) |
 | `kademlia` | `kad` | everything else in the API says `kad`; this category exists only because EC has a group for it and holds exactly one field |
 
-**Units and silent quantisation** (rename only, with one exception: the three
-`_ms` → `_minutes` fields also **convert the wire value** in the amuleapi layer.
-The core already stores whole minutes — `Preferences.h:374-388` does
-`val / 60000` on write and `mins * 60000` on read, reached via
-`ECSpecialMuleTags.cpp:947-956` — so today the API speaks milliseconds and
-silently truncates anything under a minute. Converting at the API boundary
-(GET: EC value ÷ 60000, PATCH: value × 60000) is lossless on read and makes the
-field honest: a client that PATCHes `2` reads back `2`. No EC change. Everywhere
-else, where the daemon quantises, say so in the reference.)
+**Units and silent quantisation** (rename only). The three
+`core_tweaks.*_minutes` fields already carry the honest unit and convert at the
+boundary; what they still need is the **category** rename (`core_tweaks` →
+`advanced`, below) and, for one, the `kad_reask` → `kad_source_reask`
+disambiguation. Everywhere else, where the daemon quantises, say so in the
+reference.
 
 | current | new | note |
 |---|---|---|
 | `connection.max_download_kbps` / `max_upload_kbps` | *(keep)* | R2 — `_kbps` is KiB/s and stays that way, defined once in the reference alongside `_bps`. **Not** converted to bytes at the boundary either, though it would work (the core stores KiB/s in `s_maxdownload` and `PATCH /preferences` echoes the whole object, so a rounding would be visible rather than silent): a bandwidth limit is what the user types and what the desktop shows, and both are KiB/s, so bytes would force the UI to divide to render it and make `1000000` read back as `999424` |
 | `connection.upload_slot_kbps` | `upload_slot_min_kbps` | the unit spelling stays; the fix here is that it is the *minimum bandwidth allotted per slot*, not "a slot's speed" |
-| `core_tweaks.kad_reask_ms` | `advanced.kad_source_reask_minutes` | value converts ms → minutes at the API boundary (see above) |
-| `core_tweaks.source_reask_ms` | `advanced.source_reask_minutes` | same |
-| `core_tweaks.server_keepalive_timeout_ms` | `advanced.server_keepalive_timeout_minutes` | same |
+| `core_tweaks.kad_reask_minutes` | `advanced.kad_source_reask_minutes` | category rename, plus the `kad_source_reask` disambiguation |
+| `core_tweaks.source_reask_minutes` | `advanced.source_reask_minutes` | category rename |
+| `core_tweaks.server_keepalive_timeout_minutes` | `advanced.server_keepalive_timeout_minutes` | category rename |
 | `core_tweaks.max_new_connections_per_5s` | `advanced.max_new_connections_per_5_seconds` | R1/R2 — `5s` glued into an identifier |
 | `core_tweaks.file_buffer_bytes` | *(keep the name)* | document the 15000-byte quantisation (`Preferences.h:426-427`: `100000` becomes `90000`) |
 | `core_tweaks.max_upload_queue_clients` | *(keep)* | document the step of 100 (`Preferences.h:428-429`) |
 | `core_tweaks.kad_max_source_searches` | `advanced.kad_max_concurrent_source_searches` | it is a concurrency cap, not a lifetime total |
 | `security.ipfilter_block_below_access_level` | `security.ipfilter_min_access_level` | document the 0–255 scale |
-| `online_signature.update_frequency_seconds` | *(keep)* | but clamp to 65535 — the schema max is `0xFFFFFFFF` while the core member is `uint16` (`Preferences.h:737`, `s_OSUpdate`), so large values wrap |
 
 **Unexplained internals**
 
@@ -444,14 +430,15 @@ Settle on `<thing>_update_url`, with the `<thing>_` prefix only where the catego
 holds more than one such URL. Three are already right; only
 `ip2country.custom_url` moves, to `geoip.custom_update_url`.
 
-**Read-only / write-only / gated fields are invisible.** Moved out — it is an
-access-level documentation gap rather than a naming one, and it takes the three
-phantom `remote_controls.amuleapi.*` rows and the schema-less
-`webserver.guest_password` with it. See
-[`api-design-inconsistencies.md`](api-design-inconsistencies.md) §8. The renames
-above assume that column exists, because several of them (`upnp_supported`,
-`geoip.supported`, `mmap_supported`) only read correctly once a client can see
-which rows are status and which are settings.
+**Read-only / write-only / gated fields.** The access-level documentation gap —
+which rows are settable, which are read-only status, the three phantom
+`remote_controls.amuleapi.*` rows and the schema-less `webserver.guest_password`
+— has **landed** as a documentation fix: `REFERENCE.md` now carries the access
+levels and a truthful read-only rejection message (on the resolved list in
+[`api-design-inconsistencies.md`](api-design-inconsistencies.md)). The renames
+above rely on that distinction being visible, because several of them
+(`upnp_supported`, `geoip.supported`, `mmap_supported`) only read correctly once
+a client can see which rows are status and which are settings.
 
 ### 1.10 Endpoints added after the audit
 
@@ -471,7 +458,6 @@ never held against R1–R12. Reviewed here.
 
 | current | new | why |
 |---|---|---|
-| `ok` | *(drop)* | §3.1 — a constant `true` beside a `202` that already says it |
 | `queued` | `queued_file_count` | R5 — a bare past participle holding an integer, the same defect as `uploading` on `/shared` |
 | `scope` (`"all"` / `"file"`) | *(keep)* | it distinguishes the two routes' answers in one shape, which is worth a key |
 
@@ -499,7 +485,6 @@ never held against R1–R12. Reviewed here.
 | `auth/passwords` `guest_enabled` | `guest_access_enabled` (read and write) | R6 |
 | `auth/passwords` `other_sessions_revoked` | drop | always `true` |
 | `?type=bearer` | `?include_token=true` | "type" of what. `Accept: application/jwt` (`Api.cpp:2147`) selects the same shape — say in the reference that the header form survives the rename unchanged, or retire it in the same pass |
-| `POST /version/check` `{"status": "started"}` | *(see design §6)* | same shape as the two comment routes; [`api-design-inconsistencies.md`](api-design-inconsistencies.md) §6 |
 
 ### 1.12 Error codes
 
@@ -524,54 +509,31 @@ two-status codes included — so only the renames above are left.
 
 ## 2. Query parameters
 
-Names only. Two behavioural defects that used to sit in this table — `?channels=`
-with an empty value turning filtering off, and `limit` capping the request that
-asks while leaving unbounded the one that does not — are in
-[`api-protocol-and-correctness-bugs.md`](api-protocol-and-correctness-bugs.md)
-§8 and §10.
+Names only — the query-parameter renames still open.
 
 | endpoint | current | new / fix |
 |---|---|---|
-| `GET /downloads` | `include_completed` | → `status=` — a boolean over a three-state axis, moved to [`api-design-inconsistencies.md`](api-design-inconsistencies.md) §4; the new spelling is a name, so it lands with this pass |
 | every list endpoint | `sort=size` / `progress` / `speed` / `ping` / `users` / `files` / `sessions` / `total_uploaded` / `total_downloaded` / `first_seen` / `last_seen` / `sources` / `online` | R7: each becomes the response key it orders by, after that key's own rename — `size_bytes`, `progress.percent`, `speed_bps`, `ping_ms`, `user_count`, `file_count`, `session_count`, `uploaded_bytes_total`, `downloaded_bytes_total`, `first_seen_at`, `last_seen_at`, `sources.total`, `is_online`. `sort=name`, `status`, `software`, `rating`, `directory`, `last_message_at` are already the key and do not move |
 | `GET /clients` | `filter=uploads` / `downloads` / `active` | `activity=uploading` / `downloading` / `active` — "filter" names the mechanism, not the axis, and the values are plural nouns for what are client states |
 | `POST /auth/login`, `PATCH /auth/passwords` | `type=bearer` | `include_token=true` |
 
-## 3. Shape consistency (same pass, no new data)
+## 3. Applying the renames
 
-### 3.1 Mutation responses
+**R10 (omitted-vs-null)** is the rule the renames below assume: always emit the
+key, `null` for an unknown value. It is documented in `REFERENCE.md` and holds
+across the surface; the one writer that still emits a `0` sentinel where the rule
+wants `null` (`client_ecid` / `friend_ecid` on `/friends` and `/chats`) is
+tracked in
+[`api-design-inconsistencies.md`](api-design-inconsistencies.md) §1.
 
-Moved out — fourteen `{ok, …}` shapes, 22 constant `"ok": true` bodies, and a
-`PATCH` that answers with 15 of the 32 keys its own `GET` returns. See
-[`api-design-inconsistencies.md`](api-design-inconsistencies.md) §5. It lands in
-the same pass as these renames, because both rewrite the same response bodies.
-
-### 3.3 Omitted-vs-null
-
-Moved out — R10 is the rule, and the eight writers that still omit a key rather
-than emitting `null` are inventoried in
-[`api-design-inconsistencies.md`](api-design-inconsistencies.md) §1. R10 stays
-here because the renames below assume it.
-
-### 3.4 SSE payloads
-
-`EventDiff.cpp` shares the REST serializers for exactly two payloads — the
-search result (`WriteSearchResultFields`, `SearchJson.cpp:36`) and the server
-capability objects (`ServerTcpFlagsJson` / `ServerUdpFlagsJson`) — and
+**SSE payloads.** `EventDiff.cpp` shares the REST serializers for exactly two
+payloads — the search result (`WriteSearchResultFields`, `SearchJson.cpp:36`) and
+the server capability objects (`ServerTcpFlagsJson` / `ServerUdpFlagsJson`) — and
 hand-builds **everything else** as a literal `ostringstream` chain. So every key
-above except those exists a second time as a string literal there and has to be
-renamed twice, in `ToJson*` **and** in the matching `Equal*` predicate.
+renamed above except those exists a second time as a string literal there and has
+to be renamed twice, in `ToJson*` **and** in the matching `Equal*` predicate.
 
-## 4. Contract-shape bugs found during the audit
-
-Moved out. They are not names, and they need their own tests and review:
-`available_parts` emitted past its own gate, `POST /kad/bootstrap` echoing `ip`
-as an integer, and `DELETE /logs/*` answering `204` against a reference that
-documents `{"ok": true}` — all three, plus seven more the second pass turned up,
-are in
-[`api-protocol-and-correctness-bugs.md`](api-protocol-and-correctness-bugs.md).
-
-## 5. Files to touch
+## 4. Files to touch
 
 | Area | Files |
 |---|---|
@@ -607,7 +569,7 @@ payload and its `Equal`, the snapshot struct, the Web UI reads, the curl test,
 and the doc section. Every commit then leaves the tree working; none of them
 leaves the UI reading a key the API stopped emitting.
 
-## 6. Acceptance criteria
+## 5. Acceptance criteria
 
 - [ ] Every key listed in §1 is renamed in the serializer, in the snapshot
       struct, in the SSE payload, in the Web UI and in the docs — `grep` for the
@@ -616,20 +578,8 @@ leaves the UI reading a key the API stopped emitting.
 - [ ] `docs/api/REFERENCE.md` opens with the R1–R12 rules and states the unit
       conventions (`_bps` = bytes/second, `_kbps` = KiB/s, `_at` = unix seconds,
       `_percent` = 0–100) once, in one place.
-- [ ] The three criteria this pass shares with
-      [`api-design-inconsistencies.md`](api-design-inconsistencies.md) hold: no
-      constant `"ok": true` (§5), every single-resource `PATCH` returns what
-      `GET` on the same URL returns (§5), and no key is conditionally omitted
-      (§1). They are listed there because they are shape, not name; they are
-      repeated here because the renames rewrite the same writers and a commit
-      that lands one without the other touches those writers twice.
 - [ ] Every `sort` value is spelled exactly like the response key it orders by
       (R7), so the reference needs no per-endpoint mapping table.
-- [ ] `limit` defaults to 100 on every list endpoint and the reference states it
-      once — the v1-only half of
-      [`api-protocol-and-correctness-bugs.md`](api-protocol-and-correctness-bugs.md)
-      §10, which rides this pass because it is the same kind of
-      breaking change and needs the same Web UI work.
 - [ ] `internal` no longer exists as a code distinct from `internal_error`, and
       the reference catalog still lists every code the binary can emit.
 - [ ] Grepping for `peer` across `docs/api` and `src/webapi` returns nothing that
