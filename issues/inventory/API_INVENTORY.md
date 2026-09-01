@@ -1,13 +1,13 @@
 # amuleapi — REST endpoint inventory (extracted from source)
 
-Generated from `src/webapi` at commit `43c1dad16` by the scripts described in
+Generated from `src/webapi` at commit `cd7441c72` by the scripts described in
 [How this document was produced](#how-this-document-was-produced). Every route,
 query parameter, body field, response key and error below was lifted out of the
 C++ sources — `src/webapi/Api.cpp`, `App.cpp`, `HttpServer.cpp`,
 `SearchJson.cpp`, `PrefsSchema.cpp` — and not from `docs/api/REFERENCE.md`,
 which is known to drift.
 
-**91 endpoint sections** over **61 route blocks** in `DispatchToHandler`, plus the SSE, static-file, country-flag and CORS-preflight paths that live outside it.
+**93 endpoint sections** over **63 route blocks** in `DispatchToHandler`, plus the SSE, static-file, country-flag and CORS-preflight paths that live outside it.
 
 ## Contents
 
@@ -35,6 +35,7 @@ which is known to drift.
         - [POST /api/v0/kad/update](#post-apiv0kadupdate)
         - [POST /api/v0/ipfilter/reload](#post-apiv0ipfilterreload)
         - [POST /api/v0/ipfilter/update](#post-apiv0ipfilterupdate)
+        - [POST /api/v0/geoip/update](#post-apiv0geoipupdate)
     - [Downloads](#downloads)
         - [GET, HEAD /api/v0/downloads](#get-head-apiv0downloads)
         - [POST /api/v0/downloads](#post-apiv0downloads)
@@ -70,6 +71,7 @@ which is known to drift.
         - [POST /api/v0/shared/{hash}/verify](#post-apiv0sharedhashverify)
         - [POST /api/v0/shared/{hash}/media/refresh](#post-apiv0sharedhashmediarefresh)
         - [GET, HEAD /api/v0/shared/{hash}/clients](#get-head-apiv0sharedhashclients)
+        - [GET, HEAD /api/v0/shared/{hash}/content](#get-head-apiv0sharedhashcontent)
     - [Servers (ed2k server list)](#servers-ed2k-server-list)
         - [GET, HEAD /api/v0/servers](#get-head-apiv0servers)
         - [POST /api/v0/servers](#post-apiv0servers)
@@ -88,9 +90,9 @@ which is known to drift.
         - [POST /api/v0/friends/{ecid}/messages](#post-apiv0friendsecidmessages)
     - [Chat](#chat)
         - [GET, HEAD /api/v0/chats](#get-head-apiv0chats)
-        - [GET, HEAD /api/v0/chats/{peer}/messages](#get-head-apiv0chatspeermessages)
-        - [POST /api/v0/chats/{peer}/messages](#post-apiv0chatspeermessages)
-        - [DELETE /api/v0/chats/{peer}](#delete-apiv0chatspeer)
+        - [GET, HEAD /api/v0/chats/{client_address}/messages](#get-head-apiv0chatsclient_addressmessages)
+        - [POST /api/v0/chats/{client_address}/messages](#post-apiv0chatsclient_addressmessages)
+        - [DELETE /api/v0/chats/{client_address}](#delete-apiv0chatsclient_address)
     - [Categories](#categories)
         - [GET, HEAD /api/v0/categories](#get-head-apiv0categories)
         - [POST /api/v0/categories](#post-apiv0categories)
@@ -103,8 +105,8 @@ which is known to drift.
     - [Logs](#logs)
         - [GET, HEAD /api/v0/logs/amule](#get-head-apiv0logsamule)
         - [DELETE /api/v0/logs/amule](#delete-apiv0logsamule)
-        - [GET, HEAD /api/v0/logs/serverinfo](#get-head-apiv0logsserverinfo)
-        - [DELETE /api/v0/logs/serverinfo](#delete-apiv0logsserverinfo)
+        - [GET, HEAD /api/v0/logs/server_info](#get-head-apiv0logsserver_info)
+        - [DELETE /api/v0/logs/server_info](#delete-apiv0logsserver_info)
     - [Statistics](#statistics)
         - [GET, HEAD /api/v0/stats/tree](#get-head-apiv0statstree)
         - [GET, HEAD /api/v0/stats/graphs/{graph}](#get-head-apiv0statsgraphsgraph)
@@ -145,8 +147,8 @@ which is known to drift.
 | Read timeout | 10 s to finish sending the request → `408 request_timeout`, then close; a 20 s stream backstop behind it. Both disarmed once a handler starts, and for SSE | `HttpServer.cpp` (`m_request_timer`, `expires_after`) |
 | Response compression | gzip when the client sends `Accept-Encoding: gzip`, the body is ≥ 256 B and its type is not already compressed. The `ETag` carries a coding suffix so the two representations validate apart | `HttpServer.cpp` (`WillCompressBody`) |
 | Authenticated responses | `Cache-Control: private` + `Vary: Cookie`, stamped on every response whose caller presented a token or the session cookie (a handler that set its own `Cache-Control` is left alone) | `Api.cpp` (`Dispatch`) |
-| Concurrent SSE sessions | 32; the 33rd gets `503 sessions_exhausted` + `Retry-After: 10` | `HttpServer.cpp` (`kMaxConcurrentStreamingSessions`) |
-| Unhandled handler exception | `500` with code **`internal`** (note: handlers' own 500s use `internal_error`) | `HttpServer.cpp` (session dispatch `catch`) |
+| Concurrent SSE sessions | 32; the 33rd gets `503 too_many_streams` + `Retry-After: 10` | `HttpServer.cpp` (`kMaxConcurrentStreamingSessions`) |
+| Unhandled handler exception | `500 internal_error` — the same code a handler's own 500 uses | `HttpServer.cpp` (session dispatch `catch`) |
 
 ### Dispatch order
 
@@ -262,14 +264,14 @@ if (auto r = RequireSnapshot(m_state)) return *r;  // 503 — state readers
 | `GUEST` | any valid token (guest **or** admin) | `Authenticate(req)` only |
 | `ADMIN` | admin token required | `Authenticate(req)` + `RequireAdmin(a)` |
 
-Token transport (`AuthenticateRequest`, `Api.cpp:220`):
+Token transport (`AuthenticateRequest`, `Api.cpp:223`):
 `Authorization: Bearer <jwt>` takes precedence over the
 `amuleapi_token` cookie (`kSessionCookieName`). The cookie is
 issued with `; HttpOnly; SameSite=Strict; Path=/api/v0; Max-Age=<lifetime>`
 — no `Secure` (amuleapi serves plain HTTP by design). Tokens are HS256 JWTs
 (`src/libwebcommon/Jwt.*`); a token issued before the last credential change
 is rejected (`credentials changed; please sign in again`), as is one whose
-`jti` is in the revocation set.
+`session_id` is in the revocation set.
 
 Two independent per-IP rate limiters:
 
@@ -280,7 +282,7 @@ Two independent per-IP rate limiters:
 
 Both answer `429 rate_limited` with a `Retry-After` header.
 
-`RequireSnapshot` (`Api.cpp:310`) answers `503 ec_unavailable` until the
+`RequireSnapshot` (`Api.cpp:313`) answers `503 ec_unavailable` until the
 first EC snapshot from `amuled` has been received; it guards every handler
 that reads cached daemon state.
 
@@ -290,7 +292,7 @@ that reads cached daemon state.
 
 ### Error envelope
 
-Produced by `ErrorResponse` (`Api.cpp:177`) — signature `ErrorResponse(status, code, message)`:
+Produced by `ErrorResponse` (`Api.cpp:180`) — signature `ErrorResponse(status, code, message)`:
 
 ```json
 { "error": { "code": "bad_request", "message": "…" } }
@@ -308,7 +310,7 @@ Every list endpoint goes through `ListResponse` / `ListResponseFromPtrsUnlocked`
 `total` is the pre-slice count; `limit` always echoes the effective page size —
 the requested `limit`, or the default 100 when none was sent. `WritePageMeta`,
 
-Shared query parameters (`ParseListParams`, `Api.cpp:3501`) on those
+Shared query parameters (`ParseListParams`, `Api.cpp:3598`) on those
 endpoints:
 
 | Param | Type | Rules |
@@ -324,7 +326,7 @@ Sorting is a stable sort over the whole set, then the window is sliced.
 ### Bulk mutation envelope
 
 Five routes answer with a per-item result list (`BulkResultsResponse`,
-`Api.cpp:4761`): `POST /downloads`, `PATCH /downloads`, `DELETE /downloads`,
+`Api.cpp:4971`): `POST /downloads`, `PATCH /downloads`, `DELETE /downloads`,
 `PATCH /shared` and `POST /downloads_clear_completed` (one `{id, ok}` per cleared
 hash). The `/share_directories` writes have their own shape: they answer with the
 applied root list, `{directories: [{path, recursive}]}`.
@@ -337,7 +339,7 @@ applied root list, `{directories: [{path, recursive}]}`.
 
 Aggregate HTTP status: all items OK → the route's success status; every item
 `503` → `503`; any other mixture → **`207 Multi-Status`**. `hashes` arrays are
-parsed by `ParseBulkHashes` (`Api.cpp:4807`): 1–500 entries, each a 32-char
+parsed by `ParseBulkHashes` (`Api.cpp:5017`): 1–500 entries, each a 32-char
 hex string.
 
 ### Mutation flow
@@ -358,41 +360,46 @@ handlers, plus the pairs produced below the dispatcher by the HTTP layer.
 
 | Status | `code` | Distinct messages | Meaning |
 |---|---|---|---|
-| 400 | `amuled_rejected` | 30 | `amuled` refused the EC mutation (`EC_OP_FAILED`); its message is relayed |
+| 400 | `amuled_rejected` | 31 | `amuled` refused the EC mutation (`EC_OP_FAILED`); its message is relayed |
 | 400 | `bad_request` | 171 | malformed path, query, body or field value |
 | 401 | `invalid_credentials` | 1 | login password matched no configured role |
 | 401 | `unauthorized` | 6 | missing / invalid / expired / revoked token |
 | 403 | `forbidden` | 1 | `RequireAdmin` — admin role required |
 | 403 | `invalid_credentials` | 1 | `current_password` did not match on a password change |
-| 404 | `not_found` | 40 | no such route, file, peer, server, category or search |
+| 404 | `not_found` | 41 | no such route, file, peer, server, category or search |
 | 405 | `method_not_allowed` | 1 | the path exists, the method does not; the response carries an `Allow` header (`MethodNotAllowed`, one site, one message per route) |
-| 409 | `completed_use_clear_completed` | 1 | delete attempted on a completed download |
-| 409 | `conflict` | 2 | state conflict (A4AF loop, gated preference) |
+| 409 | `download_completed` | 1 | delete attempted on a completed download |
 | 409 | `kad_more_exhausted` | 1 | `/search/{id}/more` on a Kad search with nothing left |
+| 409 | `not_a4af_source` | 1 | that client is not an A4AF source of this download |
 | 409 | `not_completed` | 1 | single clear-completed on a file that is not completed |
 | 409 | `not_shared` | 1 | comment/rating attempted on a non-shared file |
-| 409 | `partfile_unsupported` | 2 | verify attempted on a partfile |
+| 409 | `option_not_supported` | 1 | the build does not support the requested preference option |
+| 409 | `partfile_unsupported` | 3 | verify or content download attempted on a partfile |
 | 409 | `update_check_unavailable` | 1 | version check disabled or unavailable |
+| 416 | `range_not_satisfiable` | 1 | the requested byte range lies outside the file |
 | 429 | `rate_limited` | 4 | per-IP auth / login failure lockout (`Retry-After`) |
-| 429 | `update_check_throttled` | 1 | version check asked for again too soon |
-| 500 | `internal_error` | 10 | hash decode / serialization failure inside a handler |
+| 429 | `version_check_throttled` | 1 | version check asked for again too soon — its own 429, distinct from `rate_limited` |
+| 500 | `internal_error` | 10 | hash decode / serialization / file-read failure inside a handler |
 | 502 | `amuled_rejected` | 4 | the daemon answered but the reply was unusable (no `search_id` for a search/browse, shared-directory apply refused) |
-| 502 | `bad_gateway` | 1 | unparseable EC payload from `amuled` |
-| 503 | `ec_unavailable` | 45 | no first EC snapshot yet, or the EC roundtrip failed |
+| 502 | `amuled_response_invalid` | 1 | unparseable EC payload from `amuled` |
+| 503 | `ec_content_mismatch` | 1 | the on-disk file disagrees with the shared file's size (split amuleapi/amuled deployment) |
+| 503 | `ec_content_unreachable` | 1 | the shared file is not on the filesystem running amuleapi |
+| 503 | `ec_unavailable` | 46 | no first EC snapshot yet, or the EC roundtrip failed |
 | 503 | `ec_unsupported` | 8 | the connected `amuled` is too old for this feature |
 | 503 | `login_disabled` | 1 | no admin/guest password configured |
+| 503 | `path_unavailable` | 1 | the shared file's on-disk path is not known yet (`Retry-After`) |
 
 Produced by the HTTP layer, below the dispatcher:
 
 | Status | `code` | When | Source |
 |---|---|---|---|
-| 500 | `internal` | a handler threw | `HttpServer.cpp`, session dispatch `catch` |
-| 503 | `sessions_exhausted` | 33rd concurrent SSE session; `Retry-After: 10` | `HttpServer.cpp`, `WriteCapRefusal` |
+| 500 | `internal_error` | the session dispatch caught an exception (same code as a handler's own 500) | `HttpServer.cpp`, session dispatch `catch` |
+| 503 | `too_many_streams` | 33rd concurrent SSE session; `Retry-After: 10` | `HttpServer.cpp`, `WriteCapRefusal` |
 | — | — | body > 1 MiB, headers > 16 KiB, or a 10 s read timeout: the connection is closed with no response | `HttpServer.cpp` |
 
 Bulk per-item `error.code` values (inside `results[]`, not the envelope):
 `ec_unavailable`, `amuled_rejected`, `not_found`, `internal_error`,
-`completed_use_clear_completed`.
+`download_completed`.
 
 ---
 
@@ -410,7 +417,7 @@ Liveness / readiness probe. Answers `200` as long as the HTTP server is up, what
 
 | | |
 |---|---|
-| Handler | `HandleHealth` — `src/webapi/Api.cpp:1996-2012` |
+| Handler | `HandleHealth` — `src/webapi/Api.cpp:2028-2044` |
 | Auth | **NONE** |
 | Success | `200 OK` |
 
@@ -440,7 +447,7 @@ Daemon and API version, plus — for an authenticated caller — the daemon's ne
 
 | | |
 |---|---|
-| Handler | `HandleVersion` — `src/webapi/Api.cpp:2014-2096` |
+| Handler | `HandleVersion` — `src/webapi/Api.cpp:2046-2143` |
 | Auth | **NONE for the identity fields, GUEST for `update`** |
 | Success | `200 OK` |
 
@@ -452,16 +459,16 @@ Daemon and API version, plus — for an authenticated caller — the daemon's ne
 
 ```json
 {
-  "name": "string",
+  "service": "string",
   "api_version": "string",
-  "amule_version": "string",
+  "amuleapi_version": "string",
   "daemon_version": "string",
   "update": {
     "check_enabled": "bool",
     "checked": "bool",
-    "latest_version": "string",
-    "update_available": "bool",
-    "last_checked": "int|null"
+    "latest_version": "string|null",
+    "available": "bool",
+    "last_checked_at": "int|null"
   }
 }
 ```
@@ -479,7 +486,7 @@ Ask the daemon to run its new-version check now. Asynchronous: the result lands 
 
 | | |
 |---|---|
-| Handler | `HandleVersionCheck` — `src/webapi/Api.cpp:4837-4890` |
+| Handler | `HandleVersionCheck` — `src/webapi/Api.cpp:5047-5105` |
 | Auth | **ADMIN** |
 | Success | `202 Accepted` — no body |
 | Gates | first EC snapshot (`503 ec_unavailable`) |
@@ -493,13 +500,13 @@ Ask the daemon to run its new-version check now. Asynchronous: the result lands 
 | Status | `code` | `message` |
 |---|---|---|
 | 409 | `update_check_unavailable` | `version check is disabled or unavailable on the connected daemon` |
-| 429 | `update_check_throttled` | `version check was throttled by the daemon; try again shortly` |
+| 429 | `version_check_throttled` | `version check was throttled by the daemon; try again shortly` |
 | 503 | `ec_unavailable` | `EC roundtrip failed for version check` |
 
 **Notes**
 
 - Gated on the daemon reporting the check as available *and* `general.check_new_version` being on; otherwise `409 update_check_unavailable`.
-- The daemon's own throttle surfaces as `429 update_check_throttled`; the daemon's localized message is deliberately not relayed.
+- The daemon's own throttle surfaces as `429 version_check_throttled`; the daemon's localized message is deliberately not relayed.
 
 ### Authentication
 
@@ -509,7 +516,7 @@ Exchange a password for a session. The response always sets the `amuleapi_token`
 
 | | |
 |---|---|
-| Handler | `HandleLogin` — `src/webapi/Api.cpp:2098-2181` |
+| Handler | `HandleLogin` — `src/webapi/Api.cpp:2145-2228` |
 | Auth | **NONE** |
 | Success | `200 OK` |
 | Gates | JSON object body, nesting ≤ 32 (`400 bad_request`) |
@@ -518,7 +525,7 @@ Exchange a password for a session. The response always sets the `amuleapi_token`
 
 | Name | Type | Description |
 |---|---|---|
-| `type` | `bearer` | Opt into the bearer shape (also triggered by `Accept: application/jwt`). `BeginSession`, `Api.cpp:2189` |
+| `include_token` | `true` | Also echo the JWT in the body (also triggered by `Accept: application/jwt`). `BeginSession`, `Api.cpp:2236` |
 
 **Request body**
 
@@ -526,16 +533,15 @@ Exchange a password for a session. The response always sets the `amuleapi_token`
 |---|---|---|---|
 | `password` | string | yes | Plain password; matched against the admin record first, then the guest record. |
 
-**Response body** — cookie shape (default), plus `token` and `jti` when the
-bearer shape was requested:
+**Response body** — cookie shape (default), plus `token` when
+`include_token=true`:
 
 ```json
 {
-  "token": "string (bearer only)",
+  "token": "string (only with include_token)",
   "role": "admin | guest",
-  "expires_at": "ISO-8601 UTC string",
-  "expires_at_unix": "int",
-  "jti": "string (bearer only)"
+  "expires_at": "int (unix seconds)",
+  "session_id": "string"
 }
 ```
 
@@ -558,11 +564,11 @@ Headers: `Set-Cookie: amuleapi_token=<jwt>; HttpOnly; SameSite=Strict; Path=/api
 
 #### `POST /api/v0/auth/logout`
 
-Revoke the calling session's `jti` and clear the cookie.
+Revoke the calling session's `session_id` and clear the cookie.
 
 | | |
 |---|---|
-| Handler | `HandleLogout` — `src/webapi/Api.cpp:2240-2325` |
+| Handler | `HandleLogout` — `src/webapi/Api.cpp:2291-2376` |
 | Auth | **NONE** |
 | Success | `204 No Content` |
 
@@ -589,11 +595,11 @@ Headers: a `Set-Cookie` that expires `amuleapi_token`.
 
 #### `GET, HEAD /api/v0/auth/session`
 
-Describe the calling token: role, `jti`, and expiry.
+Describe the calling token: role, `session_id`, and expiry.
 
 | | |
 |---|---|
-| Handler | `HandleSession` — `src/webapi/Api.cpp:2337-2364` |
+| Handler | `HandleSession` — `src/webapi/Api.cpp:2388-2413` |
 | Auth | **GUEST** |
 | Success | `200 OK` |
 
@@ -606,9 +612,8 @@ Describe the calling token: role, `jti`, and expiry.
 ```json
 {
   "role": "string",
-  "jti": "string",
-  "exp": "string",
-  "exp_unix": "int"
+  "session_id": "string",
+  "expires_at": "int"
 }
 ```
 
@@ -618,7 +623,7 @@ Whether an admin password is set and whether the guest role is enabled. No passw
 
 | | |
 |---|---|
-| Handler | `HandleAuthPasswords` — `src/webapi/Api.cpp:2369-2390` |
+| Handler | `HandleAuthPasswords` — `src/webapi/Api.cpp:2418-2439` |
 | Auth | **ADMIN** |
 | Success | `200 OK` |
 
@@ -630,8 +635,8 @@ Whether an admin password is set and whether the guest role is enabled. No passw
 
 ```json
 {
-  "admin_set": "bool",
-  "guest_enabled": "bool"
+  "admin_password_set": "bool",
+  "guest_access_enabled": "bool"
 }
 ```
 
@@ -641,7 +646,7 @@ Change the admin and/or guest password, or enable/disable the guest role.
 
 | | |
 |---|---|
-| Handler | `HandleAuthPasswordsPatch` — `src/webapi/Api.cpp:2402-2538` |
+| Handler | `HandleAuthPasswordsPatch` — `src/webapi/Api.cpp:2451-2590` |
 | Auth | **ADMIN** |
 | Success | `200 OK` |
 | Gates | JSON object body, nesting ≤ 32 (`400 bad_request`) |
@@ -654,20 +659,19 @@ Change the admin and/or guest password, or enable/disable the guest role.
 |---|---|---|---|
 | `current_password` | string | yes | Must be the current **admin** password. |
 | `admin_password` | string | no | New admin password. Cannot be empty — the admin role cannot be removed. |
-| `guest_password` | string | no | New guest password. Setting it implies `guest_enabled: true` unless `guest_enabled` says otherwise. |
-| `guest_enabled` | bool | no | Enable/disable the guest role. |
+| `guest_password` | string | no | New guest password. Setting it implies `guest_access_enabled: true` unless `guest_access_enabled` says otherwise. |
+| `guest_access_enabled` | bool | no | Enable/disable the guest role. |
 
 **Response body** — the post-change state plus a freshly issued session
 for the caller (the same fields `POST /auth/login` returns):
 
 ```json
 {
-  "admin_set": "bool",
-  "guest_enabled": "bool",
-  "other_sessions_revoked": true,
+  "admin_password_set": "bool",
+  "guest_access_enabled": "bool",
   "role": "admin",
-  "expires_at": "ISO-8601 UTC string",
-  "expires_at_unix": "int"
+  "expires_at": "int (unix seconds)",
+  "session_id": "string"
 }
 ```
 
@@ -677,8 +681,8 @@ for the caller (the same fields `POST /auth/login` returns):
 |---|---|---|
 | 400 | `bad_request` | <code>`admin_password` cannot be empty; the admin role cannot be removed</code> |
 | 400 | `bad_request` | <code>`current_password` is required</code> |
-| 400 | `bad_request` | <code>`guest_enabled` must be a boolean</code> |
-| 400 | `bad_request` | <code>`guest_password` cannot be set together with `guest_enabled: false`</code> |
+| 400 | `bad_request` | <code>`guest_access_enabled` must be a boolean</code> |
+| 400 | `bad_request` | <code>`guest_password` cannot be set together with `guest_access_enabled: false`</code> |
 | 400 | `bad_request` | `body must be a JSON object` |
 | 400 | `bad_request` | `nothing to change` |
 | 400 | `bad_request` | `password fields must be strings` |
@@ -690,7 +694,7 @@ for the caller (the same fields `POST /auth/login` returns):
 
 - Writing the credential file invalidates every token issued before it. The caller is re-issued in the same response, so the operator who changed the password stays signed in and everybody else is signed out.
 - A wrong `current_password` is `403 invalid_credentials` and counts against the login rate limiter.
-- `guest_password` together with `guest_enabled: false` is rejected rather than guessed at; a body that changes nothing is `400 nothing to change`.
+- `guest_password` together with `guest_access_enabled: false` is rejected rather than guessed at; a body that changes nothing is `400 nothing to change`.
 - The credential store lives outside `/preferences`: sending `remote_controls.amuleapi` passwords there is rejected on purpose.
 
 ### Status and networks
@@ -701,7 +705,7 @@ The dashboard rollup: ed2k/Kad connection state, transfer counters, queue sizes,
 
 | | |
 |---|---|
-| Handler | `HandleStatus` — `src/webapi/Api.cpp:2540-2686` |
+| Handler | `HandleStatus` — `src/webapi/Api.cpp:2592-2738` |
 | Auth | **GUEST** |
 | Success | `200 OK` |
 | Gates | first EC snapshot (`503 ec_unavailable`) |
@@ -720,29 +724,30 @@ The dashboard rollup: ed2k/Kad connection state, transfer counters, queue sizes,
     "high_id": "bool",
     "user_id": "int",
     "public_ip": "string",
-    "connected_since": "int",
+    "connected_since_at": "int",
     "server_name": "string",
     "server_ip": "string",
     "server_port": "int",
     "network": {
-      "users": "int|null",
-      "files": "int|null"
+      "user_count": "int|null",
+      "file_count": "int|null"
     }
   },
   "kad": {
     "state": "string",
-    "connected_since": "int",
+    "firewalled_tcp": "bool|null",
+    "connected_since_at": "int",
     "network": {
-      "users": "int|null",
-      "files": "int|null",
-      "nodes": "int|null"
+      "user_count": "int|null",
+      "file_count": "int|null",
+      "node_count": "int|null"
     }
   },
   "speeds": {
-    "download_bps": "int",
-    "upload_bps": "int",
-    "download_overhead_bps": "int",
-    "upload_overhead_bps": "int"
+    "download_bytes_per_second": "int",
+    "upload_bytes_per_second": "int",
+    "download_overhead_bytes_per_second": "int",
+    "upload_overhead_bytes_per_second": "int"
   },
   "disk": {
     "temp_free_bytes": "int | null",
@@ -758,7 +763,7 @@ The dashboard rollup: ed2k/Kad connection state, transfer counters, queue sizes,
 **Notes**
 
 - Built from one `Dashboard()` acquisition, so every counter in the response is from the same snapshot.
-- The `kad.network` sub-object is byte-identical to the one on `GET /api/v0/kad` — one writer, `WriteKadNetworkObject`, `Api.cpp:724`.
+- The `kad.network` sub-object is byte-identical to the one on `GET /api/v0/kad` — one writer, `WriteKadNetworkObject`, `Api.cpp:727`.
 - `disk.*_free_bytes` is `null` (not `-1`, not `0`) when the daemon could not determine free space.
 - `ed2k.public_ip` is an empty string until a high ID is obtained.
 
@@ -768,7 +773,7 @@ Kademlia state: node id, firewall status, bucket/contact counters and the networ
 
 | | |
 |---|---|
-| Handler | `HandleKad` — `src/webapi/Api.cpp:7121-7190` |
+| Handler | `HandleKad` — `src/webapi/Api.cpp:7368-7437` |
 | Auth | **GUEST** |
 | Success | `200 OK` |
 | Gates | first EC snapshot (`503 ec_unavailable`) |
@@ -783,20 +788,25 @@ Kademlia state: node id, firewall status, bucket/contact counters and the networ
 {
   "state": "string",
   "node_id": "string",
-  "connected_since": "int",
+  "firewalled_tcp": "bool|null",
+  "firewalled_udp": "bool|null",
+  "lan_mode": "bool|null",
+  "connected_since_at": "int",
   "public_ip": "string",
   "network": {
-    "users": "int|null",
-    "files": "int|null",
-    "nodes": "int|null"
+    "user_count": "int|null",
+    "file_count": "int|null",
+    "node_count": "int|null"
   },
   "indexed": {
     "sources": "int|null",
     "keywords": "int|null",
     "notes": "int|null",
-    "load": "int|null"
+    "load_percent": "int|null"
   },
   "buddy": {
+    "state": "string|null",
+    "ip": "string|null",
     "port": "int|null"
   }
 }
@@ -808,7 +818,7 @@ Connect ed2k, Kad, or both.
 
 | | |
 |---|---|
-| Handler | `HandleNetworksConnect` — `src/webapi/Api.cpp:8725-8768` |
+| Handler | `HandleNetworksConnect` — `src/webapi/Api.cpp:9013-9056` |
 | Auth | **ADMIN** |
 | Success | `202 Accepted` — `{"message": "…"}` (the daemon's status message, omitted when it returns none) |
 | Gates | JSON object body, nesting ≤ 32 (`400 bad_request`) |
@@ -841,9 +851,9 @@ Disconnect ed2k, Kad, or both.
 
 | | |
 |---|---|
-| Handler | `HandleNetworksDisconnect` — `src/webapi/Api.cpp:8770-8815` |
+| Handler | `HandleNetworksDisconnect` — `src/webapi/Api.cpp:9058-9103` |
 | Auth | **ADMIN** |
-| Success | `200 OK` — `{"message": "…"}` (the daemon's status message, omitted when empty) |
+| Success | `202 Accepted` — `{"message": "…"}` (the daemon's status message, omitted when empty) |
 | Gates | JSON object body, nesting ≤ 32 (`400 bad_request`) |
 
 **Query parameters**: none.
@@ -869,7 +879,7 @@ Bootstrap Kad from one known contact.
 
 | | |
 |---|---|
-| Handler | `HandleKadBootstrap` — `src/webapi/Api.cpp:8915-9004` |
+| Handler | `HandleKadBootstrap` — `src/webapi/Api.cpp:9259-9348` |
 | Auth | **ADMIN** |
 | Success | `202 Accepted` — `{"ip": "<dotted-quad>", "port": <int>}` (echoes the parsed contact) |
 | Gates | JSON object body, nesting ≤ 32 (`400 bad_request`) |
@@ -902,7 +912,7 @@ Tell the daemon to fetch `nodes.dat` from a URL.
 
 | | |
 |---|---|
-| Handler | `HandleKadUpdateFromUrl` — `src/webapi/Api.cpp:8835-8855` |
+| Handler | `HandleKadUpdateFromUrl` — `src/webapi/Api.cpp:9123-9143` |
 | Auth | **ADMIN** |
 | Success | `202 Accepted` — no body |
 | Gates | JSON object body, nesting ≤ 32 (`400 bad_request`) |
@@ -913,7 +923,7 @@ Tell the daemon to fetch `nodes.dat` from a URL.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `nodes_url` | string | no | `http://` or `https://` URL. When omitted, the configured `kademlia.nodes_url` preference is used; if no preference snapshot exists yet, that fallback is a `503`. |
+| `url` | string | no | `http://` or `https://` URL. When omitted, the configured `kad.update_url` preference is used; if no preference snapshot exists yet, that fallback is a `503`. |
 
 **Errors** (beyond the shared auth/rate-limit ones)
 
@@ -940,7 +950,7 @@ Reload the IP filter from disk (the Security page's *Reload List*).
 
 | | |
 |---|---|
-| Handler | `HandleIpfilterReload` — `src/webapi/Api.cpp:8866-8874` |
+| Handler | `HandleIpfilterReload` — `src/webapi/Api.cpp:9154-9162` |
 | Auth | **ADMIN** |
 | Success | `202 Accepted` — `{"message": "…"}` (the daemon's status message, omitted when empty) |
 
@@ -961,7 +971,7 @@ Fetch an IP-filter list from a URL (the Security page's *Update now*).
 
 | | |
 |---|---|
-| Handler | `HandleIpfilterUpdate` — `src/webapi/Api.cpp:8887-8913` |
+| Handler | `HandleIpfilterUpdate` — `src/webapi/Api.cpp:9175-9199` |
 | Auth | **ADMIN** |
 | Success | `202 Accepted` — no body |
 | Gates | JSON object body, nesting ≤ 32 (`400 bad_request`) |
@@ -972,7 +982,7 @@ Fetch an IP-filter list from a URL (the Security page's *Update now*).
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `ipfilter_url` | string | no | `http://` or `https://` URL; falls back to the `security.ipfilter_update_url` preference when omitted. |
+| `url` | string | no | `http://` or `https://` URL; falls back to the `security.ipfilter_update_url` preference when omitted. |
 
 **Errors** (beyond the shared auth/rate-limit ones)
 
@@ -988,6 +998,33 @@ Fetch an IP-filter list from a URL (the Security page's *Update now*).
 | 503 | `ec_unavailable` | `EC roundtrip failed` |
 | 503 | `ec_unavailable` | `amuleapi has not received its first EC snapshot yet` |
 
+#### `POST /api/v0/geoip/update`
+
+Tell the daemon to re-download the GeoIP country database now.
+
+| | |
+|---|---|
+| Handler | `HandleGeoipUpdate` — `src/webapi/Api.cpp:9217-9257` |
+| Auth | **ADMIN** |
+| Success | `202 Accepted` — empty `{}` body |
+
+**Query parameters**: none.
+
+**Request body**: none.
+
+**Errors** (beyond the shared auth/rate-limit ones)
+
+| Status | `code` | `message` |
+|---|---|---|
+| 400 | `amuled_rejected` | *(relayed at runtime: `ec_err_msg.c_str()`)* |
+| 503 | `ec_unavailable` | `EC roundtrip failed` |
+
+**Notes**
+
+- Replaces the write-only `geoip.update_now` preference boolean, which `PATCH /preferences` now rejects with an instruction to POST here.
+- `202`, like the three sibling fetch routes: the download runs inside `amuled` after the reply. Progress shows on `GET /preferences` as `geoip.download_in_progress`, the outcome as `geoip.last_update_status`.
+- `503 ec_unavailable` if the EC roundtrip fails; `400 amuled_rejected` when the daemon refuses (e.g. GeoIP disabled in the build).
+
 ### Downloads
 
 #### `GET, HEAD /api/v0/downloads`
@@ -996,7 +1033,7 @@ The transfer queue. Completed entries are filtered out by default.
 
 | | |
 |---|---|
-| Handler | `HandleDownloads` — `src/webapi/Api.cpp:4003-4105` |
+| Handler | `HandleDownloads` — `src/webapi/Api.cpp:4131-4236` |
 | Auth | **GUEST** |
 | Success | `200 OK` |
 | Gates | first EC snapshot (`503 ec_unavailable`); shared list params (`limit`/`offset`/`sort`/`order`) |
@@ -1019,25 +1056,29 @@ The transfer queue. Completed entries are filtered out by default.
       "hash": "string",
       "name": "string",
       "ed2k_link": "string",
-      "size": "int",
-      "size_done": "int",
-      "size_xfer": "int",
-      "speed_bps": "int",
+      "size_bytes": "int",
+      "completed_bytes": "int",
+      "transferred_bytes": "int",
+      "speed_bytes_per_second": "int",
       "status": "string",
       "priority": "string",
       "priority_auto": "bool",
-      "category": "int",
+      "category_index": "int",
       "sources": {
         "total": "int",
-        "not_current": "int",
+        "unavailable": "int",
         "transferring": "int",
         "a4af": "int"
       },
       "progress": {
         "percent": "number"
       },
-      "kad_comment_search_running": "bool",
-      "hashing_progress": "int"
+      "kad_comment_lookup_running": "bool",
+      "hashed_part_count": "int",
+      "parts_total_count": "int",
+      "source_ecids": [
+        "int"
+      ]
     }
   ],
   "total": "uint",
@@ -1056,7 +1097,7 @@ The transfer queue. Completed entries are filtered out by default.
 **Notes**
 
 - List rows omit `progress.parts` and the detail-only fields; read `GET /api/v0/downloads/{hash}` for those.
-- `hashing_progress` and `kad_comment_search_running` *are* on the list row — deliberately, so a client can render a hashing indicator without a per-file roundtrip.
+- `hashed_part_count` and `kad_comment_lookup_running` *are* on the list row — deliberately, so a client can render a hashing indicator without a per-file roundtrip.
 
 #### `POST /api/v0/downloads`
 
@@ -1064,7 +1105,7 @@ Add one or more ed2k links.
 
 | | |
 |---|---|
-| Handler | `HandleDownloadAdd` — `src/webapi/Api.cpp:4892-5026` |
+| Handler | `HandleDownloadAdd` — `src/webapi/Api.cpp:5107-5243` |
 | Auth | **ADMIN** |
 | Success | `202 Accepted` (bulk envelope; `207` on a mixed result, `503` when every item failed) |
 | Gates | first EC snapshot (`503 ec_unavailable`); JSON object body, nesting ≤ 32 (`400 bad_request`) |
@@ -1078,7 +1119,7 @@ Add one or more ed2k links.
 | `links` | array of strings | yes | One or more `ed2k://` links; at least one entry. A single link is `{"links": ["ed2k://..."]}` — the old singular `ed2k_link` is rejected with a `400`. |
 | `category` | number | no | Category index, 0–255. Default 0. |
 
-*Fields seen in source but not described above: `ed2k_link`.*
+*Fields seen in source but not described above: `category_index`, `ed2k_link`.*
 
 **Response body** — the [bulk envelope](#bulk-mutation-envelope); `id` is
 the submitted link.
@@ -1087,8 +1128,8 @@ the submitted link.
 
 | Status | `code` | `message` |
 |---|---|---|
-| 400 | `bad_request` | <code>`category` must be a non-negative integer</code> |
-| 400 | `bad_request` | <code>`category` must be in [0, 255]</code> |
+| 400 | `bad_request` | <code>`category_index` must be a non-negative integer</code> |
+| 400 | `bad_request` | <code>`category_index` must be in [0, 255]</code> |
 | 400 | `bad_request` | <code>`ed2k_link` is not accepted; send `links` as an array, `{"links": ["ed2k://..."]}` for a single link</code> |
 | 400 | `bad_request` | <code>`links` must be an array of ed2k://strings</code> |
 | 400 | `bad_request` | <code>`links` must contain at least one entry</code> |
@@ -1114,7 +1155,7 @@ Apply the same status / priority / category change to many downloads.
 
 | | |
 |---|---|
-| Handler | `HandleDownloadsBulkPatch` — `src/webapi/Api.cpp:9125-9256` |
+| Handler | `HandleDownloadsBulkPatch` — `src/webapi/Api.cpp:9469-9603` |
 | Auth | **ADMIN** |
 | Success | `200 OK` (bulk envelope; `207` mixed, `503` all-failed) |
 | Gates | first EC snapshot (`503 ec_unavailable`); JSON object body, nesting ≤ 32 (`400 bad_request`) |
@@ -1130,6 +1171,8 @@ Apply the same status / priority / category change to many downloads.
 | `priority` | `low` \| `normal` \| `high` \| `auto` | no | Download priorities only — `very_low` and `release` are upload-side levels and are rejected here. |
 | `category` | number | no | 0–255. |
 
+*Fields seen in source but not described above: `action`, `category_index`.*
+
 **Response body** — the [bulk envelope](#bulk-mutation-envelope); `id` is
 the hash.
 
@@ -1137,17 +1180,17 @@ the hash.
 
 | Status | `code` | `message` |
 |---|---|---|
-| 400 | `bad_request` | <code>"`status` must be one of \"paused\", \"resumed\" or \"stopped\</code> |
+| 400 | `bad_request` | <code>"`action` must be one of \"pause\", \"resume\" or \"stop\</code> |
 | 400 | `bad_request` | *(relayed at runtime: `FilePriorityAccepted(kPrioDownload).c_str()`)* |
-| 400 | `bad_request` | <code>`category` must be a non-negative integer</code> |
-| 400 | `bad_request` | <code>`category` must be in [0, 255]</code> |
+| 400 | `bad_request` | <code>`category_index` must be a non-negative integer</code> |
+| 400 | `bad_request` | <code>`category_index` must be in [0, 255]</code> |
 | 400 | `bad_request` | <code>`hashes` entries must be strings</code> |
 | 400 | `bad_request` | <code>`hashes` may contain at most 500 entries</code> |
 | 400 | `bad_request` | <code>`hashes` must be an array of 32-char hex strings</code> |
 | 400 | `bad_request` | <code>`hashes` must contain at least one entry</code> |
 | 400 | `bad_request` | <code>`priority` must be a wire-string enum</code> |
 | 400 | `bad_request` | *(relayed at runtime: `parse_err.c_str()`)* |
-| 400 | `bad_request` | <code>request body must include at least one of `status`, `priority`, or `category`</code> |
+| 400 | `bad_request` | <code>request body must include at least one of `action`, `priority`, or `category_index`</code> |
 
 **Per-item errors** (inside `results[]`)
 
@@ -1169,7 +1212,7 @@ Cancel and remove many active downloads.
 
 | | |
 |---|---|
-| Handler | `HandleDownloadsBulkDelete` — `src/webapi/Api.cpp:9258-9323` |
+| Handler | `HandleDownloadsBulkDelete` — `src/webapi/Api.cpp:9605-9670` |
 | Auth | **ADMIN** |
 | Success | `200 OK` (bulk envelope) |
 | Gates | first EC snapshot (`503 ec_unavailable`); JSON object body, nesting ≤ 32 (`400 bad_request`) |
@@ -1199,14 +1242,14 @@ Cancel and remove many active downloads.
 | `http` | `code` | `message` |
 |---|---|---|
 | 404 | `not_found` | `no download with that hash` |
-| 409 | `completed_use_clear_completed` | `DELETE only removes active downloads; use POST /downloads_clear_completed to clear a completed entry` |
+| 409 | `download_completed` | `DELETE only removes active downloads; use POST /downloads_clear_completed to clear a completed entry` |
 | 500 | `internal_error` | `failed to decode partfile hash` |
 | 503 | `ec_unavailable` | `EC roundtrip failed for DELETE` |
 | 400 | `amuled_rejected` | *(relayed at runtime: `ec_err`)* |
 
 **Notes**
 
-- A `completed` entry is refused per item with `409 completed_use_clear_completed` — use `POST /api/v0/downloads_clear_completed` for those.
+- A `completed` entry is refused per item with `409 download_completed` — use `POST /api/v0/downloads_clear_completed` for those.
 
 #### `POST /api/v0/downloads_clear_completed`
 
@@ -1214,7 +1257,7 @@ Acknowledge completed downloads so the daemon drops them from its *awaiting clea
 
 | | |
 |---|---|
-| Handler | `HandleDownloadsClearCompleted` — `src/webapi/Api.cpp:5444-5563` |
+| Handler | `HandleDownloadsClearCompleted` — `src/webapi/Api.cpp:5667-5786` |
 | Auth | **ADMIN** |
 | Success | `200 OK` |
 | Gates | first EC snapshot (`503 ec_unavailable`); JSON object body, nesting ≤ 32 (`400 bad_request`) |
@@ -1253,7 +1296,7 @@ One download, with the per-part bitmap and every detail-only field.
 
 | | |
 |---|---|
-| Handler | `HandleDownloadDetail` — `src/webapi/Api.cpp:4386-4419` |
+| Handler | `HandleDownloadDetail` — `src/webapi/Api.cpp:4596-4629` |
 | Auth | **GUEST** |
 | Success | `200 OK` |
 | Gates | first EC snapshot (`503 ec_unavailable`) |
@@ -1262,7 +1305,7 @@ One download, with the per-part bitmap and every detail-only field.
 
 | Name | Description |
 |---|---|
-| `hash` | 32-char hex MD4. Case-insensitive — canonicalised to lowercase by `LowerHexKey`, `Api.cpp:324`. |
+| `hash` | 32-char hex MD4. Case-insensitive — canonicalised to lowercase by `LowerHexKey`, `Api.cpp:327`. |
 
 **Query parameters**: none.
 
@@ -1275,17 +1318,17 @@ One download, with the per-part bitmap and every detail-only field.
   "hash": "string",
   "name": "string",
   "ed2k_link": "string",
-  "size": "int",
-  "size_done": "int",
-  "size_xfer": "int",
-  "speed_bps": "int",
+  "size_bytes": "int",
+  "completed_bytes": "int",
+  "transferred_bytes": "int",
+  "speed_bytes_per_second": "int",
   "status": "string",
   "priority": "string",
   "priority_auto": "bool",
-  "category": "int",
+  "category_index": "int",
   "sources": {
     "total": "int",
-    "not_current": "int",
+    "unavailable": "int",
     "transferring": "int",
     "a4af": "int"
   },
@@ -1293,33 +1336,35 @@ One download, with the per-part bitmap and every detail-only field.
     "percent": "number",
     "parts": [
       {
-        "state": "complete | incomplete | missing",
+        "state": "complete | pending | unavailable",
         "sources": "int"
       }
     ]
   },
-  "kad_comment_search_running": "bool",
-  "hashing_progress": "int",
-  "last_seen_complete": "int|null",
-  "last_changed": "int",
-  "download_active_time": "int",
-  "available_part_count": "int",
-  "part_count": "int",
-  "remaining_time": "int|null",
-  "lost_to_corruption": "int",
-  "gained_by_compression": "int",
-  "saved_by_ich": "int",
-  "aich_hash": "string",
-  "met_file": "string",
-  "path": "string",
-  "partmet_id": "int",
-  "queued_count": "int",
-  "comment": "string",
-  "rating": "int",
+  "kad_comment_lookup_running": "bool",
+  "hashed_part_count": "int",
+  "parts_total_count": "int",
+  "source_ecids": [
+    "int"
+  ],
+  "last_seen_complete_at": "int|null",
+  "last_received_at": "int",
+  "active_seconds": "int",
+  "parts_available_count": "int",
+  "remaining_seconds": "int|null",
+  "lost_to_corruption_bytes": "int",
+  "gained_by_compression_bytes": "int",
+  "ich_recovered_packet_count": "int",
+  "aich_hash": "string|null",
+  "part_file_name": "string",
+  "directory": "string",
+  "upload_queue_count": "int",
+  "my_comment": "string",
+  "my_rating": "int",
   "a4af_auto": "bool",
   "media": {
-    "length_s": "int",
-    "bitrate": "int",
+    "duration_seconds": "int",
+    "bitrate_kilobits_per_second": "int",
     "codec": "string",
     "artist": "string",
     "album": "string",
@@ -1336,9 +1381,9 @@ One download, with the per-part bitmap and every detail-only field.
 
 **Notes**
 
-- `remaining_time` is `-1` when the file is not moving (`speed_bps == 0`).
+- `remaining_seconds` is `null` when the file is not moving (`speed_bytes_per_second == 0`).
 - `media` is present only for a file `ffprobe` has produced metadata for.
-- `parts[].state` is `complete` / `incomplete` / `missing`; the array is empty for a zero-byte file.
+- `parts[].state` is `complete` / `pending` / `unavailable`; the array is empty for a zero-byte file.
 - Unlike `GET /downloads`, this endpoint answers for a completed download too.
 
 #### `PATCH /api/v0/downloads/{hash}`
@@ -1347,7 +1392,7 @@ Change one download: pause/resume/stop, priority, category, comment+rating, or r
 
 | | |
 |---|---|
-| Handler | `HandleDownloadPatch` — `src/webapi/Api.cpp:5158-5373` |
+| Handler | `HandleDownloadPatch` — `src/webapi/Api.cpp:5375-5596` |
 | Auth | **ADMIN** |
 | Success | `200 OK` |
 | Gates | first EC snapshot (`503 ec_unavailable`); JSON object body, nesting ≤ 32 (`400 bad_request`) |
@@ -1365,13 +1410,13 @@ Change one download: pause/resume/stop, priority, category, comment+rating, or r
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `status` | `paused` \| `resumed` \| `stopped` | no |  |
-| `priority` | `low` \| `normal` \| `high` \| `auto` | no | Download priorities only — `very_low` and `release` are upload-side levels and are rejected here (`FilePriorityToCode`, `Api.cpp:3833`, domain `kPrioDownload`). |
+| `priority` | `low` \| `normal` \| `high` \| `auto` | no | Download priorities only — `very_low` and `release` are upload-side levels and are rejected here (`FilePriorityToCode`, `Api.cpp:3961`, domain `kPrioDownload`). |
 | `category` | number | no | 0–255. |
 | `comment` | string | with `rating` | ≤ 50 characters. Only settable on a file that is *shared* (a partfile with at least one complete chunk). |
 | `rating` | number | with `comment` | Integer 0–5. |
 | `name` | string | no | Rename; must be non-empty and contain no path separators. |
 
-*Fields seen in source but not described above: `a4af_auto`.*
+*Fields seen in source but not described above: `a4af_auto`, `action`, `category_index`, `my_comment`, `my_rating`.*
 
 **Response body**
 
@@ -1380,25 +1425,29 @@ Change one download: pause/resume/stop, priority, category, comment+rating, or r
   "hash": "string",
   "name": "string",
   "ed2k_link": "string",
-  "size": "int",
-  "size_done": "int",
-  "size_xfer": "int",
-  "speed_bps": "int",
+  "size_bytes": "int",
+  "completed_bytes": "int",
+  "transferred_bytes": "int",
+  "speed_bytes_per_second": "int",
   "status": "string",
   "priority": "string",
   "priority_auto": "bool",
-  "category": "int",
+  "category_index": "int",
   "sources": {
     "total": "int",
-    "not_current": "int",
+    "unavailable": "int",
     "transferring": "int",
     "a4af": "int"
   },
   "progress": {
     "percent": "number"
   },
-  "kad_comment_search_running": "bool",
-  "hashing_progress": "int"
+  "kad_comment_lookup_running": "bool",
+  "hashed_part_count": "int",
+  "parts_total_count": "int",
+  "source_ecids": [
+    "int"
+  ]
 }
 ```
 
@@ -1408,21 +1457,21 @@ Change one download: pause/resume/stop, priority, category, comment+rating, or r
 |---|---|---|
 | 400 | `amuled_rejected` | *(relayed at runtime: `ec_err.c_str()`)* |
 | 400 | `amuled_rejected` | *(relayed at runtime: `ec_err_msg.c_str()`)* |
-| 400 | `bad_request` | <code>"`status` must be one of \"paused\", \"resumed\" or \"stopped\</code> |
+| 400 | `bad_request` | <code>"`action` must be one of \"pause\", \"resume\" or \"stop\</code> |
 | 400 | `bad_request` | *(relayed at runtime: `FilePriorityAccepted(kPrioDownload).c_str()`)* |
 | 400 | `bad_request` | <code>`a4af_auto` must be a boolean</code> |
-| 400 | `bad_request` | <code>`category` must be a non-negative integer</code> |
-| 400 | `bad_request` | <code>`category` must be in [0, 255]</code> |
-| 400 | `bad_request` | <code>`comment` and `rating` must be set together</code> |
-| 400 | `bad_request` | <code>`comment` exceeds 50 characters</code> |
-| 400 | `bad_request` | <code>`comment` must be a string</code> |
+| 400 | `bad_request` | <code>`category_index` must be a non-negative integer</code> |
+| 400 | `bad_request` | <code>`category_index` must be in [0, 255]</code> |
+| 400 | `bad_request` | <code>`my_comment` and `my_rating` must be set together</code> |
+| 400 | `bad_request` | <code>`my_comment` exceeds 50 characters</code> |
+| 400 | `bad_request` | <code>`my_comment` must be a string</code> |
+| 400 | `bad_request` | <code>`my_rating` must be an integer in [0, 5]</code> |
 | 400 | `bad_request` | <code>`name` must be a string</code> |
 | 400 | `bad_request` | <code>`name` must not be empty</code> |
 | 400 | `bad_request` | <code>`name` must not contain path separators</code> |
 | 400 | `bad_request` | <code>`priority` must be a wire-string enum</code> |
-| 400 | `bad_request` | <code>`rating` must be an integer in [0, 5]</code> |
 | 400 | `bad_request` | *(relayed at runtime: `parse_err.c_str()`)* |
-| 400 | `bad_request` | <code>request body must include at least one of `status`, `priority`, `category`, `comment`+`rating`, or `name`</code> |
+| 400 | `bad_request` | <code>request body must include at least one of `action`, `priority`, `category_index`, `my_comment`+`my_rating`, or `name`</code> |
 | 404 | `not_found` | `no download with that hash` |
 | 409 | `not_shared` | `comment and rating can only be set on a shared file` |
 | 500 | `internal_error` | `failed to decode file hash` |
@@ -1443,7 +1492,7 @@ Cancel and remove one active download (partfile deleted by the daemon).
 
 | | |
 |---|---|
-| Handler | `HandleDownloadDelete` — `src/webapi/Api.cpp:5375-5442` |
+| Handler | `HandleDownloadDelete` — `src/webapi/Api.cpp:5598-5665` |
 | Auth | **ADMIN** |
 | Success | `204 No Content` |
 | Gates | first EC snapshot (`503 ec_unavailable`) |
@@ -1466,13 +1515,13 @@ Cancel and remove one active download (partfile deleted by the daemon).
 |---|---|---|
 | 400 | `amuled_rejected` | *(relayed at runtime: `ec_err_msg.c_str()`)* |
 | 404 | `not_found` | `no download with that hash` |
-| 409 | `completed_use_clear_completed` | `DELETE only removes active downloads (deletes .part/.met files from disk). Use POST /downloads_clear_completed with optional {"hash":"..."} body to clear a completed entry's post-completion notification — the file in the Incoming directory ` |
+| 409 | `download_completed` | `DELETE only removes active downloads (deletes .part/.met files from disk). Use POST /downloads_clear_completed with optional {"hash":"..."} body to clear a completed entry's post-completion notification — the file in the Incoming directory ` |
 | 500 | `internal_error` | `failed to decode partfile hash` |
 | 503 | `ec_unavailable` | `EC roundtrip failed for DELETE` |
 
 **Notes**
 
-- A `completed` entry is refused with `409 completed_use_clear_completed`: the only EC op that touches the completed staging list is `EC_OP_CLEAR_COMPLETED`, and it does not delete the file from `Incoming`.
+- A `completed` entry is refused with `409 download_completed`: the only EC op that touches the completed staging list is `EC_OP_CLEAR_COMPLETED`, and it does not delete the file from `Incoming`.
 
 #### `GET, HEAD /api/v0/downloads/{hash}/comments`
 
@@ -1480,7 +1529,7 @@ Comments and ratings reported by the file's sources, plus any Kad notes retrieve
 
 | | |
 |---|---|
-| Handler | `HandleDownloadComments` — `src/webapi/Api.cpp:4451-4495` |
+| Handler | `HandleDownloadComments` — `src/webapi/Api.cpp:4661-4705` |
 | Auth | **GUEST** |
 | Success | `200 OK` |
 | Gates | first EC snapshot (`503 ec_unavailable`) |
@@ -1499,8 +1548,8 @@ Comments and ratings reported by the file's sources, plus any Kad notes retrieve
 
 ```json
 {
-  "count": "int",
-  "kad_comment_search_running": "bool",
+  "total": "int",
+  "kad_comment_lookup_running": "bool",
   "comments": [
     {
       "username": "string",
@@ -1528,7 +1577,7 @@ Trigger an on-demand Kad NOTES lookup for this file.
 
 | | |
 |---|---|
-| Handler | `HandleDownloadCommentsKadSearch` — `src/webapi/Api.cpp:4501-4548` |
+| Handler | `HandleDownloadCommentsKadSearch` — `src/webapi/Api.cpp:4711-4758` |
 | Auth | **ADMIN** |
 | Success | `202 Accepted` — no body |
 | Gates | first EC snapshot (`503 ec_unavailable`) |
@@ -1563,7 +1612,7 @@ The filenames this file's sources report, with how many sources use each — the
 
 | | |
 |---|---|
-| Handler | `HandleDownloadFilenames` — `src/webapi/Api.cpp:4550-4584` |
+| Handler | `HandleDownloadFilenames` — `src/webapi/Api.cpp:4760-4794` |
 | Auth | **GUEST** |
 | Success | `200 OK` |
 | Gates | first EC snapshot (`503 ec_unavailable`) |
@@ -1584,8 +1633,8 @@ The filenames this file's sources report, with how many sources use each — the
 {
   "filenames": [
     {
-      "name": "string",
-      "count": "int"
+      "filename": "string",
+      "source_count": "int"
     }
   ]
 }
@@ -1603,7 +1652,7 @@ The peers related to this download: sources, peers pulling it from us, and A4AF 
 
 | | |
 |---|---|
-| Handler | `HandleFileClients` — `src/webapi/Api.cpp:4207-4281` |
+| Handler | `HandleFileClients` — `src/webapi/Api.cpp:4371-4484` |
 | Auth | **GUEST** |
 | Success | `200 OK` |
 | Gates | first EC snapshot (`503 ec_unavailable`); shared list params (`limit`/`offset`/`sort`/`order`) |
@@ -1634,10 +1683,10 @@ The peers related to this download: sources, peers pulling it from us, and A4AF 
       "user_hash": "string",
       "ip": "string",
       "port": "int",
-      "country_code": "string",
+      "country_code": "string|null",
       "software": "string",
       "software_version": "string",
-      "os_info": "string",
+      "reported_os": "string",
       "upload_state": "string",
       "download_state": "string",
       "ident_state": "string",
@@ -1645,29 +1694,29 @@ The peers related to this download: sources, peers pulling it from us, and A4AF 
       "upload_file_name": "string",
       "upload_file_hash": "string",
       "download_file_hash": "string",
-      "xfer": {
-        "up_session": "int",
-        "down_session": "int",
-        "up_total": "int",
-        "down_total": "int"
-      },
-      "upload_speed_bps": "int",
-      "download_speed_bps": "int",
-      "queue_waiting_position": "int",
-      "remote_queue_rank": "int|null",
-      "score": "int",
-      "obfuscation_status": "string",
+      "uploaded_bytes_session": "int",
+      "downloaded_bytes_session": "int",
+      "uploaded_bytes_total": "int",
+      "downloaded_bytes_total": "int",
+      "upload_speed_bytes_per_second": "int",
+      "download_speed_bytes_per_second": "int",
+      "upload_queue_position": "int",
+      "remote_queue_position": "int|null",
+      "upload_queue_score": "int",
+      "obfuscation_state": "string",
       "friend_slot": "bool",
       "source_origin": "string",
-      "available_parts": "int|null",
-      "mod_version": "string",
-      "view_shared_disabled": "bool",
+      "parts_offered_count": "int|null",
+      "client_mod_name": "string",
+      "shared_files_browsable": "bool",
       "part_progress_percent": "number",
       "role": "string",
       "a4af": "bool",
       "parts": [
         "bool"
-      ]
+      ],
+      "next_requested_part_index": "int|null",
+      "downloading_part_index": "int|null"
     }
   ],
   "total": "uint",
@@ -1687,7 +1736,7 @@ The peers related to this download: sources, peers pulling it from us, and A4AF 
 - Same handler as `GET /api/v0/shared/{hash}/clients`, with `require_downloading = true` — the hash must name a download here and a shared file there.
 - `role` is `source` / `peer` / `both` / `none`, and `a4af` marks a row that is an A4AF source of this file.
 - Which bitmap a row carries follows its direction: the download bitmap for a source, the upload bitmap for a peer; a pure A4AF row has none.
-- Sortable fields come from `ClientComparators` (`Api.cpp:3431`), so they match `GET /clients`: `name`, `software`.
+- Sortable fields come from `ClientComparators` (`Api.cpp:3528`), so they match `GET /clients`: `name`, `software`.
 
 #### `POST /api/v0/downloads/{hash}/a4af`
 
@@ -1695,7 +1744,7 @@ Swap A4AF (*asked for another file*) sources between this file and its siblings.
 
 | | |
 |---|---|
-| Handler | `HandleDownloadA4afAction` — `src/webapi/Api.cpp:4611-4720` |
+| Handler | `HandleDownloadA4afAction` — `src/webapi/Api.cpp:4821-4930` |
 | Auth | **ADMIN** |
 | Success | `200 OK` |
 | Gates | first EC snapshot (`503 ec_unavailable`); JSON object body, nesting ≤ 32 (`400 bad_request`) |
@@ -1739,7 +1788,7 @@ Swap A4AF (*asked for another file*) sources between this file and its siblings.
 | 400 | `bad_request` | <code>request body must include a string `action`</code> |
 | 404 | `not_found` | `no client with that ECID in the current snapshot` |
 | 404 | `not_found` | `no download with that hash` |
-| 409 | `conflict` | `that client is not an A4AF source of this download` |
+| 409 | `not_a4af_source` | `that client is not an A4AF source of this download` |
 | 500 | `internal_error` | `failed to decode partfile hash` |
 | 503 | `ec_unavailable` | `EC roundtrip failed for A4AF swap` |
 
@@ -1755,7 +1804,7 @@ Every peer the daemon currently knows: upload slots, queue waiters and download 
 
 | | |
 |---|---|
-| Handler | `HandleClients` — `src/webapi/Api.cpp:4283-4344` |
+| Handler | `HandleClients` — `src/webapi/Api.cpp:4486-4553` |
 | Auth | **GUEST** |
 | Success | `200 OK` |
 | Gates | first EC snapshot (`503 ec_unavailable`); shared list params (`limit`/`offset`/`sort`/`order`) |
@@ -1764,7 +1813,7 @@ Every peer the daemon currently knows: upload slots, queue waiters and download 
 
 | Name | Type | Description |
 |---|---|---|
-| `filter` | `uploads` \| `downloads` \| `active` | `uploads` = peers with `upload_state == "uploading"`; `downloads` = peers with `download_state == "downloading"`; `active` = the union. Any other value is a `400`. Absent = every peer. |
+| `activity` | `uploading` \| `downloading` \| `active` | `uploading` = peers with `upload_state == "uploading"`; `downloading` = peers with `download_state == "downloading"`; `active` = the union. Any other value is a `400`. Absent = every peer. |
 | `limit`, `offset`, `sort`, `order` | see [list envelope](#list-envelope-and-pagination) | Standard pagination/sorting. |
 
 **Request body**: none.
@@ -1780,10 +1829,10 @@ Every peer the daemon currently knows: upload slots, queue waiters and download 
       "user_hash": "string",
       "ip": "string",
       "port": "int",
-      "country_code": "string",
+      "country_code": "string|null",
       "software": "string",
       "software_version": "string",
-      "os_info": "string",
+      "reported_os": "string",
       "upload_state": "string",
       "download_state": "string",
       "ident_state": "string",
@@ -1791,23 +1840,21 @@ Every peer the daemon currently knows: upload slots, queue waiters and download 
       "upload_file_name": "string",
       "upload_file_hash": "string",
       "download_file_hash": "string",
-      "xfer": {
-        "up_session": "int",
-        "down_session": "int",
-        "up_total": "int",
-        "down_total": "int"
-      },
-      "upload_speed_bps": "int",
-      "download_speed_bps": "int",
-      "queue_waiting_position": "int",
-      "remote_queue_rank": "int|null",
-      "score": "int",
-      "obfuscation_status": "string",
+      "uploaded_bytes_session": "int",
+      "downloaded_bytes_session": "int",
+      "uploaded_bytes_total": "int",
+      "downloaded_bytes_total": "int",
+      "upload_speed_bytes_per_second": "int",
+      "download_speed_bytes_per_second": "int",
+      "upload_queue_position": "int",
+      "remote_queue_position": "int|null",
+      "upload_queue_score": "int",
+      "obfuscation_state": "string",
       "friend_slot": "bool",
       "source_origin": "string",
-      "available_parts": "int|null",
-      "mod_version": "string",
-      "view_shared_disabled": "bool",
+      "parts_offered_count": "int|null",
+      "client_mod_name": "string",
+      "shared_files_browsable": "bool",
       "part_progress_percent": "number"
     }
   ],
@@ -1821,11 +1868,11 @@ Every peer the daemon currently knows: upload slots, queue waiters and download 
 
 | Status | `code` | `message` |
 |---|---|---|
-| 400 | `bad_request` | <code>"`filter` must be one of \"uploads\", \"downloads\", \"active\</code> |
+| 400 | `bad_request` | <code>"`activity` must be one of \"uploading\", \"downloading\", \"active\</code> |
 
 **Notes**
 
-- `/api/v0/uploads` was retired in favour of this route — consumers filter client-side (or with `?filter=uploads`).
+- `/api/v0/uploads` was retired in favour of this route — consumers filter client-side (or with `?activity=uploading`).
 - `part_progress_percent` is computed per row before serialization, so the list, the per-file rows, the detail object and the SSE `client_*` payloads all carry it.
 
 #### `GET, HEAD /api/v0/clients/{ecid}`
@@ -1834,7 +1881,7 @@ One peer, with the ed2k-identity and server fields the list row omits.
 
 | | |
 |---|---|
-| Handler | `HandleClientDetail` — `src/webapi/Api.cpp:6059-6085` |
+| Handler | `HandleClientDetail` — `src/webapi/Api.cpp:6306-6332` |
 | Auth | **GUEST** |
 | Success | `200 OK` |
 | Gates | first EC snapshot (`503 ec_unavailable`) |
@@ -1858,10 +1905,10 @@ One peer, with the ed2k-identity and server fields the list row omits.
   "user_hash": "string",
   "ip": "string",
   "port": "int",
-  "country_code": "string",
+  "country_code": "string|null",
   "software": "string",
   "software_version": "string",
-  "os_info": "string",
+  "reported_os": "string",
   "upload_state": "string",
   "download_state": "string",
   "ident_state": "string",
@@ -1869,32 +1916,30 @@ One peer, with the ed2k-identity and server fields the list row omits.
   "upload_file_name": "string",
   "upload_file_hash": "string",
   "download_file_hash": "string",
-  "xfer": {
-    "up_session": "int",
-    "down_session": "int",
-    "up_total": "int",
-    "down_total": "int"
-  },
-  "upload_speed_bps": "int",
-  "download_speed_bps": "int",
-  "queue_waiting_position": "int",
-  "remote_queue_rank": "int|null",
-  "score": "int",
-  "obfuscation_status": "string",
+  "uploaded_bytes_session": "int",
+  "downloaded_bytes_session": "int",
+  "uploaded_bytes_total": "int",
+  "downloaded_bytes_total": "int",
+  "upload_speed_bytes_per_second": "int",
+  "download_speed_bytes_per_second": "int",
+  "upload_queue_position": "int",
+  "remote_queue_position": "int|null",
+  "upload_queue_score": "int",
+  "obfuscation_state": "string",
   "friend_slot": "bool",
   "source_origin": "string",
-  "available_parts": "int|null",
-  "mod_version": "string",
-  "view_shared_disabled": "bool",
+  "parts_offered_count": "int|null",
+  "client_mod_name": "string",
+  "shared_files_browsable": "bool",
   "part_progress_percent": "number",
-  "user_id_hybrid": "uint",
+  "ed2k_user_id": "uint",
   "high_id": "bool",
   "server_ip": "string",
   "server_port": "int",
   "server_name": "string",
   "kad_port": "int",
-  "is_friend": "bool",
-  "dl_up_modifier": "number"
+  "friend": "bool",
+  "credit_ratio": "number"
 }
 ```
 
@@ -1906,7 +1951,7 @@ One peer, with the ed2k-identity and server fields the list row omits.
 
 **Notes**
 
-- Detail-only keys, on top of the list row: `user_id_hybrid`, `high_id`, `server_ip`, `server_port`, `server_name`, `kad_port`, `is_friend`, `dl_up_modifier`.
+- Detail-only keys, on top of the list row: `ed2k_user_id`, `high_id`, `server_ip`, `server_port`, `server_name`, `kad_port`, `friend`, `credit_ratio`.
 - ECIDs are per-connection and are not stable across daemon restarts.
 
 #### `POST /api/v0/clients/{ecid}/shared_files`
@@ -1915,7 +1960,7 @@ Browse (*View Files*) a peer's share. Starts an asynchronous browse and returns 
 
 | | |
 |---|---|
-| Handler | `HandleClientBrowse` — `src/webapi/Api.cpp:10293-10297` |
+| Handler | `HandleClientBrowse` — `src/webapi/Api.cpp:10994-10998` |
 | Auth | **ADMIN** |
 | Success | `202 Accepted` — the created search's list row (same shape as `GET /search` rows); `Location: /api/v0/search/{search_id}` |
 
@@ -1939,8 +1984,8 @@ Browse (*View Files*) a peer's share. Starts an asynchronous browse and returns 
 
 **Notes**
 
-- Delegates to the shared `HandleBrowse` (`Api.cpp:10311`), which is where the auth gate and the EC exchange live — `HandleClientBrowse` itself is a two-line wrapper.
-- Read the listing with `GET /api/v0/search/{search_id}/results`; the search's `kind` is `browse` and its `query` is the peer's name.
+- Delegates to the shared `HandleBrowse` (`Api.cpp:11012`), which is where the auth gate and the EC exchange live — `HandleClientBrowse` itself is a two-line wrapper.
+- Read the listing with `GET /api/v0/search/{search_id}/results`; the search's `type` is `browse` and its `query` is the peer's name.
 - A peer that refuses the browse comes back as `404` carrying the daemon's reason; a daemon that starts no browse at all is a `502`.
 
 #### `POST /api/v0/clients/{ecid}/messages`
@@ -1949,7 +1994,7 @@ Send a chat message to a connected peer, addressed by ECID instead of `<ip>:<por
 
 | | |
 |---|---|
-| Handler | `HandleClientMessageSend` — `src/webapi/Api.cpp:6319-6335` |
+| Handler | `HandleClientMessageSend` — `src/webapi/Api.cpp:6566-6582` |
 | Auth | **ADMIN** |
 | Success | `202 Accepted` |
 | Gates | JSON object body, nesting ≤ 32 (`400 bad_request`) |
@@ -1971,7 +2016,7 @@ Send a chat message to a connected peer, addressed by ECID instead of `<ip>:<por
 **Response body**
 
 ```json
-{ "peer": "<ip>:<port>",
+{ "client_address": "<ip>:<port>",
   "message": { "id": "int", "direction": "out", "text": "string" } }
 ```
 
@@ -1999,7 +2044,7 @@ The daemon's credit store: every peer it has ever exchanged data with, keyed by 
 
 | | |
 |---|---|
-| Handler | `HandleKnownClients` — `src/webapi/Api.cpp:5968-6057` |
+| Handler | `HandleKnownClients` — `src/webapi/Api.cpp:6214-6304` |
 | Auth | **GUEST** |
 | Success | `200 OK` |
 | Gates | first EC snapshot (`503 ec_unavailable`); shared list params (`limit`/`offset`/`sort`/`order`) |
@@ -2019,11 +2064,20 @@ The daemon's credit store: every peer it has ever exchanged data with, keyed by 
   "known_clients": [
     {
       "user_hash": "string",
+      "name": "string|null",
+      "ip": "string|null",
       "port": "int|null",
       "kad_port": "int|null",
-      "total_uploaded": "uint",
-      "total_downloaded": "uint",
-      "last_seen": "uint",
+      "country_code": "string|null",
+      "software": "string|null",
+      "software_version": "string|null",
+      "source_origin": "string|null",
+      "obfuscation_state": "string|null",
+      "uploaded_bytes_total": "uint",
+      "downloaded_bytes_total": "uint",
+      "last_seen_at": "uint",
+      "first_seen_at": "uint|null",
+      "session_count": "uint|null",
       "online": "bool"
     }
   ],
@@ -2037,7 +2091,7 @@ The daemon's credit store: every peer it has ever exchanged data with, keyed by 
 
 | Status | `code` | `message` |
 |---|---|---|
-| 502 | `bad_gateway` | `the core answered the history request with an unknown reply` |
+| 502 | `amuled_response_invalid` | `the core answered the history request with an unknown reply` |
 | 503 | `ec_unavailable` | `the EC connection is unavailable` |
 | 503 | `ec_unsupported` | `the connected amuled does not serve the client history` |
 
@@ -2055,7 +2109,7 @@ Every file the daemon is sharing, with upload counters.
 
 | | |
 |---|---|
-| Handler | `HandleSharedList` — `src/webapi/Api.cpp:4346-4384` |
+| Handler | `HandleSharedList` — `src/webapi/Api.cpp:4555-4594` |
 | Auth | **GUEST** |
 | Success | `200 OK` |
 | Gates | first EC snapshot (`503 ec_unavailable`); shared list params (`limit`/`offset`/`sort`/`order`) |
@@ -2077,30 +2131,28 @@ Every file the daemon is sharing, with upload counters.
       "hash": "string",
       "name": "string",
       "ed2k_link": "string",
-      "size": "int",
+      "size_bytes": "int",
       "priority": "string",
       "priority_auto": "bool",
-      "complete_sources": "int",
-      "xfer": {
-        "session": "int",
-        "total": "int"
+      "sources": {
+        "complete": "int",
+        "complete_min": "int",
+        "complete_max": "int"
       },
-      "requests": {
-        "session": "int",
-        "total": "int"
-      },
-      "accepts": {
-        "session": "int",
-        "total": "int"
-      },
-      "upload_speed_bps": "int",
-      "uploading": "int",
-      "last_upload": "int|null",
-      "shared_since": "int|null",
-      "hashing_progress": "int",
+      "uploaded_bytes_session": "int",
+      "uploaded_bytes_total": "int",
+      "request_count_session": "int",
+      "request_count_total": "int",
+      "accepted_request_count_session": "int",
+      "accepted_request_count_total": "int",
+      "upload_speed_bytes_per_second": "int",
+      "uploading_client_count": "int",
+      "last_upload_at": "int|null",
+      "shared_since_at": "int|null",
+      "hashed_part_count": "int",
       "media": {
-        "length_s": "int",
-        "bitrate": "int",
+        "duration_seconds": "int",
+        "bitrate_kilobits_per_second": "int",
         "codec": "string",
         "artist": "string",
         "album": "string",
@@ -2116,8 +2168,8 @@ Every file the daemon is sharing, with upload counters.
 
 **Notes**
 
-- `uploading` is a **count of peers currently downloading this file**, not a boolean.
-- `hashing_progress` is a part *count* (parts hashed so far by a Verify Local Data or an AICH rebuild), not a percentage; `0` when idle.
+- `uploading_client_count` is a **count of peers currently downloading this file**, not a boolean.
+- `hashed_part_count` is a part *count* (parts hashed so far by a Verify Local Data or an AICH rebuild), not a percentage; `0` when idle.
 
 #### `PATCH /api/v0/shared`
 
@@ -2125,7 +2177,7 @@ Set the upload priority of many shared files at once.
 
 | | |
 |---|---|
-| Handler | `HandleSharedBulkPatch` — `src/webapi/Api.cpp:9325-9391` |
+| Handler | `HandleSharedBulkPatch` — `src/webapi/Api.cpp:9672-9738` |
 | Auth | **ADMIN** |
 | Success | `200 OK` (bulk envelope; `207` mixed, `503` all-failed) |
 | Gates | first EC snapshot (`503 ec_unavailable`); JSON object body, nesting ≤ 32 (`400 bad_request`) |
@@ -2169,7 +2221,7 @@ Ask the daemon to re-walk every configured share root.
 
 | | |
 |---|---|
-| Handler | `HandleSharedReload` — `src/webapi/Api.cpp:9865-9894` |
+| Handler | `HandleSharedReload` — `src/webapi/Api.cpp:10539-10568` |
 | Auth | **ADMIN** |
 | Success | `202 Accepted` — `{"message": "…"}` (the daemon's status message, omitted when empty) |
 
@@ -2195,7 +2247,7 @@ Re-probe **every** shared file's media metadata, replacing what is stored.
 
 | | |
 |---|---|
-| Handler | `HandleSharedMediaRefresh` — `src/webapi/Api.cpp:9822-9830` |
+| Handler | `HandleSharedMediaRefresh` — `src/webapi/Api.cpp:10496-10504` |
 | Auth | **ADMIN** |
 | Success | `202 Accepted` |
 
@@ -2236,7 +2288,7 @@ The configured share roots (as opposed to the files they produced).
 
 | | |
 |---|---|
-| Handler | `HandleSharedDirectories` — `src/webapi/Api.cpp:9561-9602` |
+| Handler | `HandleSharedDirectories` — `src/webapi/Api.cpp:10235-10276` |
 | Auth | **GUEST** |
 | Success | `200 OK` |
 
@@ -2274,7 +2326,7 @@ Replace the whole share-root list in one shot.
 
 | | |
 |---|---|
-| Handler | `HandleSharedDirectoriesPut` — `src/webapi/Api.cpp:9610-9655` |
+| Handler | `HandleSharedDirectoriesPut` — `src/webapi/Api.cpp:10284-10329` |
 | Auth | **ADMIN** |
 | Success | `200 OK` |
 | Gates | JSON object body, nesting ≤ 32 (`400 bad_request`) |
@@ -2320,7 +2372,7 @@ Add one share root, or update the `recursive` flag of an existing one.
 
 | | |
 |---|---|
-| Handler | `HandleSharedDirectoriesAdd` — `src/webapi/Api.cpp:9660-9710` |
+| Handler | `HandleSharedDirectoriesAdd` — `src/webapi/Api.cpp:10334-10384` |
 | Auth | **ADMIN** |
 | Success | `200 OK` |
 | Gates | JSON object body, nesting ≤ 32 (`400 bad_request`) |
@@ -2364,7 +2416,7 @@ Remove one share root.
 
 | | |
 |---|---|
-| Handler | `HandleSharedDirectoriesDelete` — `src/webapi/Api.cpp:9716-9754` |
+| Handler | `HandleSharedDirectoriesDelete` — `src/webapi/Api.cpp:10390-10428` |
 | Auth | **ADMIN** |
 | Success | `200 OK` |
 
@@ -2405,7 +2457,7 @@ One shared file, with the per-part source-availability array and the detail-only
 
 | | |
 |---|---|
-| Handler | `HandleSharedDetail` — `src/webapi/Api.cpp:4421-4449` |
+| Handler | `HandleSharedDetail` — `src/webapi/Api.cpp:4631-4659` |
 | Auth | **GUEST** |
 | Success | `200 OK` |
 | Gates | first EC snapshot (`503 ec_unavailable`) |
@@ -2427,48 +2479,42 @@ One shared file, with the per-part source-availability array and the detail-only
   "hash": "string",
   "name": "string",
   "ed2k_link": "string",
-  "size": "int",
+  "size_bytes": "int",
   "priority": "string",
   "priority_auto": "bool",
-  "complete_sources": "int",
-  "xfer": {
-    "session": "int",
-    "total": "int"
+  "sources": {
+    "complete": "int",
+    "complete_min": "int",
+    "complete_max": "int"
   },
-  "requests": {
-    "session": "int",
-    "total": "int"
-  },
-  "accepts": {
-    "session": "int",
-    "total": "int"
-  },
-  "upload_speed_bps": "int",
-  "uploading": "int",
-  "last_upload": "int|null",
-  "shared_since": "int|null",
-  "hashing_progress": "int",
+  "uploaded_bytes_session": "int",
+  "uploaded_bytes_total": "int",
+  "request_count_session": "int",
+  "request_count_total": "int",
+  "accepted_request_count_session": "int",
+  "accepted_request_count_total": "int",
+  "upload_speed_bytes_per_second": "int",
+  "uploading_client_count": "int",
+  "last_upload_at": "int|null",
+  "shared_since_at": "int|null",
+  "hashed_part_count": "int",
   "file_type": "string",
-  "share_ratio": "number",
-  "path": "string",
+  "upload_ratio": "number",
+  "directory": "string",
   "incomplete": "bool",
-  "complete_sources_range": {
-    "low": "int",
-    "high": "int"
-  },
-  "aich_hash": "string",
-  "part_count": "int",
+  "aich_hash": "string|null",
+  "parts_total_count": "int",
   "parts": [
     {
       "sources": "int"
     }
   ],
-  "queued_count": "int",
-  "comment": "string",
-  "rating": "int",
+  "upload_queue_count": "int",
+  "my_comment": "string",
+  "my_rating": "int",
   "media": {
-    "length_s": "int",
-    "bitrate": "int",
+    "duration_seconds": "int",
+    "bitrate_kilobits_per_second": "int",
     "codec": "string",
     "artist": "string",
     "album": "string",
@@ -2485,7 +2531,7 @@ One shared file, with the per-part source-availability array and the detail-only
 
 **Notes**
 
-- Detail-only, on top of the list row: `file_type`, `share_ratio`, `path`, `incomplete`, `complete_sources_range`, `aich_hash`, `part_count`, `parts`, `queued_count`, `comment`, `rating`, `media`.
+- Detail-only, on top of the list row: `file_type`, `upload_ratio`, `directory`, `incomplete`, `sources.complete_min` / `sources.complete_max`, `aich_hash`, `parts_total_count`, `parts`, `upload_queue_count`, `my_comment`, `my_rating`, `media`.
 - `parts[]` is `{sources}` per part — deliberately *not* the downloads `state` shape, which would invite rendering it as progress. The key is omitted entirely when nothing has been decoded yet, so *no data* stays distinguishable from *no sources anywhere*.
 - `path` is the file's real directory; for a shared partfile that is the temp directory, flagged by `incomplete`.
 
@@ -2495,7 +2541,7 @@ Set a shared file's upload priority, and/or its comment and rating.
 
 | | |
 |---|---|
-| Handler | `HandleSharedPatch` — `src/webapi/Api.cpp:9012-9113` |
+| Handler | `HandleSharedPatch` — `src/webapi/Api.cpp:9356-9457` |
 | Auth | **ADMIN** |
 | Success | `200 OK` |
 | Gates | first EC snapshot (`503 ec_unavailable`); JSON object body, nesting ≤ 32 (`400 bad_request`) |
@@ -2516,6 +2562,8 @@ Set a shared file's upload priority, and/or its comment and rating.
 | `comment` | string | with `rating` | ≤ 50 characters. |
 | `rating` | number | with `comment` | Integer 0–5. |
 
+*Fields seen in source but not described above: `my_comment`, `my_rating`.*
+
 **Response body**
 
 ```json
@@ -2523,30 +2571,28 @@ Set a shared file's upload priority, and/or its comment and rating.
   "hash": "string",
   "name": "string",
   "ed2k_link": "string",
-  "size": "int",
+  "size_bytes": "int",
   "priority": "string",
   "priority_auto": "bool",
-  "complete_sources": "int",
-  "xfer": {
-    "session": "int",
-    "total": "int"
+  "sources": {
+    "complete": "int",
+    "complete_min": "int",
+    "complete_max": "int"
   },
-  "requests": {
-    "session": "int",
-    "total": "int"
-  },
-  "accepts": {
-    "session": "int",
-    "total": "int"
-  },
-  "upload_speed_bps": "int",
-  "uploading": "int",
-  "last_upload": "int|null",
-  "shared_since": "int|null",
-  "hashing_progress": "int",
+  "uploaded_bytes_session": "int",
+  "uploaded_bytes_total": "int",
+  "request_count_session": "int",
+  "request_count_total": "int",
+  "accepted_request_count_session": "int",
+  "accepted_request_count_total": "int",
+  "upload_speed_bytes_per_second": "int",
+  "uploading_client_count": "int",
+  "last_upload_at": "int|null",
+  "shared_since_at": "int|null",
+  "hashed_part_count": "int",
   "media": {
-    "length_s": "int",
-    "bitrate": "int",
+    "duration_seconds": "int",
+    "bitrate_kilobits_per_second": "int",
     "codec": "string",
     "artist": "string",
     "album": "string",
@@ -2562,11 +2608,11 @@ Set a shared file's upload priority, and/or its comment and rating.
 | 400 | `amuled_rejected` | *(relayed at runtime: `ec_err.c_str()`)* |
 | 400 | `amuled_rejected` | *(relayed at runtime: `ec_err_msg.c_str()`)* |
 | 400 | `bad_request` | *(relayed at runtime: `FilePriorityAccepted(kPrioShared).c_str()`)* |
-| 400 | `bad_request` | <code>`comment` and `rating` must be set together</code> |
-| 400 | `bad_request` | <code>`comment` exceeds 50 characters</code> |
-| 400 | `bad_request` | <code>`comment` must be a string</code> |
+| 400 | `bad_request` | <code>`my_comment` and `my_rating` must be set together</code> |
+| 400 | `bad_request` | <code>`my_comment` exceeds 50 characters</code> |
+| 400 | `bad_request` | <code>`my_comment` must be a string</code> |
+| 400 | `bad_request` | <code>`my_rating` must be an integer in [0, 5]</code> |
 | 400 | `bad_request` | <code>`priority` must be a wire-string enum</code> |
-| 400 | `bad_request` | <code>`rating` must be an integer in [0, 5]</code> |
 | 400 | `bad_request` | *(relayed at runtime: `parse_err.c_str()`)* |
 | 400 | `bad_request` | <code>request body must include `priority`, `comment`+`rating`, or `name`</code> |
 | 404 | `not_found` | `no shared file with that hash` |
@@ -2585,7 +2631,7 @@ Re-hash a completed shared file against its on-disk data.
 
 | | |
 |---|---|
-| Handler | `HandleSharedVerify` — `src/webapi/Api.cpp:9393-9453` |
+| Handler | `HandleSharedVerify` — `src/webapi/Api.cpp:9740-9800` |
 | Auth | **ADMIN** |
 | Success | `202 Accepted` — no body |
 | Gates | first EC snapshot (`503 ec_unavailable`) |
@@ -2613,7 +2659,7 @@ Re-hash a completed shared file against its on-disk data.
 **Notes**
 
 - A partfile is refused with `409 partfile_unsupported`: the daemon's hashing task bails out on `IsPartFile()` but still answers `NOOP`, which would tell the caller the re-hash had been accepted.
-- Progress is observable as `hashing_progress` on the file's rows.
+- Progress is observable as `hashed_part_count` on the file's rows.
 
 #### `POST /api/v0/shared/{hash}/media/refresh`
 
@@ -2621,7 +2667,7 @@ Re-probe one shared file's media metadata.
 
 | | |
 |---|---|
-| Handler | `HandleSharedMediaRefreshOne` — `src/webapi/Api.cpp:9832-9863` |
+| Handler | `HandleSharedMediaRefreshOne` — `src/webapi/Api.cpp:10506-10537` |
 | Auth | **ADMIN** |
 | Success | `202 Accepted` |
 | Gates | first EC snapshot (`503 ec_unavailable`) |
@@ -2670,7 +2716,7 @@ The peers related to this shared file.
 
 | | |
 |---|---|
-| Handler | `HandleFileClients` — `src/webapi/Api.cpp:4207-4281` |
+| Handler | `HandleFileClients` — `src/webapi/Api.cpp:4371-4484` |
 | Auth | **GUEST** |
 | Success | `200 OK` |
 | Gates | first EC snapshot (`503 ec_unavailable`); shared list params (`limit`/`offset`/`sort`/`order`) |
@@ -2701,10 +2747,10 @@ The peers related to this shared file.
       "user_hash": "string",
       "ip": "string",
       "port": "int",
-      "country_code": "string",
+      "country_code": "string|null",
       "software": "string",
       "software_version": "string",
-      "os_info": "string",
+      "reported_os": "string",
       "upload_state": "string",
       "download_state": "string",
       "ident_state": "string",
@@ -2712,29 +2758,29 @@ The peers related to this shared file.
       "upload_file_name": "string",
       "upload_file_hash": "string",
       "download_file_hash": "string",
-      "xfer": {
-        "up_session": "int",
-        "down_session": "int",
-        "up_total": "int",
-        "down_total": "int"
-      },
-      "upload_speed_bps": "int",
-      "download_speed_bps": "int",
-      "queue_waiting_position": "int",
-      "remote_queue_rank": "int|null",
-      "score": "int",
-      "obfuscation_status": "string",
+      "uploaded_bytes_session": "int",
+      "downloaded_bytes_session": "int",
+      "uploaded_bytes_total": "int",
+      "downloaded_bytes_total": "int",
+      "upload_speed_bytes_per_second": "int",
+      "download_speed_bytes_per_second": "int",
+      "upload_queue_position": "int",
+      "remote_queue_position": "int|null",
+      "upload_queue_score": "int",
+      "obfuscation_state": "string",
       "friend_slot": "bool",
       "source_origin": "string",
-      "available_parts": "int|null",
-      "mod_version": "string",
-      "view_shared_disabled": "bool",
+      "parts_offered_count": "int|null",
+      "client_mod_name": "string",
+      "shared_files_browsable": "bool",
       "part_progress_percent": "number",
       "role": "string",
       "a4af": "bool",
       "parts": [
         "bool"
-      ]
+      ],
+      "next_requested_part_index": "int|null",
+      "downloading_part_index": "int|null"
     }
   ],
   "total": "uint",
@@ -2754,6 +2800,54 @@ The peers related to this shared file.
 - Same handler as `GET /api/v0/downloads/{hash}/clients` with `require_downloading = false`.
 - `parts` here is an array of booleans (one per part), present only when `include_parts=true` *and* the row actually has a bitmap for this file.
 
+#### `GET, HEAD /api/v0/shared/{hash}/content`
+
+Download the raw bytes of a completed shared file. The one route that serves a file body rather than JSON.
+
+| | |
+|---|---|
+| Handler | `HandleSharedContent` — `src/webapi/Api.cpp:9874-10127` |
+| Auth | **GUEST** |
+| Success | `200 OK` (whole file) or `206 Partial Content` (a `Range`) |
+| Gates | first EC snapshot (`503 ec_unavailable`) |
+
+**Path parameters**
+
+| Name | Description |
+|---|---|
+| `hash` | 32-char hex MD4 of a **completed** shared file. |
+
+**Query parameters**: none.
+
+**Request body**: none.
+
+**Response**: `application/octet-stream` bytes. Every response carries
+`Accept-Ranges: bytes`, an mtime+size `ETag`, `Content-Disposition: attachment`,
+`X-Content-Type-Options: nosniff` and a `Content-Security-Policy: default-src
+'none'; sandbox` — the bytes and filename came from the ed2k network, so the
+content type is never sniffed and the body is sandboxed against the Web UI's own
+origin.
+
+**Errors** (beyond the shared auth/rate-limit ones)
+
+| Status | `code` | `message` |
+|---|---|---|
+| 404 | `not_found` | `no shared file with that hash` |
+| 409 | `partfile_unsupported` | `content download is not supported on a partfile` |
+| 416 | `range_not_satisfiable` | `the requested range lies outside the file` |
+| 503 | `ec_content_mismatch` | `the file on disk does not match the shared file's size` |
+| 503 | `ec_content_unreachable` | `the file is not present on the filesystem running amuleapi` |
+| 503 | `path_unavailable` | `the file's on-disk path is not known yet` |
+
+**Notes**
+
+- **Not admin** — a guest that can list a file can read it. Authenticated like any read route.
+- `Range` (single range only): `206` with `Content-Range`; a malformed, multi-range or unsupported header is ignored and answers `200` with the whole file (CVE-2011-3192 mitigation); an unsatisfiable range is `416 range_not_satisfiable` with `Content-Range: bytes */<size>`.
+- Conditional GET: `If-None-Match` → `304`, evaluated before `Range`; `If-Range` drops the range when the validator no longer matches.
+- `409 partfile_unsupported` on an incomplete partfile — a `.part` file's byte offsets do not match the final file's, so a range out of it would be silently wrong.
+- Three `503`s cover a split deployment where amuleapi and amuled do not share a filesystem: `path_unavailable` (+ `Retry-After: 5`) before the daemon has reported the on-disk directory, `ec_content_unreachable` when the resolved path is absent locally, and `ec_content_mismatch` when a same-named local file disagrees on size. Unknown hash → `404 not_found`.
+- `HEAD` reports the same `Content-Length` a `GET` would send without reading a byte (the transport runs the body serializer in split mode).
+
 ### Servers (ed2k server list)
 
 #### `GET, HEAD /api/v0/servers`
@@ -2762,7 +2856,7 @@ The ed2k server list, with per-server capability flags.
 
 | | |
 |---|---|
-| Handler | `HandleServers` — `src/webapi/Api.cpp:5684-5704` |
+| Handler | `HandleServers` — `src/webapi/Api.cpp:5924-5945` |
 | Auth | **GUEST** |
 | Success | `200 OK` |
 | Gates | first EC snapshot (`503 ec_unavailable`); shared list params (`limit`/`offset`/`sort`/`order`) |
@@ -2786,17 +2880,18 @@ The ed2k server list, with per-server capability flags.
       "description": "string",
       "version": "string",
       "address": "string",
-      "country_code": "string",
+      "ip": "string",
+      "country_code": "string|null",
       "port": "int",
-      "users": "int",
-      "max_users": "int",
-      "files": "int",
+      "user_count": "int",
+      "max_user_count": "int",
+      "file_count": "int",
       "soft_file_limit": "int",
       "hard_file_limit": "int",
       "priority": "string",
       "ping_ms": "int",
       "failed_count": "int",
-      "static": "bool",
+      "permanent": "bool",
       "tcp_flags": {
         "bitmask": "uint",
         "compression": "bool",
@@ -2837,7 +2932,7 @@ Add a server by address.
 
 | | |
 |---|---|
-| Handler | `HandleServerAdd` — `src/webapi/Api.cpp:6650-6720` |
+| Handler | `HandleServerAdd` — `src/webapi/Api.cpp:6897-6967` |
 | Auth | **ADMIN** |
 | Success | `202 Accepted` — no body |
 | Gates | JSON object body, nesting ≤ 32 (`400 bad_request`) |
@@ -2868,7 +2963,7 @@ Tell the daemon to fetch `server.met` from a URL.
 
 | | |
 |---|---|
-| Handler | `HandleServerUpdateFromUrl` — `src/webapi/Api.cpp:6815-6837` |
+| Handler | `HandleServerUpdateFromUrl` — `src/webapi/Api.cpp:7062-7084` |
 | Auth | **ADMIN** |
 | Success | `202 Accepted` — no body |
 | Gates | JSON object body, nesting ≤ 32 (`400 bad_request`) |
@@ -2879,7 +2974,7 @@ Tell the daemon to fetch `server.met` from a URL.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `servers_url` | string | yes | `http://` or `https://` URL. Required — unlike the Kad and IP-filter variants there is no configured fallback. |
+| `url` | string | yes | `http://` or `https://` URL. Required — unlike the Kad and IP-filter variants there is no configured fallback. |
 
 **Errors** (beyond the shared auth/rate-limit ones)
 
@@ -2905,7 +3000,7 @@ Connect to one server.
 
 | | |
 |---|---|
-| Handler | `HandleServerConnect` — `src/webapi/Api.cpp:6722-6769` |
+| Handler | `HandleServerConnect` — `src/webapi/Api.cpp:6969-7016` |
 | Auth | **ADMIN** |
 | Success | `202 Accepted` — no body |
 | Gates | first EC snapshot (`503 ec_unavailable`) |
@@ -2934,7 +3029,7 @@ Connect to one server, addressed by `<ip>:<port>` instead of by ECID.
 
 | | |
 |---|---|
-| Handler | `HandleServerConnectByAddress` — `src/webapi/Api.cpp:6931-6949` |
+| Handler | `HandleServerConnectByAddress` — `src/webapi/Api.cpp:7178-7196` |
 | Auth | **ADMIN** |
 | Success | `202 Accepted` — no body |
 | Gates | first EC snapshot (`503 ec_unavailable`) |
@@ -2970,7 +3065,7 @@ Set a server's priority and/or its static flag.
 
 | | |
 |---|---|
-| Handler | `HandleServerPatch` — `src/webapi/Api.cpp:6962-7061` |
+| Handler | `HandleServerPatch` — `src/webapi/Api.cpp:7209-7308` |
 | Auth | **ADMIN** |
 | Success | `200 OK` — the full server object (same shape as `GET /servers` rows) |
 | Gates | first EC snapshot (`503 ec_unavailable`); JSON object body, nesting ≤ 32 (`400 bad_request`) |
@@ -2990,15 +3085,17 @@ Set a server's priority and/or its static flag.
 | `priority` | `low` \| `normal` \| `high` | no |  |
 | `static` | bool | no |  |
 
+*Fields seen in source but not described above: `permanent`.*
+
 **Errors** (beyond the shared auth/rate-limit ones)
 
 | Status | `code` | `message` |
 |---|---|---|
 | 400 | `amuled_rejected` | *(relayed at runtime: `ec_err_msg.c_str()`)* |
+| 400 | `bad_request` | <code>`permanent` must be a bool</code> |
 | 400 | `bad_request` | <code>`priority` must be a string</code> |
 | 400 | `bad_request` | <code>`priority` must be one of low, normal, high</code> |
-| 400 | `bad_request` | <code>`static` must be a bool</code> |
-| 400 | `bad_request` | <code>body must include at least one of `priority`, `static`</code> |
+| 400 | `bad_request` | <code>body must include at least one of `priority`, `permanent`</code> |
 | 400 | `bad_request` | *(relayed at runtime: `parse_err.c_str()`)* |
 | 404 | `not_found` | `no server with that ECID in the current snapshot` |
 | 503 | `ec_unavailable` | `EC roundtrip failed for SERVER_SET_STATIC_PRIO` |
@@ -3014,7 +3111,7 @@ Remove one server from the list.
 
 | | |
 |---|---|
-| Handler | `HandleServerDelete` — `src/webapi/Api.cpp:6771-6813` |
+| Handler | `HandleServerDelete` — `src/webapi/Api.cpp:7018-7060` |
 | Auth | **ADMIN** |
 | Success | `204 No Content` |
 | Gates | first EC snapshot (`503 ec_unavailable`) |
@@ -3043,7 +3140,7 @@ The `PATCH` and `DELETE` above, addressed by `<ip>:<port>` instead of by ECID. S
 
 | | |
 |---|---|
-| Handler | `HandleServerPatchByAddress` — `src/webapi/Api.cpp:7064-7080` |
+| Handler | `HandleServerPatchByAddress` — `src/webapi/Api.cpp:7311-7327` |
 | Auth | **ADMIN** |
 | Success | `PATCH` → `200 OK` — the full server object; `DELETE` → `204 No Content` |
 | Gates | first EC snapshot (`503 ec_unavailable`); JSON object body, nesting ≤ 32 (`400 bad_request`) |
@@ -3063,16 +3160,18 @@ The `PATCH` and `DELETE` above, addressed by `<ip>:<port>` instead of by ECID. S
 | `priority` | `low` \| `normal` \| `high` | no | `PATCH` only. |
 | `static` | bool | no | `PATCH` only. |
 
+*Fields seen in source but not described above: `permanent`.*
+
 **Errors** (beyond the shared auth/rate-limit ones)
 
 | Status | `code` | `message` |
 |---|---|---|
 | 400 | `amuled_rejected` | *(relayed at runtime: `ec_err_msg.c_str()`)* |
 | 400 | `bad_request` | `0.0.0.0 is not a server address` |
+| 400 | `bad_request` | <code>`permanent` must be a bool</code> |
 | 400 | `bad_request` | <code>`priority` must be a string</code> |
 | 400 | `bad_request` | <code>`priority` must be one of low, normal, high</code> |
-| 400 | `bad_request` | <code>`static` must be a bool</code> |
-| 400 | `bad_request` | <code>body must include at least one of `priority`, `static`</code> |
+| 400 | `bad_request` | <code>body must include at least one of `priority`, `permanent`</code> |
 | 400 | `bad_request` | `malformed ip:port selector: expected a dotted quad and a port in 1..65535` |
 | 400 | `bad_request` | *(relayed at runtime: `parse_err.c_str()`)* |
 | 404 | `not_found` | `no server matches that ip:port` |
@@ -3092,7 +3191,7 @@ The friend list — daemon-side records, not per-connection rows like `/clients`
 
 | | |
 |---|---|
-| Handler | `HandleFriends` — `src/webapi/Api.cpp:6375-6398` |
+| Handler | `HandleFriends` — `src/webapi/Api.cpp:6622-6645` |
 | Auth | **GUEST** |
 | Success | `200 OK` |
 | Gates | first EC snapshot (`503 ec_unavailable`); shared list params (`limit`/`offset`/`sort`/`order`) |
@@ -3114,9 +3213,9 @@ The friend list — daemon-side records, not per-connection rows like `/clients`
       "ecid": "int",
       "name": "string",
       "user_hash": "string",
-      "ip": "string",
+      "ip": "string|null",
       "port": "int",
-      "client_ecid": "int",
+      "client_ecid": "int|null",
       "online": "bool",
       "friend_slot": "bool"
     }
@@ -3137,7 +3236,7 @@ Add a friend, either from a live connection or from raw contact details.
 
 | | |
 |---|---|
-| Handler | `HandleFriendAdd` — `src/webapi/Api.cpp:6400-6534` |
+| Handler | `HandleFriendAdd` — `src/webapi/Api.cpp:6647-6781` |
 | Auth | **ADMIN** |
 | Success | `202 Accepted` — no body |
 | Gates | first EC snapshot (`503 ec_unavailable`); JSON object body, nesting ≤ 32 (`400 bad_request`) |
@@ -3182,7 +3281,7 @@ Grant or revoke this friend's reserved upload slot.
 
 | | |
 |---|---|
-| Handler | `HandleFriendPatch` — `src/webapi/Api.cpp:6583-6648` |
+| Handler | `HandleFriendPatch` — `src/webapi/Api.cpp:6830-6895` |
 | Auth | **ADMIN** |
 | Success | `200 OK` |
 | Gates | first EC snapshot (`503 ec_unavailable`); JSON object body, nesting ≤ 32 (`400 bad_request`) |
@@ -3208,9 +3307,9 @@ Grant or revoke this friend's reserved upload slot.
   "ecid": "int",
   "name": "string",
   "user_hash": "string",
-  "ip": "string",
+  "ip": "string|null",
   "port": "int",
-  "client_ecid": "int",
+  "client_ecid": "int|null",
   "online": "bool",
   "friend_slot": "bool"
 }
@@ -3233,7 +3332,7 @@ Remove a friend.
 
 | | |
 |---|---|
-| Handler | `HandleFriendRemove` — `src/webapi/Api.cpp:6536-6581` |
+| Handler | `HandleFriendRemove` — `src/webapi/Api.cpp:6783-6828` |
 | Auth | **ADMIN** |
 | Success | `204 No Content` |
 | Gates | first EC snapshot (`503 ec_unavailable`) |
@@ -3262,7 +3361,7 @@ Browse a friend's share.
 
 | | |
 |---|---|
-| Handler | `HandleFriendBrowse` — `src/webapi/Api.cpp:10299-10303` |
+| Handler | `HandleFriendBrowse` — `src/webapi/Api.cpp:11000-11004` |
 | Auth | **ADMIN** |
 | Success | `202 Accepted` — the created search's list row (same shape as `GET /search` rows); `Location: /api/v0/search/{search_id}` |
 
@@ -3286,8 +3385,8 @@ Browse a friend's share.
 
 **Notes**
 
-- Same delegation as the client form: the work is in `HandleBrowse` (`Api.cpp:10311`), addressed by `EC_TAG_FRIEND` instead of `EC_TAG_CLIENT`. This is the form that can reach a friend whose connection is not currently live.
-- The started search has `kind: "browse"` and the friend's name as its `query`.
+- Same delegation as the client form: the work is in `HandleBrowse` (`Api.cpp:11012`), addressed by `EC_TAG_FRIEND` instead of `EC_TAG_CLIENT`. This is the form that can reach a friend whose connection is not currently live.
+- The started search has `type: "browse"` and the friend's name as its `query`.
 
 #### `POST /api/v0/friends/{ecid}/messages`
 
@@ -3295,7 +3394,7 @@ Send a chat message to a friend, addressed by friend ECID.
 
 | | |
 |---|---|
-| Handler | `HandleFriendMessageSend` — `src/webapi/Api.cpp:6301-6317` |
+| Handler | `HandleFriendMessageSend` — `src/webapi/Api.cpp:6548-6564` |
 | Auth | **ADMIN** |
 | Success | `202 Accepted` |
 | Gates | JSON object body, nesting ≤ 32 (`400 bad_request`) |
@@ -3317,7 +3416,7 @@ Send a chat message to a friend, addressed by friend ECID.
 **Response body** — same shape as the other send forms:
 
 ```json
-{ "peer": "<ip>:<port>",
+{ "client_address": "<ip>:<port>",
   "message": { "id": "int", "direction": "out", "text": "string" } }
 ```
 
@@ -3345,7 +3444,7 @@ Open conversations, newest activity first when sorted.
 
 | | |
 |---|---|
-| Handler | `HandleChats` — `src/webapi/Api.cpp:6087-6124` |
+| Handler | `HandleChats` — `src/webapi/Api.cpp:6334-6371` |
 | Auth | **GUEST** |
 | Success | `200 OK` |
 | Gates | first EC snapshot (`503 ec_unavailable`); shared list params (`limit`/`offset`/`sort`/`order`) |
@@ -3364,21 +3463,21 @@ Open conversations, newest activity first when sorted.
 {
   "chats": [
     {
-      "peer": "string",
+      "client_address": "string",
       "ip": "string",
       "port": "int",
       "name": "string",
-      "client_ecid": "int",
-      "friend_ecid": "int",
+      "client_ecid": "int|null",
+      "friend_ecid": "int|null",
       "online": "bool",
       "message_count": "int",
-      "last_msg_id": "int",
-      "last_message_at": "int",
+      "last_message_id": "int",
+      "last_message_at": "int|null",
       "last_message": {
         "id": "int",
         "direction": "string",
         "text": "string",
-        "timestamp": "int"
+        "sent_at": "int"
       }
     }
   ],
@@ -3396,16 +3495,16 @@ Open conversations, newest activity first when sorted.
 
 **Notes**
 
-- `peer` is the `<ip>:<port>` key every other chat route takes.
+- `client_address` is the `<ip>:<port>` key every other chat route takes.
 - `last_message` is the most recent message inline, so a list render needs no per-chat roundtrip.
 
-#### `GET, HEAD /api/v0/chats/{peer}/messages`
+#### `GET, HEAD /api/v0/chats/{client_address}/messages`
 
 One conversation's messages, with a polling cursor.
 
 | | |
 |---|---|
-| Handler | `HandleChatMessages` — `src/webapi/Api.cpp:6126-6205` |
+| Handler | `HandleChatMessages` — `src/webapi/Api.cpp:6373-6452` |
 | Auth | **GUEST** |
 | Success | `200 OK` |
 | Gates | first EC snapshot (`503 ec_unavailable`) |
@@ -3414,13 +3513,13 @@ One conversation's messages, with a polling cursor.
 
 | Name | Description |
 |---|---|
-| `peer` | `<ip>:<port>`. A malformed key is a `400`. |
+| `client_address` | `<ip>:<port>`. A malformed key is a `400`. |
 
 **Query parameters**
 
 | Name | Type | Description |
 |---|---|---|
-| `since_id` | integer | Return only messages with `id` greater than this. Ids are monotonic per daemon process, so a poller never duplicates or skips; they reset when the daemon restarts (which also empties the store). |
+| `since_message_id` | integer | Return only messages with `id` greater than this. Ids are monotonic per daemon process, so a poller never duplicates or skips; they reset when the daemon restarts (which also empties the store). |
 | `limit` | integer | Keep only the **last** *n* of the selected window — *show me the tail of this conversation*. |
 
 **Request body**: none.
@@ -3429,17 +3528,17 @@ One conversation's messages, with a polling cursor.
 
 ```json
 {
-  "peer": "string",
+  "client_address": "string",
   "messages": [
     {
       "id": "int",
       "direction": "string",
       "text": "string",
-      "timestamp": "int"
+      "sent_at": "int"
     }
   ],
   "total": "int",
-  "last_msg_id": "int"
+  "last_message_id": "int"
 }
 ```
 
@@ -3447,23 +3546,23 @@ One conversation's messages, with a polling cursor.
 
 | Status | `code` | `message` |
 |---|---|---|
-| 400 | `bad_request` | <code>path `{peer}` must be `&lt;ip&gt;:&lt;port&gt;`</code> |
+| 400 | `bad_request` | <code>path `{client_address}` must be `&lt;ip&gt;:&lt;port&gt;`</code> |
 | 404 | `not_found` | `no chat session with that peer` |
 | 503 | `ec_unsupported` | `the connected amuled does not serve chat sessions` |
 
 **Notes**
 
-- `total` is the conversation's full message count, `last_msg_id` the newest id — both independent of the window returned.
+- `total` is the conversation's full message count, `last_message_id` the newest id — both independent of the window returned.
 - `503 ec_unsupported` when the connected `amuled` does not serve chat sessions.
 - This endpoint does **not** use the shared list envelope: no `offset`, no `sort`.
 
-#### `POST /api/v0/chats/{peer}/messages`
+#### `POST /api/v0/chats/{client_address}/messages`
 
 Send a message into a conversation, addressed by `<ip>:<port>`.
 
 | | |
 |---|---|
-| Handler | `HandleChatSend` — `src/webapi/Api.cpp:6281-6299` |
+| Handler | `HandleChatSend` — `src/webapi/Api.cpp:6528-6546` |
 | Auth | **ADMIN** |
 | Success | `202 Accepted` |
 | Gates | JSON object body, nesting ≤ 32 (`400 bad_request`) |
@@ -3472,7 +3571,7 @@ Send a message into a conversation, addressed by `<ip>:<port>`.
 
 | Name | Description |
 |---|---|
-| `peer` | `<ip>:<port>`. |
+| `client_address` | `<ip>:<port>`. |
 
 **Query parameters**: none.
 
@@ -3485,7 +3584,7 @@ Send a message into a conversation, addressed by `<ip>:<port>`.
 **Response body**
 
 ```json
-{ "peer": "<ip>:<port>",
+{ "client_address": "<ip>:<port>",
   "message": { "id": "int", "direction": "out", "text": "string" } }
 ```
 
@@ -3496,19 +3595,19 @@ Send a message into a conversation, addressed by `<ip>:<port>`.
 | 400 | `bad_request` | <code>`text` exceeds 1024 bytes</code> |
 | 400 | `bad_request` | <code>`text` must be a non-empty string</code> |
 | 400 | `bad_request` | *(relayed at runtime: `parse_err.c_str()`)* |
-| 400 | `bad_request` | <code>path `{peer}` must be `&lt;ip&gt;:&lt;port&gt;`</code> |
+| 400 | `bad_request` | <code>path `{client_address}` must be `&lt;ip&gt;:&lt;port&gt;`</code> |
 | 400 | `bad_request` | <code>required string field `text` is missing</code> |
 | 404 | `not_found` | *(relayed at runtime: `ec_err_msg.c_str()`)* |
 | 503 | `ec_unavailable` | `EC roundtrip failed for chat send` |
 | 503 | `ec_unsupported` | `the connected amuled does not serve chat sessions` |
 
-#### `DELETE /api/v0/chats/{peer}`
+#### `DELETE /api/v0/chats/{client_address}`
 
 Close a conversation and drop its stored messages.
 
 | | |
 |---|---|
-| Handler | `HandleChatClose` — `src/webapi/Api.cpp:6337-6373` |
+| Handler | `HandleChatClose` — `src/webapi/Api.cpp:6584-6620` |
 | Auth | **ADMIN** |
 | Success | `204 No Content` |
 
@@ -3516,7 +3615,7 @@ Close a conversation and drop its stored messages.
 
 | Name | Description |
 |---|---|
-| `peer` | `<ip>:<port>`. |
+| `client_address` | `<ip>:<port>`. |
 
 **Query parameters**: none.
 
@@ -3526,7 +3625,7 @@ Close a conversation and drop its stored messages.
 
 | Status | `code` | `message` |
 |---|---|---|
-| 400 | `bad_request` | <code>path `{peer}` must be `&lt;ip&gt;:&lt;port&gt;`</code> |
+| 400 | `bad_request` | <code>path `{client_address}` must be `&lt;ip&gt;:&lt;port&gt;`</code> |
 | 404 | `not_found` | *(relayed at runtime: `ec_err_msg.c_str()`)* |
 | 503 | `ec_unavailable` | `EC roundtrip failed for chat close` |
 | 503 | `ec_unsupported` | `the connected amuled does not serve chat sessions` |
@@ -3543,7 +3642,7 @@ The download categories. Index 0 is the daemon's built-in *all* category.
 
 | | |
 |---|---|
-| Handler | `HandleCategories` — `src/webapi/Api.cpp:7100-7119` |
+| Handler | `HandleCategories` — `src/webapi/Api.cpp:7347-7366` |
 | Auth | **GUEST** |
 | Success | `200 OK` |
 | Gates | first EC snapshot (`503 ec_unavailable`); shared list params (`limit`/`offset`/`sort`/`order`) |
@@ -3564,9 +3663,9 @@ The download categories. Index 0 is the daemon's built-in *all* category.
     {
       "index": "int",
       "name": "string",
-      "path": "string",
+      "save_path": "string",
       "comment": "string",
-      "color": "int",
+      "color": "string",
       "priority": "string"
     }
   ],
@@ -3588,7 +3687,7 @@ Create a category.
 
 | | |
 |---|---|
-| Handler | `HandleCategoryCreate` — `src/webapi/Api.cpp:10026-10079` |
+| Handler | `HandleCategoryCreate` — `src/webapi/Api.cpp:10711-10772` |
 | Auth | **ADMIN** |
 | Success | `202 Accepted` — no body |
 | Gates | JSON object body, nesting ≤ 32 (`400 bad_request`) |
@@ -3611,8 +3710,7 @@ Create a category.
 |---|---|---|
 | 400 | `amuled_rejected` | *(relayed at runtime: `ec_err_msg.c_str()`)* |
 | 400 | `bad_request` | *(relayed at runtime: `FilePriorityAccepted(kPrioCategory).c_str()`)* |
-| 400 | `bad_request` | <code>`color` must be a uint32</code> |
-| 400 | `bad_request` | <code>`color` out of range</code> |
+| 400 | `bad_request` | <code>`color` must be a "#rrggbb" string</code> |
 | 400 | `bad_request` | <code>`priority` must be a wire-string enum</code> |
 | 400 | `bad_request` | `category field must be a string` |
 | 400 | `bad_request` | *(relayed at runtime: `parse_err.c_str()`)* |
@@ -3629,7 +3727,7 @@ One category.
 
 | | |
 |---|---|
-| Handler | `HandleCategoryOne` — `src/webapi/Api.cpp:10085-10121` |
+| Handler | `HandleCategoryOne` — `src/webapi/Api.cpp:10778-10814` |
 | Auth | **GUEST** |
 | Success | `200 OK` |
 | Gates | first EC snapshot (`503 ec_unavailable`) |
@@ -3650,9 +3748,9 @@ One category.
 {
   "index": "int",
   "name": "string",
-  "path": "string",
+  "save_path": "string",
   "comment": "string",
-  "color": "int",
+  "color": "string",
   "priority": "string"
 }
 ```
@@ -3674,7 +3772,7 @@ Update a category. Unsent fields keep their current value.
 
 | | |
 |---|---|
-| Handler | `HandleCategoryUpdate` — `src/webapi/Api.cpp:10123-10192` |
+| Handler | `HandleCategoryUpdate` — `src/webapi/Api.cpp:10816-10893` |
 | Auth | **ADMIN** |
 | Success | `200 OK` |
 | Gates | first EC snapshot (`503 ec_unavailable`); JSON object body, nesting ≤ 32 (`400 bad_request`) |
@@ -3703,9 +3801,9 @@ Update a category. Unsent fields keep their current value.
 {
   "index": "int",
   "name": "string",
-  "path": "string",
+  "save_path": "string",
   "comment": "string",
-  "color": "int",
+  "color": "string",
   "priority": "string"
 }
 ```
@@ -3716,8 +3814,7 @@ Update a category. Unsent fields keep their current value.
 |---|---|---|
 | 400 | `amuled_rejected` | *(relayed at runtime: `ec_err_msg.c_str()`)* |
 | 400 | `bad_request` | *(relayed at runtime: `FilePriorityAccepted(kPrioCategory).c_str()`)* |
-| 400 | `bad_request` | <code>`color` must be a uint32</code> |
-| 400 | `bad_request` | <code>`color` out of range</code> |
+| 400 | `bad_request` | <code>`color` must be a "#rrggbb" string</code> |
 | 400 | `bad_request` | <code>`priority` must be a wire-string enum</code> |
 | 400 | `bad_request` | `category field must be a string` |
 | 400 | `bad_request` | *(relayed at runtime: `parse_err.c_str()`)* |
@@ -3731,7 +3828,7 @@ Delete a category.
 
 | | |
 |---|---|
-| Handler | `HandleCategoryDelete` — `src/webapi/Api.cpp:10194-10268` |
+| Handler | `HandleCategoryDelete` — `src/webapi/Api.cpp:10895-10969` |
 | Auth | **ADMIN** |
 | Success | `204 No Content` |
 | Gates | first EC snapshot (`503 ec_unavailable`) |
@@ -3768,7 +3865,7 @@ Every preference the daemon exposes, nested by category. Table-driven: the categ
 
 | | |
 |---|---|
-| Handler | `HandlePreferences` — `src/webapi/Api.cpp:8167-8183` |
+| Handler | `HandlePreferences` — `src/webapi/Api.cpp:8441-8457` |
 | Auth | **GUEST** |
 | Success | `200 OK` |
 | Gates | first EC snapshot (`503 ec_unavailable`) |
@@ -3790,9 +3887,9 @@ Every preference the daemon exposes, nested by category. Table-driven: the categ
   "message_filter": { "…": "…" },
   "remote_controls": { "webserver": { "…": "…" }, "amuleapi": { "…": "…" } },
   "online_signature": { "…": "…" },
-  "core_tweaks": { "…": "…" },
-  "kademlia": { "…": "…" },
-  "ip2country": { "…": "…" }
+  "advanced": { "…": "…" },
+  "kad": { "…": "…" },
+  "geoip": { "…": "…" }
 }
 ```
 
@@ -3810,7 +3907,7 @@ Apply a partial preferences update. The body mirrors the GET shape: one optional
 
 | | |
 |---|---|
-| Handler | `HandlePreferencesPatch` — `src/webapi/Api.cpp:8415-8666` |
+| Handler | `HandlePreferencesPatch` — `src/webapi/Api.cpp:8689-8948` |
 | Auth | **ADMIN** |
 | Success | `200 OK` |
 | Gates | JSON object body, nesting ≤ 32 (`400 bad_request`) |
@@ -3829,7 +3926,7 @@ One optional object per category, e.g.
 Field-level rules come from the schema (Appendix A): `Uint16` / `Uint32` rows
 have an inclusive `max`, `Enum` rows accept only their listed names,
 `StringArray` rows take an array of strings, and a row with a `gated_by`
-capability answers `409 conflict` when that capability is false.
+capability answers `409 option_not_supported` when that capability is false.
 
 **Response body** — the full `GET /api/v0/preferences` object, re-read
 after an inline refresher tick, so a consumer can confirm what actually landed
@@ -3840,6 +3937,7 @@ without a follow-up `GET`.
 | Status | `code` | `message` |
 |---|---|---|
 | 400 | `amuled_rejected` | *(relayed at runtime: `ec_err_msg.c_str()`)* |
+| 400 | `bad_request` | <code>`geoip.update_now` is an action, not a setting: POST /geoip/update instead</code> |
 | 400 | `bad_request` | `amuleapi passwords are managed through PATCH /auth/passwords, not through /preferences` |
 | 400 | `bad_request` | *(relayed at runtime: `err.c_str()`)* |
 | 400 | `bad_request` | `guest_enabled must be a bool` |
@@ -3847,7 +3945,7 @@ without a follow-up `GET`.
 | 400 | `bad_request` | *(relayed at runtime: `msg.c_str()`)* |
 | 400 | `bad_request` | *(relayed at runtime: `parse_err.c_str()`)* |
 | 400 | `bad_request` | `request body did not include any known pref fields` |
-| 409 | `conflict` | `this daemon was built without support for that option` |
+| 409 | `option_not_supported` | `this daemon was built without support for that option` |
 | 503 | `ec_unavailable` | `EC roundtrip failed for SET_PREFERENCES` |
 
 **Notes**
@@ -3856,7 +3954,7 @@ without a follow-up `GET`.
 - A body with no recognised field at all is a `400`; unknown keys inside a known category are ignored.
 - `remote_controls.amuleapi` passwords are explicitly **rejected** here — they live behind `PATCH /api/v0/auth/passwords`.
 - `remote_controls.webserver.guest_enabled` + `guest_password` share one EC tag, so their packing is hand-written rather than table-driven (`PrefAccess::Bespoke`).
-- `core_tweaks.kad_reask_ms`, `source_reask_ms` and `server_keepalive_timeout_ms` are milliseconds on the wire, exactly as the daemon stores them — no unit conversion happens in this layer.
+- `advanced.kad_source_reask_minutes`, `source_reask_minutes` and `server_keepalive_timeout_minutes` are minutes in the API; the schema scales them to the milliseconds the daemon stores at the EC boundary.
 
 ### Logs
 
@@ -3866,7 +3964,7 @@ The daemon log as amuleapi has mirrored it (append-only, in-process cache).
 
 | | |
 |---|---|
-| Handler | `HandleLogAmule` — `src/webapi/Api.cpp:7907-7947` |
+| Handler | `HandleLogAmule` — `src/webapi/Api.cpp:8181-8221` |
 | Auth | **GUEST** |
 | Success | `200 OK` |
 
@@ -3885,14 +3983,14 @@ The daemon log as amuleapi has mirrored it (append-only, in-process cache).
   "lines": [
     "string"
   ],
-  "total_cached": "int",
-  "returned": "int"
+  "total_lines": "int",
+  "returned_lines": "int"
 }
 ```
 
 **Notes**
 
-- `total_cached` is what the mirror holds, `returned` what this response carried — enough for a client to know what it missed.
+- `total_lines` is what the mirror holds, `returned_lines` what this response carried — enough for a client to know what it missed.
 - New lines also arrive as the `log_appended` SSE event.
 
 #### `DELETE /api/v0/logs/amule`
@@ -3901,7 +3999,7 @@ Reset the daemon log.
 
 | | |
 |---|---|
-| Handler | `HandleLogAmuleReset` — `src/webapi/Api.cpp:7949-7981` |
+| Handler | `HandleLogAmuleReset` — `src/webapi/Api.cpp:8223-8255` |
 | Auth | **ADMIN** |
 | Success | `204 No Content` |
 
@@ -3920,13 +4018,13 @@ Reset the daemon log.
 
 - Also drops the in-process mirror, so the next `GET` starts empty and no spurious `log_appended` fires.
 
-#### `GET, HEAD /api/v0/logs/serverinfo`
+#### `GET, HEAD /api/v0/logs/server_info`
 
 The server-info log — one accumulated text blob, fetched from the daemon lazily with a 1 s TTL.
 
 | | |
 |---|---|
-| Handler | `HandleLogServerinfo` — `src/webapi/Api.cpp:7983-8043` |
+| Handler | `HandleLogServerinfo` — `src/webapi/Api.cpp:8257-8317` |
 | Auth | **GUEST** |
 | Success | `200 OK` |
 
@@ -3958,13 +4056,13 @@ The server-info log — one accumulated text blob, fetched from the daemon lazil
 
 - `total_bytes` / `returned_bytes` let a client decide whether to re-poll with a smaller `?tail=`.
 
-#### `DELETE /api/v0/logs/serverinfo`
+#### `DELETE /api/v0/logs/server_info`
 
 Clear the server-info log.
 
 | | |
 |---|---|
-| Handler | `HandleLogServerinfoReset` — `src/webapi/Api.cpp:8045-8073` |
+| Handler | `HandleLogServerinfoReset` — `src/webapi/Api.cpp:8319-8347` |
 | Auth | **ADMIN** |
 | Success | `204 No Content` |
 
@@ -3991,7 +4089,7 @@ The daemon's statistics tree (the desktop's *Statistics* page), as nested nodes.
 
 | | |
 |---|---|
-| Handler | `HandleStatsTree` — `src/webapi/Api.cpp:7445-7521` |
+| Handler | `HandleStatsTree` — `src/webapi/Api.cpp:7694-7770` |
 | Auth | **GUEST** |
 | Success | `200 OK` |
 
@@ -4051,7 +4149,7 @@ One time series plus the session totals.
 
 | | |
 |---|---|
-| Handler | `HandleStatsGraph` — `src/webapi/Api.cpp:7523-7674` |
+| Handler | `HandleStatsGraph` — `src/webapi/Api.cpp:7772-7923` |
 | Auth | **GUEST** |
 | Success | `200 OK` |
 
@@ -4117,7 +4215,7 @@ Every search the daemon currently holds — including ones started by another cl
 
 | | |
 |---|---|
-| Handler | `HandleSearchList` — `src/webapi/Api.cpp:7855-7905` |
+| Handler | `HandleSearchList` — `src/webapi/Api.cpp:8129-8179` |
 | Auth | **GUEST** |
 | Success | `200 OK` |
 | Gates | first EC snapshot (`503 ec_unavailable`); shared list params (`limit`/`offset`/`sort`/`order`) |
@@ -4136,9 +4234,9 @@ Every search the daemon currently holds — including ones started by another cl
 {
   "searches": [
     {
-      "search_id": "int",
+      "id": "int",
       "query": "string",
-      "kind": "string",
+      "type": "string",
       "state": "string",
       "client_ecid": "int|null",
       "started_at": "int",
@@ -4161,7 +4259,7 @@ Every search the daemon currently holds — including ones started by another cl
 
 - Fetched live over EC (`EC_OP_SEARCH_LIST`), not from the refresher cache.
 - `client_ecid` appears only on a browse entry (whose share is being listed); `started_at` only for searches *this* amuleapi started; `result_count` only when the daemon reports it. All three are omitted rather than zeroed, so *unknown* stays distinguishable from *none*.
-- `kind` is `local` / `global` / `kad` / `browse`; `state` is the daemon's lifecycle state.
+- `type` is `local` / `global` / `kad` / `browse`; `state` is the daemon's lifecycle state.
 - Carries the standard list envelope: the rows are fetched whole over EC, then sorted and sliced like any other list endpoint.
 
 #### `POST /api/v0/search`
@@ -4170,7 +4268,7 @@ Start a search. The daemon allocates the `search_id` everything else is addresse
 
 | | |
 |---|---|
-| Handler | `HandleSearchStart` — `src/webapi/Api.cpp:10408-10591` |
+| Handler | `HandleSearchStart` — `src/webapi/Api.cpp:11109-11294` |
 | Auth | **ADMIN** |
 | Success | `202 Accepted` — the created search's list row (same shape as `GET /search` rows); `Location: /api/v0/search/{search_id}` |
 | Gates | JSON object body, nesting ≤ 32 (`400 bad_request`) |
@@ -4185,9 +4283,9 @@ Start a search. The daemon allocates the `search_id` everything else is addresse
 | `type` | `local` \| `global` \| `kad` | no | Default `global`. |
 | `file_type` | string | no | aMule file-type label. |
 | `extension` | string | no | e.g. `mkv`. |
-| `min_size` | number | no | Bytes, ≥ 0. Default 0. |
-| `max_size` | number | no | Bytes, ≥ 0. Default 0 = no cap. |
-| `min_avail` | number | no | uint32. Default 0. |
+| `min_size_bytes` | number | no | Bytes, ≥ 0. Default 0. |
+| `max_size_bytes` | number | no | Bytes, ≥ 0. Default 0 = no cap. |
+| `min_source_count` | number | no | uint32. Default 0. |
 
 **Errors** (beyond the shared auth/rate-limit ones)
 
@@ -4197,12 +4295,12 @@ Start a search. The daemon allocates the `search_id` everything else is addresse
 | 400 | `bad_request` | <code>"`type` must be one of \"local\", \"global\", \"kad\</code> |
 | 400 | `bad_request` | <code>`extension` must be a string</code> |
 | 400 | `bad_request` | <code>`file_type` must be a string</code> |
-| 400 | `bad_request` | <code>`max_size` must be &gt;= 0</code> |
-| 400 | `bad_request` | <code>`max_size` must be a non-negative integer (bytes; 0 = no cap)</code> |
-| 400 | `bad_request` | <code>`min_avail` must be a non-negative integer</code> |
-| 400 | `bad_request` | <code>`min_avail` out of range</code> |
-| 400 | `bad_request` | <code>`min_size` must be &gt;= 0</code> |
-| 400 | `bad_request` | <code>`min_size` must be a non-negative integer (bytes)</code> |
+| 400 | `bad_request` | <code>`max_size_bytes` must be &gt;= 0</code> |
+| 400 | `bad_request` | <code>`max_size_bytes` must be a non-negative integer (bytes; 0 = no cap)</code> |
+| 400 | `bad_request` | <code>`min_size_bytes` must be &gt;= 0</code> |
+| 400 | `bad_request` | <code>`min_size_bytes` must be a non-negative integer (bytes)</code> |
+| 400 | `bad_request` | <code>`min_source_count` must be a non-negative integer</code> |
+| 400 | `bad_request` | <code>`min_source_count` out of range</code> |
 | 400 | `bad_request` | <code>`query` must be non-empty</code> |
 | 400 | `bad_request` | *(relayed at runtime: `parse_err.c_str()`)* |
 | 400 | `bad_request` | <code>required string field `query` is missing</code> |
@@ -4220,7 +4318,7 @@ One search's results, with its progress rolled into the same envelope.
 
 | | |
 |---|---|
-| Handler | `HandleSearchResults` — `src/webapi/Api.cpp:7676-7768` |
+| Handler | `HandleSearchResults` — `src/webapi/Api.cpp:7925-8019` |
 | Auth | **GUEST** |
 | Success | `200 OK` |
 | Gates | shared list params (`limit`/`offset`/`sort`/`order`) |
@@ -4247,22 +4345,21 @@ One search's results, with its progress rolled into the same envelope.
     {
       "hash": "string",
       "name": "string",
-      "size": "int",
+      "size_bytes": "int",
       "sources": {
         "total": "int",
         "complete": "int"
       },
-      "already_have": "bool",
+      "already_downloaded": "bool",
       "rating": "int",
       "status": "string",
-      "type": "string",
+      "file_type": "string",
       "directory": "string",
       "media": "null",
-      "children": [
+      "alternate_names": [
         {
           "ecid": "int",
           "name": "string",
-          "hash": "string",
           "sources": {
             "total": "int",
             "complete": "int"
@@ -4270,7 +4367,7 @@ One search's results, with its progress rolled into the same envelope.
           "directory": "string"
         }
       ],
-      "kad_comment_search_running": "bool",
+      "kad_comment_lookup_running": "bool",
       "comments": [
         {
           "username": "string",
@@ -4316,7 +4413,7 @@ Stop a running search but keep its results readable.
 
 | | |
 |---|---|
-| Handler | `HandleSearchStop` — `src/webapi/Api.cpp:10636-10655` |
+| Handler | `HandleSearchStop` — `src/webapi/Api.cpp:11339-11358` |
 | Auth | **ADMIN** |
 | Success | `204 No Content` |
 
@@ -4348,7 +4445,7 @@ Ask a running **Kad** search to widen its result frontier (the desktop's *More* 
 
 | | |
 |---|---|
-| Handler | `HandleSearchMore` — `src/webapi/Api.cpp:10679-10727` |
+| Handler | `HandleSearchMore` — `src/webapi/Api.cpp:11382-11430` |
 | Auth | **ADMIN** |
 | Success | `202 Accepted` — no body |
 
@@ -4384,7 +4481,7 @@ Stop **and** free a search: the daemon drops it and the local slot goes away.
 
 | | |
 |---|---|
-| Handler | `HandleSearchClose` — `src/webapi/Api.cpp:10657-10677` |
+| Handler | `HandleSearchClose` — `src/webapi/Api.cpp:11360-11380` |
 | Auth | **ADMIN** |
 | Success | `204 No Content` |
 
@@ -4417,7 +4514,7 @@ Download one search result.
 
 | | |
 |---|---|
-| Handler | `HandleSearchDownload` — `src/webapi/Api.cpp:10729-10826` |
+| Handler | `HandleSearchDownload` — `src/webapi/Api.cpp:11432-11531` |
 | Auth | **ADMIN** |
 | Success | `202 Accepted` — no body |
 | Gates | JSON object body, nesting ≤ 32 (`400 bad_request`) |
@@ -4437,13 +4534,15 @@ Download one search result.
 | `category` | number | no | 0–255, default 0. |
 | `ecid` | number | no | Pick one grouped child (from a result's `children[].ecid`) so the file downloads under that filename. Omitted means the parent hit. |
 
+*Fields seen in source but not described above: `category_index`.*
+
 **Errors** (beyond the shared auth/rate-limit ones)
 
 | Status | `code` | `message` |
 |---|---|---|
 | 400 | `amuled_rejected` | *(relayed at runtime: `ec_err_msg.c_str()`)* |
-| 400 | `bad_request` | <code>`category` must be a non-negative integer</code> |
-| 400 | `bad_request` | <code>`category` must be in [0, 255]</code> |
+| 400 | `bad_request` | <code>`category_index` must be a non-negative integer</code> |
+| 400 | `bad_request` | <code>`category_index` must be in [0, 255]</code> |
 | 400 | `bad_request` | <code>`ecid` must be a non-negative integer</code> |
 | 400 | `bad_request` | <code>`ecid` out of range</code> |
 | 400 | `bad_request` | <code>`{hash}` must be a 32-char hex MD4</code> |
@@ -4462,7 +4561,7 @@ Kad community ratings/comments retrieved for one search result.
 
 | | |
 |---|---|
-| Handler | `HandleSearchComments` — `src/webapi/Api.cpp:10831-10895` |
+| Handler | `HandleSearchComments` — `src/webapi/Api.cpp:11536-11600` |
 | Auth | **GUEST** |
 | Success | `200 OK` |
 | Gates | first EC snapshot (`503 ec_unavailable`) |
@@ -4482,7 +4581,7 @@ Kad community ratings/comments retrieved for one search result.
 ```json
 {
   "count": "int",
-  "kad_comment_search_running": "bool",
+  "kad_comment_lookup_running": "bool",
   "comments": [
     {
       "username": "string",
@@ -4510,7 +4609,7 @@ Trigger a Kad NOTES lookup for one search result.
 
 | | |
 |---|---|
-| Handler | `HandleSearchCommentsKadSearch` — `src/webapi/Api.cpp:10901-10965` |
+| Handler | `HandleSearchCommentsKadSearch` — `src/webapi/Api.cpp:11606-11670` |
 | Auth | **ADMIN** |
 | Success | `202 Accepted` — no body |
 | Gates | first EC snapshot (`503 ec_unavailable`) |
@@ -4542,7 +4641,7 @@ The push channel: one long-lived `text/event-stream` carrying every state change
 
 | | |
 |---|---|
-| Handler | `DispatchEvents` — `src/webapi/Api.cpp:11074-11374` |
+| Handler | `DispatchEvents` — `src/webapi/Api.cpp:11779-12079` |
 | Auth | **GUEST** |
 | Success | `200 OK`, `Content-Type: text/event-stream` |
 
@@ -4579,7 +4678,7 @@ has been written for 15 s (wall-clock driven, so a busy bus behind a
 **Notes**
 
 - Auth runs in `PreflightEvents` on the I/O thread, **before** a worker thread is spawned and before the 32-slot budget is claimed, so an unauthenticated peer gets an ordinary `401`/`429` and cannot hold a slot.
-- The 33rd concurrent stream is refused by the HTTP layer with `503 sessions_exhausted` + `Retry-After: 10`.
+- The 33rd concurrent stream is refused by the HTTP layer with `503 too_many_streams` + `Retry-After: 10`.
 - Reconnect: send `Last-Event-ID`. An id newer than the bus (daemon restarted) or older than its oldest retained event (gap) produces a `resync` frame carrying `{reason, since_id, newest_id}` — `restart` or `gap` — after which the client is expected to invalidate and re-GET the REST collections. Gaps are also detected mid-stream, not only at connect.
 - The cursor advances over filtered-out events too, so a reconnect never re-delivers them; replay is id-based, not channel-based.
 - Guest tokens are accepted: SSE is a read-only push.
@@ -4595,7 +4694,7 @@ A country flag PNG, for `<img src>` in a UI. Outside `/api/v0` on purpose, and u
 
 | | |
 |---|---|
-| Handler | `ServeCountryFlag` — `src/webapi/Api.cpp:1924-1979` |
+| Handler | `ServeCountryFlag` — `src/webapi/Api.cpp:1956-2011` |
 | Auth | **NONE** |
 | Success | `200 OK` |
 
@@ -4628,7 +4727,7 @@ The bundled Web UI. Any safe-method request whose path does not start with `/api
 
 | | |
 |---|---|
-| Handler | `ServeStaticFile` — `src/webapi/Api.cpp:1777-1922` |
+| Handler | `ServeStaticFile` — `src/webapi/Api.cpp:1809-1954` |
 | Auth | **NONE** |
 | Success | `200 OK` |
 
@@ -4686,100 +4785,100 @@ Access levels: **ReadWrite** (emitted, applied) · **ReadOnly** (emitted, silent
 
 | Category | Key | JSON type | Access | Constraint / values | Notes |
 |---|---|---|---|---|---|
-| `general` | `check_new_version` | bool | ReadWrite |  |  |
-| `general` | `local_host_name` | string | ReadOnly |  |  |
+| `general` | `version_check_enabled` | bool | ReadWrite |  |  |
+| `general` | `daemon_host_name` | string | ReadOnly |  |  |
 | `general` | `nickname` | string | ReadWrite |  |  |
 | `general` | `user_hash` | string (md4 hex) | ReadOnly |  |  |
 | `connection` | `autoconnect` | bool | ReadWrite |  |  |
 | `connection` | `bind_address` | string | ReadWrite |  |  |
 | `connection` | `bind_interface` | string | ReadWrite |  |  |
 | `connection` | `extended_udp_port_enabled` | bool | ReadWrite |  | API value is the negation of the EC value |
-| `connection` | `max_connections` | number (uint32) | ReadWrite | max `65535` |  |
+| `connection` | `max_connection_count` | number (uint32) | ReadWrite | max `65535` |  |
 | `connection` | `max_download_kbps` | number (uint32) | ReadWrite | max `1000000000` |  |
-| `connection` | `max_sources_per_file` | number (uint32) | ReadWrite | max `65535` |  |
+| `connection` | `max_sources_per_file_count` | number (uint32) | ReadWrite | max `65535` |  |
 | `connection` | `max_upload_kbps` | number (uint32) | ReadWrite | max `1000000000` |  |
-| `connection` | `network_ed2k` | bool | ReadWrite |  |  |
-| `connection` | `network_kad` | bool | ReadWrite |  |  |
+| `connection` | `ed2k_enabled` | bool | ReadWrite |  |  |
+| `connection` | `kad_enabled` | bool | ReadWrite |  |  |
 | `connection` | `proxy_auth` | bool | ReadWrite |  |  |
 | `connection` | `proxy_enabled` | bool | ReadWrite |  |  |
 | `connection` | `proxy_host` | string | ReadWrite |  |  |
 | `connection` | `proxy_port` | number (uint16) | ReadWrite | max `65535` |  |
 | `connection` | `proxy_type` | string (enum) | ReadWrite | `socks5`, `socks4`, `http`, `socks4a` |  |
 | `connection` | `proxy_user` | string | ReadWrite |  |  |
-| `connection` | `reconnect` | bool | ReadWrite |  |  |
+| `connection` | `reconnect_on_connection_loss` | bool | ReadWrite |  |  |
 | `connection` | `tcp_port` | U16_DOMAIN | ReadWrite |  |  |
 | `connection` | `udp_port` | number (uint16) | ReadWrite | max `65535` |  |
-| `connection` | `upload_slot_kbps` | number (uint32) | ReadWrite | max `65535` |  |
-| `connection` | `upnp_available` | bool | ReadOnly |  | tag read from another EC group |
+| `connection` | `upload_slot_min_kbps` | number (uint32) | ReadWrite | max `65535` |  |
+| `connection` | `upnp_supported` | bool | ReadOnly |  | tag read from another EC group |
 | `connection` | `upnp_enabled` | bool | ReadWrite |  |  |
-| `connection` | `upnp_tcp_port` | number (uint16) | ReadWrite | max `65535` |  |
+| `connection` | `upnp_control_point_port` | number (uint16) | ReadWrite | max `65535` |  |
 | `connection` | `proxy_password` | string (write-only) | WriteOnly |  |  |
-| `directories` | `auto_rescan` | bool | ReadWrite |  |  |
+| `directories` | `rescan_on_startup` | bool | ReadWrite |  |  |
 | `directories` | `exclude_patterns` | string | ReadWrite |  |  |
 | `directories` | `exclude_patterns_use_regex` | bool | ReadWrite |  |  |
 | `directories` | `follow_symlinks` | bool | ReadWrite |  |  |
-| `directories` | `incoming` | string | ReadWrite |  |  |
+| `directories` | `incoming_path` | string | ReadWrite |  |  |
 | `directories` | `share_hidden` | bool | ReadWrite |  |  |
-| `directories` | `shared` | array of strings | ReadWrite |  |  |
-| `directories` | `temp` | string | ReadWrite |  |  |
+| `directories` | `shared_paths` | array of strings | ReadWrite |  |  |
+| `directories` | `temp_path` | string | ReadWrite |  |  |
 | `files` | `add_new_downloads_paused` | bool | ReadWrite |  |  |
-| `files` | `aich_trust_every_hash` | bool | ReadWrite |  |  |
+| `files` | `trust_unverified_aich_hashes` | bool | ReadWrite |  |  |
 | `files` | `create_sparse_files` | bool | ReadWrite |  | API value is the negation of the EC value |
-| `files` | `endgame_enabled` | bool | ReadWrite |  |  |
+| `files` | `endgame_mode_enabled` | bool | ReadWrite |  |  |
 | `files` | `ffprobe_path` | string | ReadWrite |  |  |
 | `files` | `ich_enabled` | bool | ReadWrite |  |  |
 | `files` | `media_metadata_enabled` | bool | ReadWrite |  |  |
 | `files` | `min_free_space_mb` | number (uint32) | ReadWrite | max `0xFFFFFFFF` |  |
-| `files` | `mmap_enabled` | bool | ReadWrite |  | gated by `mmap_supported` (else `409 conflict`) |
+| `files` | `mmap_enabled` | bool | ReadWrite |  | gated by `mmap_supported` (else `409 option_not_supported`) |
 | `files` | `mmap_supported` | bool | ReadOnly |  |  |
 | `files` | `new_downloads_auto_priority` | bool | ReadWrite |  |  |
 | `files` | `new_shared_files_auto_priority` | bool | ReadWrite |  |  |
 | `files` | `preallocate_full_file_size` | bool | ReadWrite |  |  |
 | `files` | `prioritize_first_last_chunks` | bool | ReadWrite |  |  |
-| `files` | `save_source_seeds_for_rare_files` | bool | ReadWrite |  |  |
-| `files` | `start_next_alphabetical` | bool | ReadWrite |  |  |
-| `files` | `start_next_paused` | bool | ReadWrite |  |  |
-| `files` | `start_next_same_category` | bool | ReadWrite |  |  |
+| `files` | `save_sources_for_rare_files` | bool | ReadWrite |  |  |
+| `files` | `on_finished_start_next_alphabetically` | bool | ReadWrite |  |  |
+| `files` | `on_finished_start_next_paused` | bool | ReadWrite |  |  |
+| `files` | `on_finished_start_next_in_same_category` | bool | ReadWrite |  |  |
 | `files` | `stop_on_low_disk_space` | bool | ReadWrite |  |  |
-| `servers` | `auto_update` | bool | ReadWrite |  |  |
+| `servers` | `update_list_at_startup` | bool | ReadWrite |  |  |
 | `servers` | `autoconnect_static_servers_only` | bool | ReadWrite |  |  |
-| `servers` | `dead_server_retries` | number (uint32) | ReadWrite | max `65535` |  |
+| `servers` | `dead_server_retry_count` | number (uint32) | ReadWrite | max `65535` |  |
 | `servers` | `manual_servers_high_priority` | bool | ReadWrite |  |  |
-| `servers` | `remove_dead` | bool | ReadWrite |  |  |
-| `servers` | `safe_connect` | bool | ReadWrite |  |  |
-| `servers` | `smart_id_check` | bool | ReadWrite |  |  |
+| `servers` | `remove_dead_servers` | bool | ReadWrite |  |  |
+| `servers` | `safe_server_connect_enabled` | bool | ReadWrite |  |  |
+| `servers` | `smart_lowid_check_enabled` | bool | ReadWrite |  |  |
 | `servers` | `update_list_from_client` | bool | ReadWrite |  |  |
 | `servers` | `update_list_from_server` | bool | ReadWrite |  |  |
 | `servers` | `update_url` | string | ReadWrite |  |  |
-| `servers` | `use_priority_system` | bool | ReadWrite |  |  |
+| `servers` | `server_priority_system_enabled` | bool | ReadWrite |  |  |
 | `security` | `ipfilter_auto_update` | bool | ReadWrite |  |  |
-| `security` | `ipfilter_block_below_access_level` | number (uint32) | ReadWrite | max `255` |  |
+| `security` | `ipfilter_min_access_level` | number (uint32) | ReadWrite | max `255` |  |
 | `security` | `ipfilter_clients` | bool | ReadWrite |  |  |
 | `security` | `ipfilter_include_lan_ips` | bool | ReadWrite |  |  |
 | `security` | `ipfilter_servers` | bool | ReadWrite |  |  |
 | `security` | `ipfilter_update_url` | string | ReadWrite |  |  |
-| `security` | `obfuscation_enabled` | bool | ReadWrite |  |  |
+| `security` | `protocol_obfuscation_enabled` | bool | ReadWrite |  |  |
 | `security` | `obfuscation_requested` | bool | ReadWrite |  |  |
 | `security` | `obfuscation_required` | bool | ReadWrite |  |  |
 | `security` | `reject_spoofed_source_ips` | bool | ReadWrite |  |  |
 | `security` | `shared_files_visibility` | string (enum) | ReadWrite | `everybody`, `friends`, `nobody` |  |
-| `security` | `use_secident` | bool | ReadWrite |  |  |
-| `security` | `use_system_ipfilter` | bool | ReadWrite |  |  |
+| `security` | `secure_identification_enabled` | bool | ReadWrite |  |  |
+| `security` | `system_ipfilter_enabled` | bool | ReadWrite |  |  |
 | `message_filter` | `accept_from_friends_only` | bool | ReadWrite |  |  |
 | `message_filter` | `accept_from_known_clients_only` | bool | ReadWrite |  |  |
-| `message_filter` | `by_keyword` | bool | ReadWrite |  |  |
+| `message_filter` | `filter_by_keyword` | bool | ReadWrite |  |  |
 | `message_filter` | `comment_keywords` | string | ReadWrite |  |  |
 | `message_filter` | `enabled` | bool | ReadWrite |  |  |
 | `message_filter` | `filter_all_messages` | bool | ReadWrite |  |  |
 | `message_filter` | `filter_comments` | bool | ReadWrite |  |  |
 | `message_filter` | `keywords` | string | ReadWrite |  |  |
-| `message_filter` | `show_in_log` | bool | ReadWrite |  |  |
+| `message_filter` | `log_filtered_messages` | bool | ReadWrite |  |  |
 | `remote_controls.webserver` | `enabled` | bool | ReadWrite |  |  |
 | `remote_controls.webserver` | `guest_enabled` | bool | Bespoke |  |  |
 | `remote_controls.webserver` | `port` | number (uint32) | ReadWrite | max `65535` |  |
 | `remote_controls.webserver` | `refresh_seconds` | number (uint32) | ReadWrite | max `0xFFFFFFFF` |  |
-| `remote_controls.webserver` | `template` | string | ReadWrite |  |  |
-| `remote_controls.webserver` | `use_gzip` | bool | ReadWrite |  |  |
+| `remote_controls.webserver` | `template_name` | string | ReadWrite |  |  |
+| `remote_controls.webserver` | `gzip_enabled` | bool | ReadWrite |  |  |
 | `remote_controls.webserver` | `password` | string (write-only, md4 hex) | WriteOnly |  |  |
 | `remote_controls.amuleapi` | `bind_address` | string | ReadWrite |  |  |
 | `remote_controls.amuleapi` | `enabled` | bool | ReadWrite |  |  |
@@ -4790,27 +4889,27 @@ Access levels: **ReadWrite** (emitted, applied) · **ReadOnly** (emitted, silent
 | `online_signature` | `directory` | string | ReadWrite |  |  |
 | `online_signature` | `enabled` | bool | ReadWrite |  |  |
 | `online_signature` | `update_frequency_seconds` | number (uint32) | ReadWrite | max `65535` |  |
-| `core_tweaks` | `file_buffer_bytes` | U32_DOMAIN | ReadWrite |  |  |
-| `core_tweaks` | `kad_max_source_searches` | U32_DOMAIN | ReadWrite |  |  |
-| `core_tweaks` | `kad_reask_minutes` | U32_SCALED_DOMAIN | ReadWrite |  |  |
-| `core_tweaks` | `max_new_connections_per_5s` | U32_DOMAIN | ReadWrite |  |  |
-| `core_tweaks` | `max_upload_queue_clients` | U32_DOMAIN | ReadWrite |  |  |
-| `core_tweaks` | `server_keepalive_timeout_minutes` | U32_SCALED | ReadWrite |  |  |
-| `core_tweaks` | `source_reask_minutes` | U32_SCALED_DOMAIN | ReadWrite |  |  |
-| `core_tweaks` | `verbose_logging` | bool | ReadWrite |  |  |
-| `kademlia` | `update_url` | string | ReadWrite |  |  |
-| `ip2country` | `auto_update` | bool | ReadWrite |  |  |
-| `ip2country` | `custom_url` | string | ReadWrite |  |  |
-| `ip2country` | `db_loaded` | bool | ReadOnly |  |  |
-| `ip2country` | `db_path` | string | ReadOnly |  |  |
-| `ip2country` | `download_in_progress` | bool | ReadOnly |  |  |
-| `ip2country` | `enabled` | bool | ReadWrite |  |  |
-| `ip2country` | `last_update_result` | string | ReadOnly |  |  |
-| `ip2country` | `loaded_source` | string | ReadOnly |  |  |
-| `ip2country` | `maxmind_license` | string | ReadWrite |  |  |
-| `ip2country` | `source` | string (enum) | ReadWrite | `dbip`, `maxmind`, `custom` |  |
-| `ip2country` | `supported` | bool | ReadOnly |  |  |
-| `ip2country` | `update_now` | bool (write-only trigger) | WriteOnly |  |  |
+| `advanced` | `file_buffer_bytes` | U32_DOMAIN | ReadWrite |  |  |
+| `advanced` | `kad_max_concurrent_source_searches` | U32_DOMAIN | ReadWrite |  |  |
+| `advanced` | `kad_source_reask_minutes` | U32_SCALED_DOMAIN | ReadWrite |  |  |
+| `advanced` | `max_new_connections_per_5_seconds` | U32_DOMAIN | ReadWrite |  |  |
+| `advanced` | `max_upload_queue_clients` | U32_DOMAIN | ReadWrite |  |  |
+| `advanced` | `server_keepalive_timeout_minutes` | U32_SCALED | ReadWrite |  |  |
+| `advanced` | `source_reask_minutes` | U32_SCALED_DOMAIN | ReadWrite |  |  |
+| `advanced` | `verbose_logging` | bool | ReadWrite |  |  |
+| `kad` | `update_url` | string | ReadWrite |  |  |
+| `geoip` | `auto_update` | bool | ReadWrite |  |  |
+| `geoip` | `custom_update_url` | string | ReadWrite |  |  |
+| `geoip` | `db_loaded` | bool | ReadOnly |  |  |
+| `geoip` | `db_path` | string | ReadOnly |  |  |
+| `geoip` | `download_in_progress` | bool | ReadOnly |  |  |
+| `geoip` | `enabled` | bool | ReadWrite |  |  |
+| `geoip` | `last_update_status` | string | ReadOnly |  |  |
+| `geoip` | `loaded_source` | string | ReadOnly |  |  |
+| `geoip` | `maxmind_license` | string | ReadWrite |  |  |
+| `geoip` | `source` | string (enum) | ReadWrite | `dbip`, `maxmind`, `custom` |  |
+| `geoip` | `supported` | bool | ReadOnly |  |  |
+| `geoip` | `update_now` | — | Rejected |  |  |
 
 EC group per category (`kCategories`, `PrefsSchema.cpp`):
 
@@ -4826,9 +4925,9 @@ EC group per category (`kCategories`, `PrefsSchema.cpp`):
 | `remote_controls.webserver` | `EC_TAG_PREFS_REMOTECTRL` |
 | `remote_controls.amuleapi` | `EC_TAG_PREFS_REMOTECTRL` |
 | `online_signature` | `EC_TAG_PREFS_ONLINESIG` |
-| `core_tweaks` | `EC_TAG_PREFS_CORETWEAKS` |
-| `kademlia` | `EC_TAG_PREFS_KADEMLIA` |
-| `ip2country` | `EC_TAG_PREFS_IP2COUNTRY` |
+| `advanced` | `EC_TAG_PREFS_CORETWEAKS` |
+| `kad` | `EC_TAG_PREFS_KADEMLIA` |
+| `geoip` | `EC_TAG_PREFS_IP2COUNTRY` |
 
 ---
 
@@ -4851,11 +4950,11 @@ prefix before the first `_`, mapped by the resolver in `DispatchEvents`
 | `friend_added` / `friend_updated` / `friend_removed` | `friends` | friend object / `{"ecid": N}` | `EmitDiffsAndUpdate`, `EventDiff.cpp` |
 | `status_changed` | `status` | the nested `GET /status` envelope | `EmitDiffsAndUpdate`, `EventDiff.cpp` |
 | `log_appended` | `logs` | the appended log lines | `EmitDiffsAndUpdate`, `EventDiff.cpp` |
-| `search_result_added` | `search` | one search result (same writer as `GET /search/{id}/results`) | `EmitDiffsAndUpdate`, `EventDiff.cpp` |
-| `search_progress` | `search` | `{search_id, state, kind, percent, results}` | `EmitDiffsAndUpdate`, `EventDiff.cpp` |
+| `search_result_added` / `search_result_updated` | `search` | one search result (same writer as `GET /search/{id}/results`); `_updated` re-fires when a held result's `sources` / `already_downloaded` / `status` / `children` / `comments` change | `EmitDiffsAndUpdate`, `EventDiff.cpp` |
+| `search_progress` | `search` | `{search_id, state, percent, result_count, type}` | `EmitDiffsAndUpdate`, `EventDiff.cpp` |
 | `search_closed` | `search` | `{search_id}` | `EmitDiffsAndUpdate`, `EventDiff.cpp` |
 | `chat_message` | `chats` | one chat message object | `PublishChatEvents`, `EventDiff.cpp` |
-| `chat_session_closed` | `chats` | `{"peer": "<ip>:<port>"}` | `PublishChatEvents`, `EventDiff.cpp` |
+| `chat_session_closed` | `chats` | `{"client_address": "<ip>:<port>"}` | `PublishChatEvents`, `EventDiff.cpp` |
 | `resync` | *(always delivered)* | `{"reason": "gap" \| "restart", "since_id": N, "newest_id": N}` | `DispatchEvents`, `Api.cpp` |
 
 `search_result_added` and `GET /search/{id}/results` share one serializer
@@ -4877,7 +4976,7 @@ byte-identical whether it arrives by poll or by push.
 
 | Path | Replacement |
 |---|---|
-| `/api/v0/uploads` | `GET /api/v0/clients` (filter by `upload_state`, or `?filter=uploads`) |
+| `/api/v0/uploads` | `GET /api/v0/clients` (filter by `upload_state`, or `?activity=uploading`) |
 | `/api/v0/kad/connect` | `POST /api/v0/networks/connect` with `{"network":"kad"}` |
 | `/api/v0/kad/disconnect` | `POST /api/v0/networks/disconnect` with `{"network":"kad"}` |
 
@@ -4929,7 +5028,7 @@ listed here take no `sort` at all.
 | `GET /api/v0/friends` | `online` | inline `kComps` in `HandleFriends` |
 | `GET /api/v0/chats` | `last_message_at`, `name` | inline `kComps` in `HandleChats` |
 | `GET /api/v0/search/{id}/results` |  | inline `kComps` in `HandleSearchResults` |
-| `GET /api/v0/search` | `search_id`, `query`, `started_at`, `result_count` | `SearchListComparators()` |
+| `GET /api/v0/search` | `id`, `query`, `started_at`, `result_count` | `SearchListComparators()` |
 | `GET /api/v0/categories` | `index`, `name` | `CategoryComparators()` |
 
 Range and type validation for `limit` / `offset` and for the endpoint-specific
@@ -4976,8 +5075,8 @@ Two limits worth knowing when reading the response skeletons:
 
 Every `GET` route in this file was additionally executed against a running
 `amuleapi` and the response compared against the extracted skeleton — all of them
-except `GET /api/v0/chats/{peer}/messages`, which needs a live conversation with
-a peer. That is how
+except `GET /api/v0/chats/{client_address}/messages`, which needs a live
+conversation with a client. That is how
 the `/stats/graphs/{graph}` names in this document are `download_speed`,
 `upload_speed`, `connections`, `kad_nodes` — a stale comment in `DispatchToHandler`
 still calls them `download`/`upload`/`connections`/`kad`, and

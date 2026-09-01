@@ -152,8 +152,8 @@ w("""## Contents
 | Read timeout | 10 s to finish sending the request → `408 request_timeout`, then close; a 20 s stream backstop behind it. Both disarmed once a handler starts, and for SSE | `HttpServer.cpp` (`m_request_timer`, `expires_after`) |
 | Response compression | gzip when the client sends `Accept-Encoding: gzip`, the body is ≥ 256 B and its type is not already compressed. The `ETag` carries a coding suffix so the two representations validate apart | `HttpServer.cpp` (`WillCompressBody`) |
 | Authenticated responses | `Cache-Control: private` + `Vary: Cookie`, stamped on every response whose caller presented a token or the session cookie (a handler that set its own `Cache-Control` is left alone) | `Api.cpp` (`Dispatch`) |
-| Concurrent SSE sessions | 32; the 33rd gets `503 sessions_exhausted` + `Retry-After: 10` | `HttpServer.cpp` (`kMaxConcurrentStreamingSessions`) |
-| Unhandled handler exception | `500` with code **`internal`** (note: handlers' own 500s use `internal_error`) | `HttpServer.cpp` (session dispatch `catch`) |
+| Concurrent SSE sessions | 32; the 33rd gets `503 too_many_streams` + `Retry-After: 10` | `HttpServer.cpp` (`kMaxConcurrentStreamingSessions`) |
+| Unhandled handler exception | `500 internal_error` — the same code a handler's own 500 uses | `HttpServer.cpp` (session dispatch `catch`) |
 
 ### Dispatch order
 
@@ -276,7 +276,7 @@ issued with `; HttpOnly; SameSite=Strict; Path=/api/v0; Max-Age=<lifetime>`
 — no `Secure` (amuleapi serves plain HTTP by design). Tokens are HS256 JWTs
 (`src/libwebcommon/Jwt.*`); a token issued before the last credential change
 is rejected (`credentials changed; please sign in again`), as is one whose
-`jti` is in the revocation set.
+`session_id` is in the revocation set.
 
 Two independent per-IP rate limiters:
 
@@ -383,21 +383,26 @@ MEANING = {
     (403, "forbidden"): "`RequireAdmin` — admin role required",
     (403, "invalid_credentials"): "`current_password` did not match on a password change",
     (404, "not_found"): "no such route, file, peer, server, category or search",
-    (409, "conflict"): "state conflict (A4AF loop, gated preference)",
+    (409, "option_not_supported"): "the build does not support the requested preference option",
+    (409, "not_a4af_source"): "that client is not an A4AF source of this download",
     (409, "not_shared"): "comment/rating attempted on a non-shared file",
     (409, "not_completed"): "single clear-completed on a file that is not completed",
-    (409, "completed_use_clear_completed"): "delete attempted on a completed download",
-    (409, "partfile_unsupported"): "verify attempted on a partfile",
+    (409, "download_completed"): "delete attempted on a completed download",
+    (409, "partfile_unsupported"): "verify or content download attempted on a partfile",
     (409, "kad_more_exhausted"): "`/search/{id}/more` on a Kad search with nothing left",
     (409, "update_check_unavailable"): "version check disabled or unavailable",
+    (416, "range_not_satisfiable"): "the requested byte range lies outside the file",
     (429, "rate_limited"): "per-IP auth / login failure lockout (`Retry-After`)",
-    (429, "update_check_throttled"): "version check asked for again too soon",
-    (500, "internal_error"): "hash decode / serialization failure inside a handler",
+    (429, "version_check_throttled"): "version check asked for again too soon — its own 429, distinct from `rate_limited`",
+    (500, "internal_error"): "hash decode / serialization / file-read failure inside a handler",
     (502, "amuled_rejected"): "the daemon answered but the reply was unusable (no `search_id` for a search/browse, shared-directory apply refused)",
-    (502, "bad_gateway"): "unparseable EC payload from `amuled`",
+    (502, "amuled_response_invalid"): "unparseable EC payload from `amuled`",
     (503, "ec_unavailable"): "no first EC snapshot yet, or the EC roundtrip failed",
     (503, "ec_unsupported"): "the connected `amuled` is too old for this feature",
     (503, "login_disabled"): "no admin/guest password configured",
+    (503, "path_unavailable"): "the shared file's on-disk path is not known yet (`Retry-After`)",
+    (503, "ec_content_unreachable"): "the shared file is not on the filesystem running amuleapi",
+    (503, "ec_content_mismatch"): "the on-disk file disagrees with the shared file's size (split amuleapi/amuled deployment)",
 }
 for (st, ecode), cnt in sorted(pairs.items()):
     w(f"| {st} | `{ecode}` | {cnt} | {MEANING.get((st, ecode), '')} |")
@@ -406,13 +411,13 @@ w("Produced by the HTTP layer, below the dispatcher:")
 w()
 w("| Status | `code` | When | Source |")
 w("|---|---|---|---|")
-w("| 500 | `internal` | a handler threw | `HttpServer.cpp`, session dispatch `catch` |")
-w("| 503 | `sessions_exhausted` | 33rd concurrent SSE session; `Retry-After: 10` | `HttpServer.cpp`, `WriteCapRefusal` |")
+w("| 500 | `internal_error` | the session dispatch caught an exception (same code as a handler's own 500) | `HttpServer.cpp`, session dispatch `catch` |")
+w("| 503 | `too_many_streams` | 33rd concurrent SSE session; `Retry-After: 10` | `HttpServer.cpp`, `WriteCapRefusal` |")
 w("| — | — | body > 1 MiB, headers > 16 KiB, or a 10 s read timeout: the connection is closed with no response | `HttpServer.cpp` |")
 w()
 w("Bulk per-item `error.code` values (inside `results[]`, not the envelope):")
 w("`ec_unavailable`, `amuled_rejected`, `not_found`, `internal_error`,")
-w("`completed_use_clear_completed`.")
+w("`download_completed`.")
 w()
 w("---")
 w()
@@ -600,7 +605,7 @@ ep("POST", "/api/v0/version/check", "HandleVersionCheck",
    success="`202 Accepted` — no body",
    notes=["Gated on the daemon reporting the check as available *and* "
           "`general.check_new_version` being on; otherwise `409 update_check_unavailable`.",
-          "The daemon's own throttle surfaces as `429 update_check_throttled`; the "
+          "The daemon's own throttle surfaces as `429 version_check_throttled`; the "
           "daemon's localized message is deliberately not relayed."])
 
 # ------------------------------------------------------------------ Auth
@@ -609,20 +614,19 @@ group("Authentication")
 ep("POST", "/api/v0/auth/login", "HandleLogin",
    "Exchange a password for a session. The response always sets the "
    "`amuleapi_token` cookie; the JWT is only echoed in the body for bearer clients.",
-   query=[("type", "`bearer`", "Opt into the bearer shape (also triggered by "
-           "`Accept: application/jwt`). `BeginSession`, `Api.cpp:1836`")],
+   query=[("include_token", "`true`", "Also echo the JWT in the body (also "
+           "triggered by `Accept: application/jwt`). `BeginSession`, `Api.cpp:1836`")],
    body=[("password", "string", "yes", "Plain password; matched against the admin "
           "record first, then the guest record.")],
-   resp="""**Response body** — cookie shape (default), plus `token` and `jti` when the
-bearer shape was requested:
+   resp="""**Response body** — cookie shape (default), plus `token` when
+`include_token=true`:
 
 ```json
 {
-  "token": "string (bearer only)",
+  "token": "string (only with include_token)",
   "role": "admin | guest",
-  "expires_at": "ISO-8601 UTC string",
-  "expires_at_unix": "int",
-  "jti": "string (bearer only)"
+  "expires_at": "int (unix seconds)",
+  "session_id": "string"
 }
 ```
 
@@ -637,7 +641,7 @@ Headers: `Set-Cookie: amuleapi_token=<jwt>; HttpOnly; SameSite=Strict; Path=/api
           "upgraded in place on a successful login."])
 
 ep("POST", "/api/v0/auth/logout", "HandleLogout",
-   "Revoke the calling session's `jti` and clear the cookie.",
+   "Revoke the calling session's `session_id` and clear the cookie.",
    success="`204 No Content`",
    resp="""**Response body**: none.
 
@@ -648,7 +652,7 @@ Headers: a `Set-Cookie` that expires `amuleapi_token`.""",
           "Repeated `401`s here still feed the generic per-IP auth limiter."])
 
 ep("GET, HEAD", "/api/v0/auth/session", "HandleSession",
-   "Describe the calling token: role, `jti`, and expiry.",
+   "Describe the calling token: role, `session_id`, and expiry.",
    shape_from="HandleSession")
 
 ep("GET, HEAD", "/api/v0/auth/passwords", "HandleAuthPasswords",
@@ -662,19 +666,18 @@ ep("PATCH", "/api/v0/auth/passwords", "HandleAuthPasswordsPatch",
          ("admin_password", "string", "no", "New admin password. Cannot be empty — "
           "the admin role cannot be removed."),
          ("guest_password", "string", "no", "New guest password. Setting it implies "
-          "`guest_enabled: true` unless `guest_enabled` says otherwise."),
-         ("guest_enabled", "bool", "no", "Enable/disable the guest role.")],
+          "`guest_access_enabled: true` unless `guest_access_enabled` says otherwise."),
+         ("guest_access_enabled", "bool", "no", "Enable/disable the guest role.")],
    resp="""**Response body** — the post-change state plus a freshly issued session
 for the caller (the same fields `POST /auth/login` returns):
 
 ```json
 {
-  "admin_set": "bool",
-  "guest_enabled": "bool",
-  "other_sessions_revoked": true,
+  "admin_password_set": "bool",
+  "guest_access_enabled": "bool",
   "role": "admin",
-  "expires_at": "ISO-8601 UTC string",
-  "expires_at_unix": "int"
+  "expires_at": "int (unix seconds)",
+  "session_id": "string"
 }
 ```""",
    errors_from=["ParseJsonObjectBody"],
@@ -683,7 +686,7 @@ for the caller (the same fields `POST /auth/login` returns):
           "changed the password stays signed in and everybody else is signed out.",
           "A wrong `current_password` is `403 invalid_credentials` and counts "
           "against the login rate limiter.",
-          "`guest_password` together with `guest_enabled: false` is rejected "
+          "`guest_password` together with `guest_access_enabled: false` is rejected "
           "rather than guessed at; a body that changes nothing is `400 nothing to change`.",
           "The credential store lives outside `/preferences`: sending "
           "`remote_controls.amuleapi` passwords there is rejected on purpose."])
@@ -726,7 +729,7 @@ ep("POST", "/api/v0/networks/connect", "HandleNetworksConnect",
 
 ep("POST", "/api/v0/networks/disconnect", "HandleNetworksDisconnect",
    "Disconnect ed2k, Kad, or both.",
-   success="`200 OK` — `{\"message\": \"…\"}` (the daemon's status message, "
+   success="`202 Accepted` — `{\"message\": \"…\"}` (the daemon's status message, "
    "omitted when empty)",
    body=[("network", "`ed2k` \\| `kad` \\| `both`", "no", "Default `both`.")],
    errors_from=["SimpleConnControlOp", "ParseJsonObjectBody"])
@@ -742,8 +745,8 @@ ep("POST", "/api/v0/kad/bootstrap", "HandleKadBootstrap",
 ep("POST", "/api/v0/kad/update", "HandleKadUpdateFromUrl",
    "Tell the daemon to fetch `nodes.dat` from a URL.",
    success="`202 Accepted` — no body",
-   body=[("nodes_url", "string", "no", "`http://` or `https://` URL. When omitted, "
-          "the configured `kademlia.nodes_url` preference is used; if no "
+   body=[("url", "string", "no", "`http://` or `https://` URL. When omitted, "
+          "the configured `kad.update_url` preference is used; if no "
           "preference snapshot exists yet, that fallback is a `503`.")],
    errors_from=["ResolveFetchUrl", "UrlFetchOp"],
    notes=["`amuled` persists the URL into the matching preference itself, so this "
@@ -760,21 +763,33 @@ ep("POST", "/api/v0/ipfilter/reload", "HandleIpfilterReload",
 ep("POST", "/api/v0/ipfilter/update", "HandleIpfilterUpdate",
    "Fetch an IP-filter list from a URL (the Security page's *Update now*).",
    success="`202 Accepted` — no body",
-   body=[("ipfilter_url", "string", "no", "`http://` or `https://` URL; falls back "
+   body=[("url", "string", "no", "`http://` or `https://` URL; falls back "
           "to the `security.ipfilter_update_url` preference when omitted.")],
    errors_from=["ResolveFetchUrl", "UrlFetchOp"])
+
+ep("POST", "/api/v0/geoip/update", "HandleGeoipUpdate",
+   "Tell the daemon to re-download the GeoIP country database now.",
+   success="`202 Accepted` — empty `{}` body",
+   notes=["Replaces the write-only `geoip.update_now` preference boolean, which "
+          "`PATCH /preferences` now rejects with an instruction to POST here.",
+          "`202`, like the three sibling fetch routes: the download runs inside "
+          "`amuled` after the reply. Progress shows on `GET /preferences` as "
+          "`geoip.download_in_progress`, the outcome as `geoip.last_update_status`.",
+          "`503 ec_unavailable` if the EC roundtrip fails; `400 amuled_rejected` "
+          "when the daemon refuses (e.g. GeoIP disabled in the build)."])
 
 # ------------------------------------------------------------------ Downloads
 group("Downloads")
 
-DL_DETAIL_ONLY = ["last_seen_complete", "last_changed", "download_active_time",
-                  "available_part_count", "part_count", "remaining_time",
-                  "lost_to_corruption", "gained_by_compression", "saved_by_ich",
-                  "aich_hash", "met_file", "path", "partmet_id", "queued_count",
-                  "comment", "rating", "a4af_auto", "media"]
+DL_DETAIL_ONLY = ["last_seen_complete_at", "last_received_at", "active_seconds",
+                  "parts_available_count", "remaining_seconds",
+                  "lost_to_corruption_bytes", "gained_by_compression_bytes",
+                  "ich_recovered_packet_count", "aich_hash", "part_file_name",
+                  "directory", "upload_queue_count", "my_comment", "my_rating",
+                  "a4af_auto", "media"]
 DL_FULL = dict(SHAPE["WriteDownloadObject"])
 DL_FULL["progress"] = {"percent": "number",
-                       "parts": [{"state": "complete | incomplete | missing", "sources": "int"}]}
+                       "parts": [{"state": "complete | pending | unavailable", "sources": "int"}]}
 DL_LIST = {k: v for k, v in DL_FULL.items() if k not in DL_DETAIL_ONLY}
 DL_LIST["progress"] = {"percent": "number"}
 
@@ -788,7 +803,7 @@ ep("GET, HEAD", "/api/v0/downloads", "HandleDownloads",
    resp={"downloads": [DL_LIST], "total": "uint", "offset": "uint", "limit": "uint"},
    notes=["List rows omit `progress.parts` and the detail-only fields; read "
           "`GET /api/v0/downloads/{hash}` for those.",
-          "`hashing_progress` and `kad_comment_search_running` *are* on the list "
+          "`hashed_part_count` and `kad_comment_lookup_running` *are* on the list "
           "row — deliberately, so a client can render a hashing indicator without "
           "a per-file roundtrip."])
 
@@ -831,7 +846,7 @@ ep("DELETE", "/api/v0/downloads", "HandleDownloadsBulkDelete",
    resp="""**Response body** — the [bulk envelope](#bulk-mutation-envelope).""",
    errors_from=["ParseBulkHashes", "ParseJsonObjectBody"],
    notes=["A `completed` entry is refused per item with "
-          "`409 completed_use_clear_completed` — use "
+          "`409 download_completed` — use "
           "`POST /api/v0/downloads_clear_completed` for those."])
 
 ep("POST", "/api/v0/downloads_clear_completed", "HandleDownloadsClearCompleted",
@@ -854,9 +869,10 @@ ep("GET, HEAD", "/api/v0/downloads/{hash}", "HandleDownloadDetail",
    path_params=[("hash", "32-char hex MD4. Case-insensitive — canonicalised to "
                  "lowercase by `LowerHexKey`, `Api.cpp:246`.")],
    resp=DL_FULL,
-   notes=["`remaining_time` is `-1` when the file is not moving (`speed_bps == 0`).",
+   notes=["`remaining_seconds` is `null` when the file is not moving "
+          "(`speed_bytes_per_second == 0`).",
           "`media` is present only for a file `ffprobe` has produced metadata for.",
-          "`parts[].state` is `complete` / `incomplete` / `missing`; the array is "
+          "`parts[].state` is `complete` / `pending` / `unavailable`; the array is "
           "empty for a zero-byte file.",
           "Unlike `GET /downloads`, this endpoint answers for a completed download too."])
 
@@ -887,7 +903,7 @@ ep("DELETE", "/api/v0/downloads/{hash}", "HandleDownloadDelete",
    success="`204 No Content`",
    path_params=[("hash", "32-char hex MD4.")],
    resp="""**Response body**: none.""",
-   notes=["A `completed` entry is refused with `409 completed_use_clear_completed`: "
+   notes=["A `completed` entry is refused with `409 download_completed`: "
           "the only EC op that touches the completed staging list is "
           "`EC_OP_CLEAR_COMPLETED`, and it does not delete the file from `Incoming`."])
 
@@ -952,13 +968,13 @@ group("Clients (peers)")
 ep("GET, HEAD", "/api/v0/clients", "HandleClients",
    "Every peer the daemon currently knows: upload slots, queue waiters and "
    "download sources, in one collection.",
-   query=[("filter", "`uploads` \\| `downloads` \\| `active`", "`uploads` = peers "
-           "with `upload_state == \"uploading\"`; `downloads` = peers with "
+   query=[("activity", "`uploading` \\| `downloading` \\| `active`", "`uploading` = "
+           "peers with `upload_state == \"uploading\"`; `downloading` = peers with "
            "`download_state == \"downloading\"`; `active` = the union. Any other "
            "value is a `400`. Absent = every peer.")],
    list_env=("clients", "WriteClientObject"),
    notes=["`/api/v0/uploads` was retired in favour of this route — consumers "
-          "filter client-side (or with `?filter=uploads`).",
+          "filter client-side (or with `?activity=uploading`).",
           "`part_progress_percent` is computed per row before serialization, so "
           "the list, the per-file rows, the detail object and the SSE "
           "`client_*` payloads all carry it."])
@@ -968,9 +984,9 @@ ep("GET, HEAD", "/api/v0/clients/{ecid}", "HandleClientDetail",
    path_params=[("ecid", "EC connection id (`uint32`), unique per live connection. "
                  "An empty or non-numeric segment is a `400`.")],
    shape_from="WriteClientDetailObject",
-   notes=["Detail-only keys, on top of the list row: `user_id_hybrid`, `high_id`, "
-          "`server_ip`, `server_port`, `server_name`, `kad_port`, `is_friend`, "
-          "`dl_up_modifier`.",
+   notes=["Detail-only keys, on top of the list row: `ed2k_user_id`, `high_id`, "
+          "`server_ip`, `server_port`, `server_name`, `kad_port`, `friend`, "
+          "`credit_ratio`.",
           "ECIDs are per-connection and are not stable across daemon restarts."])
 
 ep("POST", "/api/v0/clients/{ecid}/shared_files", "HandleClientBrowse",
@@ -984,7 +1000,7 @@ ep("POST", "/api/v0/clients/{ecid}/shared_files", "HandleClientBrowse",
           "the auth gate and the EC exchange live — `HandleClientBrowse` itself is "
           "a two-line wrapper.",
           "Read the listing with `GET /api/v0/search/{search_id}/results`; the "
-          "search's `kind` is `browse` and its `query` is the peer's name.",
+          "search's `type` is `browse` and its `query` is the peer's name.",
           "A peer that refuses the browse comes back as `404` carrying the "
           "daemon's reason; a daemon that starts no browse at all is a `502`."])
 
@@ -998,7 +1014,7 @@ ep("POST", "/api/v0/clients/{ecid}/messages", "HandleClientMessageSend",
    resp="""**Response body**
 
 ```json
-{ "peer": "<ip>:<port>",
+{ "client_address": "<ip>:<port>",
   "message": { "id": "int", "direction": "out", "text": "string" } }
 ```""",
    notes=["Only reaches a peer the daemon has a live connection to. Use "
@@ -1023,9 +1039,9 @@ group("Shared files")
 ep("GET, HEAD", "/api/v0/shared", "HandleSharedList",
    "Every file the daemon is sharing, with upload counters.",
    list_env=("shared", "WriteSharedObject"),
-   notes=["`uploading` is a **count of peers currently downloading this file**, "
-          "not a boolean.",
-          "`hashing_progress` is a part *count* (parts hashed so far by a Verify "
+   notes=["`uploading_client_count` is a **count of peers currently downloading "
+          "this file**, not a boolean.",
+          "`hashed_part_count` is a part *count* (parts hashed so far by a Verify "
           "Local Data or an AICH rebuild), not a percentage; `0` when idle."])
 
 ep("PATCH", "/api/v0/shared", "HandleSharedBulkPatch",
@@ -1121,9 +1137,10 @@ ep("GET, HEAD", "/api/v0/shared/{hash}", "HandleSharedDetail",
    "detail-only fields.",
    path_params=[("hash", "32-char hex MD4, case-insensitive.")],
    resp=SH_FULL,
-   notes=["Detail-only, on top of the list row: `file_type`, `share_ratio`, "
-          "`path`, `incomplete`, `complete_sources_range`, `aich_hash`, "
-          "`part_count`, `parts`, `queued_count`, `comment`, `rating`, `media`.",
+   notes=["Detail-only, on top of the list row: `file_type`, `upload_ratio`, "
+          "`directory`, `incomplete`, `sources.complete_min` / `sources.complete_max`, "
+          "`aich_hash`, `parts_total_count`, `parts`, `upload_queue_count`, "
+          "`my_comment`, `my_rating`, `media`.",
           "`parts[]` is `{sources}` per part — deliberately *not* the downloads "
           "`state` shape, which would invite rendering it as progress. The key is "
           "omitted entirely when nothing has been decoded yet, so *no data* stays "
@@ -1148,7 +1165,7 @@ ep("POST", "/api/v0/shared/{hash}/verify", "HandleSharedVerify",
    notes=["A partfile is refused with `409 partfile_unsupported`: the daemon's "
           "hashing task bails out on `IsPartFile()` but still answers `NOOP`, "
           "which would tell the caller the re-hash had been accepted.",
-          "Progress is observable as `hashing_progress` on the file's rows."])
+          "Progress is observable as `hashed_part_count` on the file's rows."])
 
 ep("POST", "/api/v0/shared/{hash}/media/refresh", "HandleSharedMediaRefreshOne",
    "Re-probe one shared file's media metadata.",
@@ -1182,6 +1199,37 @@ ep("GET, HEAD", "/api/v0/shared/{hash}/clients", "HandleFileClients",
           "`require_downloading = false`.",
           "`parts` here is an array of booleans (one per part), present only when "
           "`include_parts=true` *and* the row actually has a bitmap for this file."])
+
+ep("GET, HEAD", "/api/v0/shared/{hash}/content", "HandleSharedContent",
+   "Download the raw bytes of a completed shared file. The one route that serves "
+   "a file body rather than JSON.",
+   success="`200 OK` (whole file) or `206 Partial Content` (a `Range`)",
+   path_params=[("hash", "32-char hex MD4 of a **completed** shared file.")],
+   resp="""**Response**: `application/octet-stream` bytes. Every response carries
+`Accept-Ranges: bytes`, an mtime+size `ETag`, `Content-Disposition: attachment`,
+`X-Content-Type-Options: nosniff` and a `Content-Security-Policy: default-src
+'none'; sandbox` — the bytes and filename came from the ed2k network, so the
+content type is never sniffed and the body is sandboxed against the Web UI's own
+origin.""",
+   notes=["**Not admin** — a guest that can list a file can read it. Authenticated "
+          "like any read route.",
+          "`Range` (single range only): `206` with `Content-Range`; a malformed, "
+          "multi-range or unsupported header is ignored and answers `200` with "
+          "the whole file (CVE-2011-3192 mitigation); an unsatisfiable range is "
+          "`416 range_not_satisfiable` with `Content-Range: bytes */<size>`.",
+          "Conditional GET: `If-None-Match` → `304`, evaluated before `Range`; "
+          "`If-Range` drops the range when the validator no longer matches.",
+          "`409 partfile_unsupported` on an incomplete partfile — a `.part` file's "
+          "byte offsets do not match the final file's, so a range out of it would "
+          "be silently wrong.",
+          "Three `503`s cover a split deployment where amuleapi and amuled do not "
+          "share a filesystem: `path_unavailable` (+ `Retry-After: 5`) before the "
+          "daemon has reported the on-disk directory, `ec_content_unreachable` "
+          "when the resolved path is absent locally, and `ec_content_mismatch` "
+          "when a same-named local file disagrees on size. Unknown hash → "
+          "`404 not_found`.",
+          "`HEAD` reports the same `Content-Length` a `GET` would send without "
+          "reading a byte (the transport runs the body serializer in split mode)."])
 
 # ------------------------------------------------------------------ Servers
 group("Servers (ed2k server list)")
@@ -1218,7 +1266,7 @@ ep("POST", "/api/v0/servers", "HandleServerAdd",
 ep("POST", "/api/v0/servers_update", "HandleServerUpdateFromUrl",
    "Tell the daemon to fetch `server.met` from a URL.",
    success="`202 Accepted` — no body",
-   body=[("servers_url", "string", "yes", "`http://` or `https://` URL. Required — "
+   body=[("url", "string", "yes", "`http://` or `https://` URL. Required — "
           "unlike the Kad and IP-filter variants there is no configured fallback.")],
    errors_from=["ResolveFetchUrl", "UrlFetchOp"],
    notes=["A top-level path: updating the list is an action on the collection, "
@@ -1312,7 +1360,7 @@ ep("POST", "/api/v0/friends/{ecid}/shared_files", "HandleFriendBrowse",
           "(`Api.cpp:9638`), addressed by `EC_TAG_FRIEND` instead of "
           "`EC_TAG_CLIENT`. This is the form that can reach a friend whose "
           "connection is not currently live.",
-          "The started search has `kind: \"browse\"` and the friend's name as its "
+          "The started search has `type: \"browse\"` and the friend's name as its "
           "`query`."])
 
 ep("POST", "/api/v0/friends/{ecid}/messages", "HandleFriendMessageSend",
@@ -1324,7 +1372,7 @@ ep("POST", "/api/v0/friends/{ecid}/messages", "HandleFriendMessageSend",
    resp="""**Response body** — same shape as the other send forms:
 
 ```json
-{ "peer": "<ip>:<port>",
+{ "client_address": "<ip>:<port>",
   "message": { "id": "int", "direction": "out", "text": "string" } }
 ```""",
    notes=["This is the form that reaches an **offline** friend — the daemon opens "
@@ -1336,44 +1384,45 @@ group("Chat")
 ep("GET, HEAD", "/api/v0/chats", "HandleChats",
    "Open conversations, newest activity first when sorted.",
    list_env=("chats", "WriteChatObject"),
-   notes=["`peer` is the `<ip>:<port>` key every other chat route takes.",
+   notes=["`client_address` is the `<ip>:<port>` key every other chat route "
+          "takes.",
           "`last_message` is the most recent message inline, so a list render "
           "needs no per-chat roundtrip."])
 
-ep("GET, HEAD", "/api/v0/chats/{peer}/messages", "HandleChatMessages",
+ep("GET, HEAD", "/api/v0/chats/{client_address}/messages", "HandleChatMessages",
    "One conversation's messages, with a polling cursor.",
-   path_params=[("peer", "`<ip>:<port>`. A malformed key is a `400`.")],
-   query=[("since_id", "integer", "Return only messages with `id` greater than "
-           "this. Ids are monotonic per daemon process, so a poller never "
+   path_params=[("client_address", "`<ip>:<port>`. A malformed key is a `400`.")],
+   query=[("since_message_id", "integer", "Return only messages with `id` greater "
+           "than this. Ids are monotonic per daemon process, so a poller never "
            "duplicates or skips; they reset when the daemon restarts (which also "
            "empties the store)."),
           ("limit", "integer", "Keep only the **last** *n* of the selected window "
            "— *show me the tail of this conversation*.")],
    shape_from="HandleChatMessages",
-   notes=["`total` is the conversation's full message count, `last_msg_id` the "
-          "newest id — both independent of the window returned.",
+   notes=["`total` is the conversation's full message count, `last_message_id` "
+          "the newest id — both independent of the window returned.",
           "`503 ec_unsupported` when the connected `amuled` does not serve chat "
           "sessions.",
           "This endpoint does **not** use the shared list envelope: no `offset`, "
           "no `sort`."])
 
-ep("POST", "/api/v0/chats/{peer}/messages", "HandleChatSend",
+ep("POST", "/api/v0/chats/{client_address}/messages", "HandleChatSend",
    "Send a message into a conversation, addressed by `<ip>:<port>`.",
    success="`202 Accepted`",
-   path_params=[("peer", "`<ip>:<port>`.")],
+   path_params=[("client_address", "`<ip>:<port>`.")],
    body=[("text", "string", "yes", "Non-empty, ≤ 1024 bytes.")],
    errors_from=["SendChatMessageTo"],
    resp="""**Response body**
 
 ```json
-{ "peer": "<ip>:<port>",
+{ "client_address": "<ip>:<port>",
   "message": { "id": "int", "direction": "out", "text": "string" } }
 ```""")
 
-ep("DELETE", "/api/v0/chats/{peer}", "HandleChatClose",
+ep("DELETE", "/api/v0/chats/{client_address}", "HandleChatClose",
    "Close a conversation and drop its stored messages.",
    success="`204 No Content`",
-   path_params=[("peer", "`<ip>:<port>`.")],
+   path_params=[("client_address", "`<ip>:<port>`.")],
    notes=["Publishes `chat_session_closed` to SSE subscribers."])
 
 # ------------------------------------------------------------------ Categories
@@ -1453,9 +1502,9 @@ ep("GET, HEAD", "/api/v0/preferences", "HandlePreferences",
   "message_filter": { "…": "…" },
   "remote_controls": { "webserver": { "…": "…" }, "amuleapi": { "…": "…" } },
   "online_signature": { "…": "…" },
-  "core_tweaks": { "…": "…" },
-  "kademlia": { "…": "…" },
-  "ip2country": { "…": "…" }
+  "advanced": { "…": "…" },
+  "kad": { "…": "…" },
+  "geoip": { "…": "…" }
 }
 ```
 
@@ -1480,7 +1529,7 @@ ep("PATCH", "/api/v0/preferences", "HandlePreferencesPatch",
 Field-level rules come from the schema (Appendix A): `Uint16` / `Uint32` rows
 have an inclusive `max`, `Enum` rows accept only their listed names,
 `StringArray` rows take an array of strings, and a row with a `gated_by`
-capability answers `409 conflict` when that capability is false.""",
+capability answers `409 option_not_supported` when that capability is false.""",
    resp="""**Response body** — the full `GET /api/v0/preferences` object, re-read
 after an inline refresher tick, so a consumer can confirm what actually landed
 without a follow-up `GET`.""",
@@ -1494,9 +1543,9 @@ without a follow-up `GET`.""",
           "`remote_controls.webserver.guest_enabled` + `guest_password` share one "
           "EC tag, so their packing is hand-written rather than table-driven "
           "(`PrefAccess::Bespoke`).",
-          "`core_tweaks.kad_reask_ms`, `source_reask_ms` and "
-          "`server_keepalive_timeout_ms` are milliseconds on the wire, exactly as "
-          "the daemon stores them — no unit conversion happens in this layer."])
+          "`advanced.kad_source_reask_minutes`, `source_reask_minutes` and "
+          "`server_keepalive_timeout_minutes` are minutes in the API; the schema "
+          "scales them to the milliseconds the daemon stores at the EC boundary."])
 
 # ------------------------------------------------------------------ Logs
 group("Logs")
@@ -1506,8 +1555,8 @@ ep("GET, HEAD", "/api/v0/logs/amule", "HandleLogAmule",
    query=[("tail", "integer", "Return only the last *n* lines. `0`, absent, "
            "negative or non-numeric means everything; capped at 100 000.")],
    shape_from="HandleLogAmule",
-   notes=["`total_cached` is what the mirror holds, `returned` what this response "
-          "carried — enough for a client to know what it missed.",
+   notes=["`total_lines` is what the mirror holds, `returned_lines` what this "
+          "response carried — enough for a client to know what it missed.",
           "New lines also arrive as the `log_appended` SSE event."])
 
 ep("DELETE", "/api/v0/logs/amule", "HandleLogAmuleReset",
@@ -1516,7 +1565,7 @@ ep("DELETE", "/api/v0/logs/amule", "HandleLogAmuleReset",
    notes=["Also drops the in-process mirror, so the next `GET` starts empty and no "
           "spurious `log_appended` fires."])
 
-ep("GET, HEAD", "/api/v0/logs/serverinfo", "HandleLogServerinfo",
+ep("GET, HEAD", "/api/v0/logs/server_info", "HandleLogServerinfo",
    "The server-info log — one accumulated text blob, fetched from the daemon "
    "lazily with a 1 s TTL.",
    query=[("tail", "integer", "Keep only the last *n* lines, sliced at line "
@@ -1525,7 +1574,7 @@ ep("GET, HEAD", "/api/v0/logs/serverinfo", "HandleLogServerinfo",
    notes=["`total_bytes` / `returned_bytes` let a client decide whether to re-poll "
           "with a smaller `?tail=`."])
 
-ep("DELETE", "/api/v0/logs/serverinfo", "HandleLogServerinfoReset",
+ep("DELETE", "/api/v0/logs/server_info", "HandleLogServerinfoReset",
    "Clear the server-info log.",
    success="`204 No Content`",
    notes=["Invalidates the 1 s lazy cache so the next `GET` re-fetches instead of "
@@ -1597,7 +1646,7 @@ ep("GET, HEAD", "/api/v0/search", "HandleSearchList",
           "listed); `started_at` only for searches *this* amuleapi started; "
           "`result_count` only when the daemon reports it. All three are omitted "
           "rather than zeroed, so *unknown* stays distinguishable from *none*.",
-          "`kind` is `local` / `global` / `kad` / `browse`; `state` is the "
+          "`type` is `local` / `global` / `kad` / `browse`; `state` is the "
           "daemon's lifecycle state.",
           "Carries the standard list envelope: the rows are fetched whole over "
           "EC, then sorted and sliced like any other list endpoint."])
@@ -1611,9 +1660,9 @@ ep("POST", "/api/v0/search", "HandleSearchStart",
          ("type", "`local` \\| `global` \\| `kad`", "no", "Default `global`."),
          ("file_type", "string", "no", "aMule file-type label."),
          ("extension", "string", "no", "e.g. `mkv`."),
-         ("min_size", "number", "no", "Bytes, ≥ 0. Default 0."),
-         ("max_size", "number", "no", "Bytes, ≥ 0. Default 0 = no cap."),
-         ("min_avail", "number", "no", "uint32. Default 0.")],
+         ("min_size_bytes", "number", "no", "Bytes, ≥ 0. Default 0."),
+         ("max_size_bytes", "number", "no", "Bytes, ≥ 0. Default 0 = no cap."),
+         ("min_source_count", "number", "no", "uint32. Default 0.")],
    errors_from=["ParseJsonObjectBody"],
    notes=["A reply carrying no `search_id` is reported as `502 amuled_rejected` — "
           "without an id the caller has nothing to address.",
@@ -1740,7 +1789,7 @@ has been written for 15 s (wall-clock driven, so a busy bus behind a
           "thread is spawned and before the 32-slot budget is claimed, so an "
           "unauthenticated peer gets an ordinary `401`/`429` and cannot hold a slot.",
           "The 33rd concurrent stream is refused by the HTTP layer with "
-          "`503 sessions_exhausted` + `Retry-After: 10`.",
+          "`503 too_many_streams` + `Retry-After: 10`.",
           "Reconnect: send `Last-Event-ID`. An id newer than the bus (daemon "
           "restarted) or older than its oldest retained event (gap) produces a "
           "`resync` frame carrying `{reason, since_id, newest_id}` — `restart` or "
@@ -1842,7 +1891,7 @@ for r in P["rows"]:
     if r["invert"]:
         notes.append("API value is the negation of the EC value")
     if r["gate"]:
-        notes.append(f"gated by `{r['gate']}` (else `409 conflict`)")
+        notes.append(f"gated by `{r['gate']}` (else `409 option_not_supported`)")
     if r["macro"] == "BOOL_INGROUP":
         notes.append("tag read from another EC group")
     w(f"| `{r['category']}` | `{r['key']}` | {r['type']} | {r['access']} | "
@@ -1880,11 +1929,11 @@ prefix before the first `_`, mapped by the resolver in `DispatchEvents`
 | `friend_added` / `friend_updated` / `friend_removed` | `friends` | friend object / `{"ecid": N}` | `EmitDiffsAndUpdate`, `EventDiff.cpp` |
 | `status_changed` | `status` | the nested `GET /status` envelope | `EmitDiffsAndUpdate`, `EventDiff.cpp` |
 | `log_appended` | `logs` | the appended log lines | `EmitDiffsAndUpdate`, `EventDiff.cpp` |
-| `search_result_added` | `search` | one search result (same writer as `GET /search/{id}/results`) | `EmitDiffsAndUpdate`, `EventDiff.cpp` |
-| `search_progress` | `search` | `{search_id, state, kind, percent, results}` | `EmitDiffsAndUpdate`, `EventDiff.cpp` |
+| `search_result_added` / `search_result_updated` | `search` | one search result (same writer as `GET /search/{id}/results`); `_updated` re-fires when a held result's `sources` / `already_downloaded` / `status` / `children` / `comments` change | `EmitDiffsAndUpdate`, `EventDiff.cpp` |
+| `search_progress` | `search` | `{search_id, state, percent, result_count, type}` | `EmitDiffsAndUpdate`, `EventDiff.cpp` |
 | `search_closed` | `search` | `{search_id}` | `EmitDiffsAndUpdate`, `EventDiff.cpp` |
 | `chat_message` | `chats` | one chat message object | `PublishChatEvents`, `EventDiff.cpp` |
-| `chat_session_closed` | `chats` | `{"peer": "<ip>:<port>"}` | `PublishChatEvents`, `EventDiff.cpp` |
+| `chat_session_closed` | `chats` | `{"client_address": "<ip>:<port>"}` | `PublishChatEvents`, `EventDiff.cpp` |
 | `resync` | *(always delivered)* | `{"reason": "gap" \\| "restart", "since_id": N, "newest_id": N}` | `DispatchEvents`, `Api.cpp` |
 
 `search_result_added` and `GET /search/{id}/results` share one serializer
@@ -1910,7 +1959,7 @@ w("""## Appendix C — retired and shadowed paths
 
 | Path | Replacement |
 |---|---|
-| `/api/v0/uploads` | `GET /api/v0/clients` (filter by `upload_state`, or `?filter=uploads`) |
+| `/api/v0/uploads` | `GET /api/v0/clients` (filter by `upload_state`, or `?activity=uploading`) |
 | `/api/v0/kad/connect` | `POST /api/v0/networks/connect` with `{"network":"kad"}` |
 | `/api/v0/kad/disconnect` | `POST /api/v0/networks/disconnect` with `{"network":"kad"}` |
 
@@ -1968,7 +2017,7 @@ SORTS = [
     ("GET /api/v0/chats", "HandleChats", "inline `kComps` in `HandleChats`"),
     ("GET /api/v0/search/{id}/results", "HandleSearchResults", "inline `kComps` in `HandleSearchResults`"),
     ("GET /api/v0/search", None, "`SearchListComparators()`",
-     ["search_id", "query", "started_at", "result_count"]),
+     ["id", "query", "started_at", "result_count"]),
     ("GET /api/v0/categories", None, "`CategoryComparators()`", ["index", "name"]),
 ]
 for row in SORTS:
@@ -2025,8 +2074,8 @@ Two limits worth knowing when reading the response skeletons:
 
 Every `GET` route in this file was additionally executed against a running
 `amuleapi` and the response compared against the extracted skeleton — all of them
-except `GET /api/v0/chats/{{peer}}/messages`, which needs a live conversation with
-a peer. That is how
+except `GET /api/v0/chats/{{client_address}}/messages`, which needs a live
+conversation with a client. That is how
 the `/stats/graphs/{{graph}}` names in this document are `download_speed`,
 `upload_speed`, `connections`, `kad_nodes` — a stale comment in `DispatchToHandler`
 still calls them `download`/`upload`/`connections`/`kad`, and

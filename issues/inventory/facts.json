@@ -1,0 +1,8976 @@
+{
+ "funcs": {
+  "SplitPathAndQuery": {
+   "loc": [
+    "Api.cpp:106-116"
+   ],
+   "lines": 11,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "WriteIntOrNull": {
+   "loc": [
+    "Api.cpp:127-134"
+   ],
+   "lines": 8,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "WriteUIntOrNull": {
+   "loc": [
+    "Api.cpp:136-143"
+   ],
+   "lines": 8,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "WriteBoolOrNull": {
+   "loc": [
+    "Api.cpp:152-159"
+   ],
+   "lines": 8,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "WriteStringOrNull": {
+   "loc": [
+    "Api.cpp:161-168"
+   ],
+   "lines": 8,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "FinalizeJsonBody": {
+   "loc": [
+    "Api.cpp:170-178"
+   ],
+   "lines": 9,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "ErrorResponse": {
+   "loc": [
+    "Api.cpp:180-197"
+   ],
+   "lines": 18,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "error",
+    "code",
+    "message"
+   ],
+   "calls": [
+    "FinalizeJsonBody"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "MethodNotAllowed": {
+   "loc": [
+    "Api.cpp:207-212"
+   ],
+   "lines": 6,
+   "errors": [
+    [
+     405,
+     "method_not_allowed",
+     "message"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "ErrorResponse"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "AuthenticateRequest": {
+   "loc": [
+    "Api.cpp:223-291"
+   ],
+   "lines": 69,
+   "errors": [
+    [
+     401,
+     "unauthorized",
+     "missing bearer token or session cookie"
+    ],
+    [
+     401,
+     "unauthorized",
+     "invalid or expired token"
+    ],
+    [
+     401,
+     "unauthorized",
+     "token has been revoked"
+    ],
+    [
+     401,
+     "unauthorized",
+     "credentials changed; please sign in again"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "ErrorResponse"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "RequireAdmin": {
+   "loc": [
+    "Api.cpp:297-304"
+   ],
+   "lines": 8,
+   "errors": [
+    [
+     403,
+     "forbidden",
+     "admin role required for this endpoint"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "ErrorResponse"
+   ],
+   "auth": false,
+   "admin": true,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "RequireSnapshot": {
+   "loc": [
+    "Api.cpp:313-320"
+   ],
+   "lines": 8,
+   "errors": [
+    [
+     503,
+     "ec_unavailable",
+     "amuleapi has not received its first EC snapshot yet"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "ErrorResponse"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "LowerHexKey": {
+   "loc": [
+    "Api.cpp:327-334"
+   ],
+   "lines": 8,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "FindDownloadByKey": {
+   "loc": [
+    "Api.cpp:336-339"
+   ],
+   "lines": 4,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "LowerHexKey"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "FindSharedByKey": {
+   "loc": [
+    "Api.cpp:341-344"
+   ],
+   "lines": 4,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "LowerHexKey"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "AuthenticateRequestRateLimited": {
+   "loc": [
+    "Api.cpp:354-385"
+   ],
+   "lines": 32,
+   "errors": [
+    [
+     429,
+     "rate_limited",
+     "too many failed auth attempts; retry later"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "AuthenticateRequest",
+    "ErrorResponse"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "MakeSetCookie": {
+   "loc": [
+    "Api.cpp:398-423"
+   ],
+   "lines": 26,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "MakeClearCookie": {
+   "loc": [
+    "Api.cpp:429-438"
+   ],
+   "lines": 10,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "StaticContentType": {
+   "loc": [
+    "Api.cpp:454-493"
+   ],
+   "lines": 40,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "ReadStaticFile": {
+   "loc": [
+    "Api.cpp:499-516"
+   ],
+   "lines": 18,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "BuildStaticEtag": {
+   "loc": [
+    "Api.cpp:521-527"
+   ],
+   "lines": 7,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "ResolveDefaultStaticDir": {
+   "loc": [
+    "Api.cpp:537-627"
+   ],
+   "lines": 91,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "CApiDispatcher": {
+   "loc": [
+    "Api.cpp:631-638"
+   ],
+   "lines": 8,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "m_authRateLimiter": {
+   "loc": [
+    "Api.cpp:647-649"
+   ],
+   "lines": 3,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "FindHeaderCaseInsensitive": {
+   "loc": [
+    "Api.cpp:659-672"
+   ],
+   "lines": 14,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "ResolveCorsOrigin": {
+   "loc": [
+    "Api.cpp:683-698"
+   ],
+   "lines": 16,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "FindHeaderCaseInsensitive"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "ApplyCorsHeaders": {
+   "loc": [
+    "Api.cpp:705-721"
+   ],
+   "lines": 17,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "WriteKadNetworkObject": {
+   "loc": [
+    "Api.cpp:727-740"
+   ],
+   "lines": 14,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "network"
+   ],
+   "calls": [
+    "WriteIntOrNull"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "ParseSearchIdSegment": {
+   "loc": [
+    "Api.cpp:752-766"
+   ],
+   "lines": 15,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "RequestCarriesCredentials": {
+   "loc": [
+    "Api.cpp:779-789"
+   ],
+   "lines": 11,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "FindHeaderCaseInsensitive"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "Dispatch": {
+   "loc": [
+    "Api.cpp:791-967"
+   ],
+   "lines": 177,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "ApplyCorsHeaders",
+    "DispatchToHandler",
+    "FindHeaderCaseInsensitive",
+    "RequestCarriesCredentials",
+    "ResolveCorsOrigin"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "204",
+    "304"
+   ]
+  },
+  "DispatchToHandler": {
+   "loc": [
+    "Api.cpp:969-1807"
+   ],
+   "lines": 839,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "path contains a traversal/injection token"
+    ],
+    [
+     400,
+     "bad_request",
+     "kBadSearchIdMessage"
+    ],
+    [
+     404,
+     "not_found",
+     "unknown search action (expected results, stop or more)"
+    ],
+    [
+     404,
+     "not_found",
+     "no such endpoint"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "ErrorResponse",
+    "HandleAuthPasswords",
+    "HandleAuthPasswordsPatch",
+    "HandleCategories",
+    "HandleCategoryCreate",
+    "HandleCategoryDelete",
+    "HandleCategoryOne",
+    "HandleCategoryUpdate",
+    "HandleChatClose",
+    "HandleChatMessages",
+    "HandleChatSend",
+    "HandleChats",
+    "HandleClientBrowse",
+    "HandleClientDetail",
+    "HandleClientMessageSend",
+    "HandleClients",
+    "HandleDownloadA4afAction",
+    "HandleDownloadAdd",
+    "HandleDownloadComments",
+    "HandleDownloadCommentsKadSearch",
+    "HandleDownloadDelete",
+    "HandleDownloadDetail",
+    "HandleDownloadFilenames",
+    "HandleDownloadPatch",
+    "HandleDownloads",
+    "HandleDownloadsBulkDelete",
+    "HandleDownloadsBulkPatch",
+    "HandleDownloadsClearCompleted",
+    "HandleFileClients",
+    "HandleFriendAdd",
+    "HandleFriendBrowse",
+    "HandleFriendMessageSend",
+    "HandleFriendPatch",
+    "HandleFriendRemove",
+    "HandleFriends",
+    "HandleGeoipUpdate",
+    "HandleHealth",
+    "HandleIpfilterReload",
+    "HandleIpfilterUpdate",
+    "HandleKad",
+    "HandleKadBootstrap",
+    "HandleKadUpdateFromUrl",
+    "HandleKnownClients",
+    "HandleLogAmule",
+    "HandleLogAmuleReset",
+    "HandleLogServerinfo",
+    "HandleLogServerinfoReset",
+    "HandleLogin",
+    "HandleLogout",
+    "HandleNetworksConnect",
+    "HandleNetworksDisconnect",
+    "HandlePreferences",
+    "HandlePreferencesPatch",
+    "HandleSearchClose",
+    "HandleSearchComments",
+    "HandleSearchCommentsKadSearch",
+    "HandleSearchDownload",
+    "HandleSearchList",
+    "HandleSearchMore",
+    "HandleSearchResults",
+    "HandleSearchStart",
+    "HandleSearchStop",
+    "HandleServerAdd",
+    "HandleServerConnect",
+    "HandleServerConnectByAddress",
+    "HandleServerDelete",
+    "HandleServerDeleteByAddress",
+    "HandleServerPatch",
+    "HandleServerPatchByAddress",
+    "HandleServerUpdateFromUrl",
+    "HandleServers",
+    "HandleSession",
+    "HandleSharedBulkPatch",
+    "HandleSharedContent",
+    "HandleSharedDetail",
+    "HandleSharedDirectories",
+    "HandleSharedDirectoriesAdd",
+    "HandleSharedDirectoriesDelete",
+    "HandleSharedDirectoriesPut",
+    "HandleSharedList",
+    "HandleSharedMediaRefresh",
+    "HandleSharedMediaRefreshOne",
+    "HandleSharedPatch",
+    "HandleSharedReload",
+    "HandleSharedVerify",
+    "HandleStatsGraph",
+    "HandleStatsTree",
+    "HandleStatus",
+    "HandleVersion",
+    "HandleVersionCheck",
+    "MethodNotAllowed",
+    "ParseSearchIdSegment",
+    "ServeCountryFlag",
+    "ServeStaticFile",
+    "SplitPathAndQuery"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "ServeStaticFile": {
+   "loc": [
+    "Api.cpp:1809-1954"
+   ],
+   "lines": 146,
+   "errors": [
+    [
+     404,
+     "not_found",
+     "no such endpoint"
+    ],
+    [
+     404,
+     "not_found",
+     "no such file"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "BuildStaticEtag",
+    "ErrorResponse",
+    "FindHeaderCaseInsensitive",
+    "ReadStaticFile",
+    "ResolveDefaultStaticDir",
+    "StaticContentType"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "200",
+    "304"
+   ]
+  },
+  "ServeCountryFlag": {
+   "loc": [
+    "Api.cpp:1956-2011"
+   ],
+   "lines": 56,
+   "errors": [
+    [
+     404,
+     "not_found",
+     "no such flag"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "ErrorResponse"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "200"
+   ]
+  },
+  "HandleHealth": {
+   "loc": [
+    "Api.cpp:2028-2044"
+   ],
+   "lines": 17,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "status",
+    "ec_connected",
+    "snapshot"
+   ],
+   "calls": [
+    "FinalizeJsonBody"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "200"
+   ]
+  },
+  "HandleVersion": {
+   "loc": [
+    "Api.cpp:2046-2143"
+   ],
+   "lines": 98,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "service",
+    "api_version",
+    "amuleapi_version",
+    "daemon_version",
+    "update",
+    "check_enabled",
+    "checked",
+    "available"
+   ],
+   "calls": [
+    "Authenticate",
+    "FinalizeJsonBody",
+    "RequestCarriesCredentials",
+    "WriteIntOrNull",
+    "WriteStringOrNull"
+   ],
+   "auth": true,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "200"
+   ]
+  },
+  "HandleLogin": {
+   "loc": [
+    "Api.cpp:2145-2228"
+   ],
+   "lines": 84,
+   "errors": [
+    [
+     429,
+     "rate_limited",
+     "too many failed attempts; retry later"
+    ],
+    [
+     400,
+     "bad_request",
+     "body must be JSON object {\"password\": \"...\"}"
+    ],
+    [
+     400,
+     "bad_request",
+     "missing or non-string `password` field"
+    ],
+    [
+     503,
+     "login_disabled",
+     "amuleapi has no admin/guest password configured; set one via `amuleapi --set-admin-pass=<plain>`"
+    ],
+    [
+     401,
+     "invalid_credentials",
+     "password does not match any configured role"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [
+    "password"
+   ],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "BeginSession",
+    "ErrorResponse",
+    "FinalizeJsonBody",
+    "ParseJsonObjectBody"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": true,
+   "status_literals": [
+    "200"
+   ]
+  },
+  "BeginSession": {
+   "loc": [
+    "Api.cpp:2236-2289"
+   ],
+   "lines": 54,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [
+    "include_token"
+   ],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "token",
+    "role",
+    "expires_at",
+    "session_id"
+   ],
+   "calls": [
+    "FindHeaderCaseInsensitive",
+    "MakeSetCookie"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleLogout": {
+   "loc": [
+    "Api.cpp:2291-2376"
+   ],
+   "lines": 86,
+   "errors": [
+    [
+     429,
+     "rate_limited",
+     "too many failed auth attempts; retry later"
+    ],
+    [
+     401,
+     "unauthorized",
+     "missing bearer token or session cookie"
+    ],
+    [
+     401,
+     "unauthorized",
+     "invalid or expired token"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "ErrorResponse",
+    "MakeClearCookie"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "204"
+   ]
+  },
+  "Authenticate": {
+   "loc": [
+    "Api.cpp:2378-2386"
+   ],
+   "lines": 9,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "AuthenticateRequestRateLimited"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleSession": {
+   "loc": [
+    "Api.cpp:2388-2413"
+   ],
+   "lines": 26,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "role",
+    "session_id",
+    "expires_at"
+   ],
+   "calls": [
+    "Authenticate",
+    "FinalizeJsonBody"
+   ],
+   "auth": true,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "200"
+   ]
+  },
+  "HandleAuthPasswords": {
+   "loc": [
+    "Api.cpp:2418-2439"
+   ],
+   "lines": 22,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "admin_password_set",
+    "guest_access_enabled"
+   ],
+   "calls": [
+    "Authenticate",
+    "FinalizeJsonBody",
+    "RequireAdmin"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "200"
+   ]
+  },
+  "HandleAuthPasswordsPatch": {
+   "loc": [
+    "Api.cpp:2451-2590"
+   ],
+   "lines": 140,
+   "errors": [
+    [
+     429,
+     "rate_limited",
+     "too many failed attempts; retry later"
+    ],
+    [
+     400,
+     "bad_request",
+     "body must be a JSON object"
+    ],
+    [
+     400,
+     "bad_request",
+     "password fields must be strings"
+    ],
+    [
+     400,
+     "bad_request",
+     "`current_password` is required"
+    ],
+    [
+     400,
+     "bad_request",
+     "`guest_access_enabled` must be a boolean"
+    ],
+    [
+     400,
+     "bad_request",
+     "`guest_password` cannot be set together with `guest_access_enabled: false`"
+    ],
+    [
+     400,
+     "bad_request",
+     "nothing to change"
+    ],
+    [
+     400,
+     "bad_request",
+     "`admin_password` cannot be empty; the admin role cannot be removed"
+    ],
+    [
+     403,
+     "invalid_credentials",
+     "`current_password` is not the admin password"
+    ],
+    [
+     500,
+     "internal_error",
+     "apply_err.c_str()"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [
+    "guest_access_enabled"
+   ],
+   "sort_keys": [],
+   "keys": [
+    "admin_password_set",
+    "guest_access_enabled"
+   ],
+   "calls": [
+    "Authenticate",
+    "BeginSession",
+    "ErrorResponse",
+    "FinalizeJsonBody",
+    "ParseJsonObjectBody",
+    "RequireAdmin"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": true,
+   "status_literals": [
+    "200"
+   ]
+  },
+  "HandleStatus": {
+   "loc": [
+    "Api.cpp:2592-2738"
+   ],
+   "lines": 147,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "ec_connected",
+    "ed2k",
+    "state",
+    "high_id",
+    "user_id",
+    "public_ip",
+    "connected_since_at",
+    "server_name",
+    "server_ip",
+    "server_port",
+    "network",
+    "kad",
+    "speeds",
+    "download_bytes_per_second",
+    "upload_bytes_per_second",
+    "download_overhead_bytes_per_second",
+    "upload_overhead_bytes_per_second",
+    "disk",
+    "queue",
+    "upload_clients_waiting",
+    "download_sources_total"
+   ],
+   "calls": [
+    "Authenticate",
+    "FinalizeJsonBody",
+    "RequireSnapshot",
+    "WriteBoolOrNull",
+    "WriteIntOrNull",
+    "WriteKadNetworkObject"
+   ],
+   "auth": true,
+   "admin": false,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "200"
+   ]
+  },
+  "WriteProgressParts": {
+   "loc": [
+    "Api.cpp:2765-2805"
+   ],
+   "lines": 41,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "parts",
+    "state",
+    "sources"
+   ],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "SharedPartSources": {
+   "loc": [
+    "Api.cpp:2813-2817"
+   ],
+   "lines": 5,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "WriteSharedAvailabilityParts": {
+   "loc": [
+    "Api.cpp:2826-2847"
+   ],
+   "lines": 22,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "parts",
+    "sources"
+   ],
+   "calls": [
+    "SharedPartSources"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "WriteMediaIfPresent": {
+   "loc": [
+    "Api.cpp:2857-2879"
+   ],
+   "lines": 23,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "media",
+    "duration_seconds",
+    "bitrate_kilobits_per_second",
+    "codec",
+    "artist",
+    "album",
+    "title"
+   ],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "WriteDownloadObject": {
+   "loc": [
+    "Api.cpp:2881-3018"
+   ],
+   "lines": 138,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "hash",
+    "name",
+    "ed2k_link",
+    "size_bytes",
+    "completed_bytes",
+    "transferred_bytes",
+    "speed_bytes_per_second",
+    "status",
+    "priority",
+    "priority_auto",
+    "category_index",
+    "sources",
+    "total",
+    "unavailable",
+    "transferring",
+    "a4af",
+    "progress",
+    "percent",
+    "kad_comment_lookup_running",
+    "hashed_part_count",
+    "parts_total_count",
+    "source_ecids",
+    "last_received_at",
+    "active_seconds",
+    "parts_available_count",
+    "lost_to_corruption_bytes",
+    "gained_by_compression_bytes",
+    "ich_recovered_packet_count",
+    "part_file_name",
+    "directory",
+    "upload_queue_count",
+    "my_comment",
+    "my_rating",
+    "a4af_auto"
+   ],
+   "calls": [
+    "WriteIntOrNull",
+    "WriteMediaIfPresent",
+    "WriteProgressParts",
+    "WriteStringOrNull"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "WriteClientBaseFields": {
+   "loc": [
+    "Api.cpp:3023-3119"
+   ],
+   "lines": 97,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "ecid",
+    "name",
+    "user_hash",
+    "ip",
+    "port",
+    "software",
+    "software_version",
+    "reported_os",
+    "upload_state",
+    "download_state",
+    "ident_state",
+    "download_file_name",
+    "upload_file_name",
+    "upload_file_hash",
+    "download_file_hash",
+    "uploaded_bytes_session",
+    "downloaded_bytes_session",
+    "uploaded_bytes_total",
+    "downloaded_bytes_total",
+    "upload_speed_bytes_per_second",
+    "download_speed_bytes_per_second",
+    "upload_queue_position",
+    "upload_queue_score",
+    "obfuscation_state",
+    "friend_slot",
+    "source_origin",
+    "client_mod_name",
+    "shared_files_browsable",
+    "part_progress_percent"
+   ],
+   "calls": [
+    "WriteIntOrNull",
+    "WriteStringOrNull"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "WriteClientObject": {
+   "loc": [
+    "Api.cpp:3122-3127"
+   ],
+   "lines": 6,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "WriteClientBaseFields"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "DecodeKnownClient": {
+   "loc": [
+    "Api.cpp:3137-3174"
+   ],
+   "lines": 38,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "WriteKnownClientObject": {
+   "loc": [
+    "Api.cpp:3182-3217"
+   ],
+   "lines": 36,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "user_hash",
+    "uploaded_bytes_total",
+    "downloaded_bytes_total",
+    "last_seen_at",
+    "online"
+   ],
+   "calls": [
+    "WriteIntOrNull",
+    "WriteStringOrNull",
+    "WriteUIntOrNull"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "WriteClientDetailObject": {
+   "loc": [
+    "Api.cpp:3222-3250"
+   ],
+   "lines": 29,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "ed2k_user_id",
+    "high_id",
+    "server_ip",
+    "server_port",
+    "server_name",
+    "kad_port",
+    "friend",
+    "credit_ratio"
+   ],
+   "calls": [
+    "WriteClientBaseFields"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "WriteSharedBaseFields": {
+   "loc": [
+    "Api.cpp:3259-3327"
+   ],
+   "lines": 69,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "hash",
+    "name",
+    "ed2k_link",
+    "size_bytes",
+    "priority",
+    "priority_auto",
+    "sources",
+    "complete",
+    "complete_min",
+    "complete_max",
+    "uploaded_bytes_session",
+    "uploaded_bytes_total",
+    "request_count_session",
+    "request_count_total",
+    "accepted_request_count_session",
+    "accepted_request_count_total",
+    "upload_speed_bytes_per_second",
+    "uploading_client_count",
+    "hashed_part_count"
+   ],
+   "calls": [
+    "WriteIntOrNull"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "WriteSharedObject": {
+   "loc": [
+    "Api.cpp:3329-3342"
+   ],
+   "lines": 14,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "WriteMediaIfPresent",
+    "WriteSharedBaseFields"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "WriteSharedDetailObject": {
+   "loc": [
+    "Api.cpp:3346-3381"
+   ],
+   "lines": 36,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "file_type",
+    "upload_ratio",
+    "directory",
+    "incomplete",
+    "parts_total_count",
+    "upload_queue_count",
+    "my_comment",
+    "my_rating"
+   ],
+   "calls": [
+    "WriteMediaIfPresent",
+    "WriteSharedAvailabilityParts",
+    "WriteSharedBaseFields",
+    "WriteStringOrNull"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "WriteSearchListRow": {
+   "loc": [
+    "Api.cpp:3475-3499"
+   ],
+   "lines": 25,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "id",
+    "query",
+    "type",
+    "state",
+    "started_at",
+    "result_count"
+   ],
+   "calls": [
+    "WriteIntOrNull"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "SearchListComparators": {
+   "loc": [
+    "Api.cpp:3504-3513"
+   ],
+   "lines": 10,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "CategoryComparators": {
+   "loc": [
+    "Api.cpp:3519-3526"
+   ],
+   "lines": 8,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "ClientComparators": {
+   "loc": [
+    "Api.cpp:3528-3539"
+   ],
+   "lines": 12,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "BadRequestPtr": {
+   "loc": [
+    "Api.cpp:3541-3544"
+   ],
+   "lines": 4,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "message"
+    ],
+    [
+     400,
+     "bad_request",
+     "const char *message"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "ErrorResponse"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "ParseUintParam": {
+   "loc": [
+    "Api.cpp:3559-3574"
+   ],
+   "lines": 16,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "msg.c_str()"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "BadRequestPtr"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "ParseBoolParam": {
+   "loc": [
+    "Api.cpp:3582-3593"
+   ],
+   "lines": 12,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "msg.c_str()"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "BadRequestPtr"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "ParseListParams": {
+   "loc": [
+    "Api.cpp:3598-3637"
+   ],
+   "lines": 40,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "\"`order` must be \\\"asc\\\" or \\\"desc\\"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [
+    "after",
+    "order",
+    "sort"
+   ],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "BadRequestPtr",
+    "ParseUintParam"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": true,
+   "json_body": false,
+   "status_literals": []
+  },
+  "BuildListWindowFromPtrs": {
+   "loc": [
+    "Api.cpp:3644-3695"
+   ],
+   "lines": 52,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "unknown `sort` field for this endpoint"
+    ],
+    [
+     400,
+     "bad_request",
+     "`after` needs a `sort` field that identifies a row"
+    ],
+    [
+     400,
+     "bad_request",
+     "`after` is ascending-only; drop `order=desc`"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "BadRequestPtr"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "BuildListWindow": {
+   "loc": [
+    "Api.cpp:3703-3714"
+   ],
+   "lines": 12,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "BuildListWindowFromPtrs"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "WritePageMeta": {
+   "loc": [
+    "Api.cpp:3725-3735"
+   ],
+   "lines": 11,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "total",
+    "offset",
+    "limit"
+   ],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "QueryOf": {
+   "loc": [
+    "Api.cpp:3738-3743"
+   ],
+   "lines": 6,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "SplitPathAndQuery"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "ListResponseFromPtrsUnlocked": {
+   "loc": [
+    "Api.cpp:3756-3781"
+   ],
+   "lines": 26,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "BuildListWindowFromPtrs",
+    "FinalizeJsonBody",
+    "WritePageMeta"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "200"
+   ]
+  },
+  "ListResponse": {
+   "loc": [
+    "Api.cpp:3784-3816"
+   ],
+   "lines": 33,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "BuildListWindow",
+    "FinalizeJsonBody",
+    "RequireSnapshot",
+    "WritePageMeta"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "200"
+   ]
+  },
+  "ParseJsonObjectBody": {
+   "loc": [
+    "Api.cpp:3845-3861"
+   ],
+   "lines": 17,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": true,
+   "status_literals": []
+  },
+  "IsEcFailedResponse": {
+   "loc": [
+    "Api.cpp:3868-3883"
+   ],
+   "lines": 16,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "EcCategoryPathKept": {
+   "loc": [
+    "Api.cpp:3900-3909"
+   ],
+   "lines": 10,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "FilePriorityToCode": {
+   "loc": [
+    "Api.cpp:3961-3970"
+   ],
+   "lines": 10,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "FilePriorityAccepted": {
+   "loc": [
+    "Api.cpp:3975-3986"
+   ],
+   "lines": 12,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "ResolveFetchUrl": {
+   "loc": [
+    "Api.cpp:4021-4088"
+   ],
+   "lines": 68,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "parse_err.c_str()"
+    ],
+    [
+     400,
+     "bad_request",
+     "(field + \" must be a string\").c_str()"
+    ],
+    [
+     400,
+     "bad_request",
+     "(\"required string field \" + field + \" is missing\").c_str()"
+    ],
+    [
+     503,
+     "ec_unavailable",
+     "amuleapi has not received its first EC snapshot yet"
+    ],
+    [
+     400,
+     "bad_request",
+     "(field + \" was omitted and no URL is configured\").c_str()"
+    ],
+    [
+     400,
+     "bad_request",
+     "(field + \" must not be empty\").c_str()"
+    ],
+    [
+     400,
+     "bad_request",
+     "(field + \" must be an http:// or https:// URL\").c_str()"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "ErrorResponse",
+    "ParseJsonObjectBody"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": true,
+   "status_literals": []
+  },
+  "UrlFetchOp": {
+   "loc": [
+    "Api.cpp:4091-4117"
+   ],
+   "lines": 27,
+   "errors": [
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed"
+    ],
+    [
+     400,
+     "amuled_rejected",
+     "ec_err.c_str()"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "ErrorResponse",
+    "IsEcFailedResponse"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "202"
+   ]
+  },
+  "HashFromHex": {
+   "loc": [
+    "Api.cpp:4122-4127"
+   ],
+   "lines": 6,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleDownloads": {
+   "loc": [
+    "Api.cpp:4131-4236"
+   ],
+   "lines": 106,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "`include_completed` is not accepted; use `status=active|all|completed`"
+    ],
+    [
+     400,
+     "bad_request",
+     "`status` must be one of active, all, completed"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [
+    "status"
+   ],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "ListResponseFromPtrsUnlocked",
+    "ParseListParams",
+    "QueryOf",
+    "RequireSnapshot",
+    "WriteDownloadObject"
+   ],
+   "auth": true,
+   "admin": false,
+   "snapshot_gate": true,
+   "list_params": true,
+   "json_body": false,
+   "status_literals": []
+  },
+  "FileClientComparators": {
+   "loc": [
+    "Api.cpp:4260-4285"
+   ],
+   "lines": 26,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "ClientComparators"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "WriteFileClientRow": {
+   "loc": [
+    "Api.cpp:4287-4337"
+   ],
+   "lines": 51,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "role",
+    "a4af",
+    "parts"
+   ],
+   "calls": [
+    "WriteClientBaseFields",
+    "WriteIntOrNull"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "ResolvePartBitmap": {
+   "loc": [
+    "Api.cpp:4344-4362"
+   ],
+   "lines": 19,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleFileClients": {
+   "loc": [
+    "Api.cpp:4371-4484"
+   ],
+   "lines": 114,
+   "errors": [
+    [
+     404,
+     "not_found",
+     "require_downloading ? \"no download with that hash\" : \"no shared file with that hash\""
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "FileClientComparators",
+    "ListResponse",
+    "LowerHexKey",
+    "ParseBoolParam",
+    "ParseListParams",
+    "QueryOf",
+    "RequireSnapshot",
+    "ResolvePartBitmap",
+    "WriteFileClientRow"
+   ],
+   "auth": true,
+   "admin": false,
+   "snapshot_gate": true,
+   "list_params": true,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleClients": {
+   "loc": [
+    "Api.cpp:4486-4553"
+   ],
+   "lines": 68,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "\"`activity` must be one of \\\"uploading\\\", \\\"downloading\\\", \\\"active\\"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [
+    "activity"
+   ],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ClientComparators",
+    "ErrorResponse",
+    "ListResponse",
+    "ParseListParams",
+    "QueryOf"
+   ],
+   "auth": true,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": true,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleSharedList": {
+   "loc": [
+    "Api.cpp:4555-4594"
+   ],
+   "lines": 40,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ListResponseFromPtrsUnlocked",
+    "ParseListParams",
+    "QueryOf",
+    "RequireSnapshot"
+   ],
+   "auth": true,
+   "admin": false,
+   "snapshot_gate": true,
+   "list_params": true,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleDownloadDetail": {
+   "loc": [
+    "Api.cpp:4596-4629"
+   ],
+   "lines": 34,
+   "errors": [
+    [
+     404,
+     "not_found",
+     "no download with that hash"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "FinalizeJsonBody",
+    "FindDownloadByKey",
+    "RequireSnapshot",
+    "WriteDownloadObject"
+   ],
+   "auth": true,
+   "admin": false,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "200"
+   ]
+  },
+  "HandleSharedDetail": {
+   "loc": [
+    "Api.cpp:4631-4659"
+   ],
+   "lines": 29,
+   "errors": [
+    [
+     404,
+     "not_found",
+     "no shared file with that hash"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "FinalizeJsonBody",
+    "FindSharedByKey",
+    "RequireSnapshot",
+    "WriteSharedDetailObject"
+   ],
+   "auth": true,
+   "admin": false,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "200"
+   ]
+  },
+  "HandleDownloadComments": {
+   "loc": [
+    "Api.cpp:4661-4705"
+   ],
+   "lines": 45,
+   "errors": [
+    [
+     404,
+     "not_found",
+     "no download with that hash"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "total",
+    "kad_comment_lookup_running",
+    "comments",
+    "username",
+    "filename",
+    "rating",
+    "comment"
+   ],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "FinalizeJsonBody",
+    "FindDownloadByKey",
+    "RequireSnapshot"
+   ],
+   "auth": true,
+   "admin": false,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "200"
+   ]
+  },
+  "HandleDownloadCommentsKadSearch": {
+   "loc": [
+    "Api.cpp:4711-4758"
+   ],
+   "lines": 48,
+   "errors": [
+    [
+     404,
+     "not_found",
+     "no download with that hash"
+    ],
+    [
+     500,
+     "internal_error",
+     "failed to decode file hash"
+    ],
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed for SEARCH_KAD_NOTES"
+    ],
+    [
+     400,
+     "amuled_rejected",
+     "ec_err.c_str()"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "FindDownloadByKey",
+    "HashFromHex",
+    "IsEcFailedResponse",
+    "RequireAdmin",
+    "RequireSnapshot"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "202"
+   ]
+  },
+  "HandleDownloadFilenames": {
+   "loc": [
+    "Api.cpp:4760-4794"
+   ],
+   "lines": 35,
+   "errors": [
+    [
+     404,
+     "not_found",
+     "no download with that hash"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "filenames",
+    "filename",
+    "source_count"
+   ],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "FinalizeJsonBody",
+    "FindDownloadByKey",
+    "RequireSnapshot"
+   ],
+   "auth": true,
+   "admin": false,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "200"
+   ]
+  },
+  "WriteA4afObject": {
+   "loc": [
+    "Api.cpp:4806-4818"
+   ],
+   "lines": 13,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "a4af_auto",
+    "source_ecids"
+   ],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleDownloadA4afAction": {
+   "loc": [
+    "Api.cpp:4821-4930"
+   ],
+   "lines": 110,
+   "errors": [
+    [
+     404,
+     "not_found",
+     "no download with that hash"
+    ],
+    [
+     400,
+     "bad_request",
+     "parse_err.c_str()"
+    ],
+    [
+     400,
+     "bad_request",
+     "request body must include a string `action`"
+    ],
+    [
+     400,
+     "bad_request",
+     "`swap_this_auto` is not accepted; set the flag with PATCH /downloads/{hash} `{\"a4af_auto\": true|false}`"
+    ],
+    [
+     400,
+     "bad_request",
+     "`action` must be one of swap_this, swap_others"
+    ],
+    [
+     400,
+     "bad_request",
+     "`client_ecid` must be a non-negative integer"
+    ],
+    [
+     400,
+     "bad_request",
+     "`client_ecid` is only valid with action `swap_this`"
+    ],
+    [
+     404,
+     "not_found",
+     "no client with that ECID in the current snapshot"
+    ],
+    [
+     409,
+     "not_a4af_source",
+     "that client is not an A4AF source of this download"
+    ],
+    [
+     500,
+     "internal_error",
+     "failed to decode partfile hash"
+    ],
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed for A4AF swap"
+    ],
+    [
+     400,
+     "amuled_rejected",
+     "ec_err_msg.c_str()"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [
+    "action",
+    "client_ecid"
+   ],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "FinalizeJsonBody",
+    "FindClientByEcid",
+    "FindDownloadByKey",
+    "HashFromHex",
+    "IsEcFailedResponse",
+    "ParseJsonObjectBody",
+    "RequireAdmin",
+    "RequireSnapshot",
+    "WriteA4afObject"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": true,
+   "status_literals": [
+    "200"
+   ]
+  },
+  "BulkOk": {
+   "loc": [
+    "Api.cpp:4949-4955"
+   ],
+   "lines": 7,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "BulkErr": {
+   "loc": [
+    "Api.cpp:4957-4966"
+   ],
+   "lines": 10,
+   "errors": [],
+   "bulk_errors": [
+    [
+     "int http",
+     "const char *code",
+     "const std::string &message"
+    ]
+   ],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "BulkResultsResponse": {
+   "loc": [
+    "Api.cpp:4971-5013"
+   ],
+   "lines": 43,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "results",
+    "id",
+    "ok",
+    "error",
+    "code",
+    "message"
+   ],
+   "calls": [
+    "FinalizeJsonBody"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "ParseBulkHashes": {
+   "loc": [
+    "Api.cpp:5017-5043"
+   ],
+   "lines": 27,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "`hashes` must be an array of 32-char hex strings"
+    ],
+    [
+     400,
+     "bad_request",
+     "`hashes` must contain at least one entry"
+    ],
+    [
+     400,
+     "bad_request",
+     "`hashes` may contain at most 500 entries"
+    ],
+    [
+     400,
+     "bad_request",
+     "`hashes` entries must be strings"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [
+    "hashes"
+   ],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "ErrorResponse"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleVersionCheck": {
+   "loc": [
+    "Api.cpp:5047-5105"
+   ],
+   "lines": 59,
+   "errors": [
+    [
+     409,
+     "update_check_unavailable",
+     "version check is disabled or unavailable on the connected daemon"
+    ],
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed for version check"
+    ],
+    [
+     429,
+     "version_check_throttled",
+     "version check was throttled by the daemon; try again shortly"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "RequireAdmin",
+    "RequireSnapshot"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "202"
+   ]
+  },
+  "HandleDownloadAdd": {
+   "loc": [
+    "Api.cpp:5107-5243"
+   ],
+   "lines": 137,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "parse_err.c_str()"
+    ],
+    [
+     400,
+     "bad_request",
+     "`ed2k_link` is not accepted; send `links` as an array, `{\"links\": [\"ed2k://...\"]}` for a single link"
+    ],
+    [
+     400,
+     "bad_request",
+     "required field missing: `links` (array of ed2k:// strings)"
+    ],
+    [
+     400,
+     "bad_request",
+     "`links` must be an array of ed2k://strings"
+    ],
+    [
+     400,
+     "bad_request",
+     "`links` must contain at least one entry"
+    ],
+    [
+     400,
+     "bad_request",
+     "every entry in `links` must be a string"
+    ],
+    [
+     400,
+     "bad_request",
+     "every link must start with ed2k://"
+    ],
+    [
+     400,
+     "bad_request",
+     "`category_index` must be a non-negative integer"
+    ],
+    [
+     400,
+     "bad_request",
+     "`category_index` must be in [0, 255]"
+    ]
+   ],
+   "bulk_errors": [
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed for ADD_LINK"
+    ],
+    [
+     400,
+     "amuled_rejected",
+     "ec_err_msg"
+    ]
+   ],
+   "query": [],
+   "body_fields": [
+    "category_index",
+    "ed2k_link",
+    "links"
+   ],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "BulkErr",
+    "BulkOk",
+    "BulkResultsResponse",
+    "ErrorResponse",
+    "IsEcFailedResponse",
+    "ParseJsonObjectBody",
+    "RequireAdmin",
+    "RequireSnapshot"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": true,
+   "status_literals": []
+  },
+  "TrySetCommentRating": {
+   "loc": [
+    "Api.cpp:5254-5318"
+   ],
+   "lines": 65,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "`my_comment` and `my_rating` must be set together"
+    ],
+    [
+     400,
+     "bad_request",
+     "`my_comment` must be a string"
+    ],
+    [
+     400,
+     "bad_request",
+     "`my_comment` exceeds 50 characters"
+    ],
+    [
+     400,
+     "bad_request",
+     "`my_rating` must be an integer in [0, 5]"
+    ],
+    [
+     409,
+     "not_shared",
+     "comment and rating can only be set on a shared file"
+    ],
+    [
+     500,
+     "internal_error",
+     "failed to decode file hash"
+    ],
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed for SET_COMMENT"
+    ],
+    [
+     400,
+     "amuled_rejected",
+     "ec_err.c_str()"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [
+    "my_comment",
+    "my_rating"
+   ],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "ErrorResponse",
+    "HashFromHex",
+    "IsEcFailedResponse"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "TryRename": {
+   "loc": [
+    "Api.cpp:5327-5372"
+   ],
+   "lines": 46,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "`name` must be a string"
+    ],
+    [
+     400,
+     "bad_request",
+     "`name` must not be empty"
+    ],
+    [
+     400,
+     "bad_request",
+     "`name` must not contain path separators"
+    ],
+    [
+     500,
+     "internal_error",
+     "failed to decode file hash"
+    ],
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed for RENAME_FILE"
+    ],
+    [
+     400,
+     "amuled_rejected",
+     "ec_err.c_str()"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [
+    "name"
+   ],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "ErrorResponse",
+    "HashFromHex",
+    "IsEcFailedResponse"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleDownloadPatch": {
+   "loc": [
+    "Api.cpp:5375-5596"
+   ],
+   "lines": 222,
+   "errors": [
+    [
+     404,
+     "not_found",
+     "no download with that hash"
+    ],
+    [
+     400,
+     "bad_request",
+     "parse_err.c_str()"
+    ],
+    [
+     500,
+     "internal_error",
+     "failed to decode partfile hash"
+    ],
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed"
+    ],
+    [
+     400,
+     "amuled_rejected",
+     "ec_err_msg.c_str()"
+    ],
+    [
+     400,
+     "bad_request",
+     "\"`action` must be one of \\\"pause\\\", \\\"resume\\\" or \\\"stop\\"
+    ],
+    [
+     400,
+     "bad_request",
+     "`priority` must be a wire-string enum"
+    ],
+    [
+     400,
+     "bad_request",
+     "FilePriorityAccepted(kPrioDownload).c_str()"
+    ],
+    [
+     400,
+     "bad_request",
+     "`category_index` must be a non-negative integer"
+    ],
+    [
+     400,
+     "bad_request",
+     "`category_index` must be in [0, 255]"
+    ],
+    [
+     400,
+     "bad_request",
+     "`a4af_auto` must be a boolean"
+    ],
+    [
+     400,
+     "bad_request",
+     "request body must include at least one of `action`, `priority`, `category_index`, `my_comment`+`my_rating`, or `name`"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [
+    "a4af_auto",
+    "action",
+    "category_index",
+    "priority"
+   ],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "FilePriorityAccepted",
+    "FilePriorityToCode",
+    "FinalizeJsonBody",
+    "FindDownloadByKey",
+    "HashFromHex",
+    "IsEcFailedResponse",
+    "ParseJsonObjectBody",
+    "RequireAdmin",
+    "RequireSnapshot",
+    "TryRename",
+    "TrySetCommentRating",
+    "WriteDownloadObject"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": true,
+   "status_literals": [
+    "200"
+   ]
+  },
+  "HandleDownloadDelete": {
+   "loc": [
+    "Api.cpp:5598-5665"
+   ],
+   "lines": 68,
+   "errors": [
+    [
+     404,
+     "not_found",
+     "no download with that hash"
+    ],
+    [
+     409,
+     "download_completed",
+     "DELETE only removes active downloads (deletes .part/.met files from disk). Use POST /downloads_clear_completed with optional {\"hash\":\"...\"} body to clear a completed entry's post-completion notification \u2014 the file in the Incoming directory "
+    ],
+    [
+     500,
+     "internal_error",
+     "failed to decode partfile hash"
+    ],
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed for DELETE"
+    ],
+    [
+     400,
+     "amuled_rejected",
+     "ec_err_msg.c_str()"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "FindDownloadByKey",
+    "HashFromHex",
+    "IsEcFailedResponse",
+    "RequireAdmin",
+    "RequireSnapshot"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "204"
+   ]
+  },
+  "HandleDownloadsClearCompleted": {
+   "loc": [
+    "Api.cpp:5667-5786"
+   ],
+   "lines": 120,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "parse_err.c_str()"
+    ],
+    [
+     400,
+     "bad_request",
+     "`hash` must be a string"
+    ],
+    [
+     404,
+     "not_found",
+     "no download with that hash"
+    ],
+    [
+     409,
+     "not_completed",
+     "target download exists but is not in the completed staging list (status != \"completed\"). To remove an active partfile, use DELETE /downloads/{hash}."
+    ],
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed for CLEAR_COMPLETED"
+    ],
+    [
+     400,
+     "amuled_rejected",
+     "ec_err_msg.c_str()"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [
+    "hash"
+   ],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "BulkOk",
+    "BulkResultsResponse",
+    "ErrorResponse",
+    "IsEcFailedResponse",
+    "ParseJsonObjectBody",
+    "RequireAdmin",
+    "RequireSnapshot"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": true,
+   "status_literals": []
+  },
+  "ParseIpv4Dotted": {
+   "loc": [
+    "Api.cpp:5796-5805"
+   ],
+   "lines": 10,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "WriteServerObject": {
+   "loc": [
+    "Api.cpp:5807-5862"
+   ],
+   "lines": 56,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "ecid",
+    "name",
+    "description",
+    "version",
+    "address",
+    "ip",
+    "port",
+    "user_count",
+    "max_user_count",
+    "file_count",
+    "soft_file_limit",
+    "hard_file_limit",
+    "priority",
+    "ping_ms",
+    "failed_count",
+    "permanent",
+    "tcp_flags",
+    "udp_flags"
+   ],
+   "calls": [
+    "WriteStringOrNull"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "WriteCategoryObject": {
+   "loc": [
+    "Api.cpp:5864-5890"
+   ],
+   "lines": 27,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "index",
+    "name",
+    "save_path",
+    "comment",
+    "color",
+    "priority"
+   ],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "WriteFriendObject": {
+   "loc": [
+    "Api.cpp:5894-5922"
+   ],
+   "lines": 29,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "ecid",
+    "name",
+    "user_hash",
+    "port",
+    "online",
+    "friend_slot"
+   ],
+   "calls": [
+    "WriteIntOrNull",
+    "WriteStringOrNull"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleServers": {
+   "loc": [
+    "Api.cpp:5924-5945"
+   ],
+   "lines": 22,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ListResponse",
+    "ParseListParams",
+    "QueryOf"
+   ],
+   "auth": true,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": true,
+   "json_body": false,
+   "status_literals": []
+  },
+  "ParseEcidPath": {
+   "loc": [
+    "Api.cpp:5953-5974"
+   ],
+   "lines": 22,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "RequireEcidPath": {
+   "loc": [
+    "Api.cpp:5983-5989"
+   ],
+   "lines": 7,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "path `{ecid}` must be a non-negative integer"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "BadRequestPtr",
+    "ParseEcidPath"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "FindServerByEcid": {
+   "loc": [
+    "Api.cpp:5993-6003"
+   ],
+   "lines": 11,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "FindClientByEcid": {
+   "loc": [
+    "Api.cpp:6007-6017"
+   ],
+   "lines": 11,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "CategoriesWithDefault": {
+   "loc": [
+    "Api.cpp:6051-6071"
+   ],
+   "lines": 21,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "FindCategoryByIndex": {
+   "loc": [
+    "Api.cpp:6076-6085"
+   ],
+   "lines": 10,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "FindFriendByEcid": {
+   "loc": [
+    "Api.cpp:6087-6097"
+   ],
+   "lines": 11,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "ParseChatPeerKey": {
+   "loc": [
+    "Api.cpp:6118-6144"
+   ],
+   "lines": 27,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "WriteChatMessageObject": {
+   "loc": [
+    "Api.cpp:6146-6160"
+   ],
+   "lines": 15,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "id",
+    "direction",
+    "text",
+    "sent_at"
+   ],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "WriteChatObject": {
+   "loc": [
+    "Api.cpp:6162-6200"
+   ],
+   "lines": 39,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "client_address",
+    "ip",
+    "port",
+    "name",
+    "online",
+    "message_count",
+    "last_message_id",
+    "last_message"
+   ],
+   "calls": [
+    "WriteChatMessageObject",
+    "WriteIntOrNull"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "FindChat": {
+   "loc": [
+    "Api.cpp:6202-6210"
+   ],
+   "lines": 9,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleKnownClients": {
+   "loc": [
+    "Api.cpp:6214-6304"
+   ],
+   "lines": 91,
+   "errors": [
+    [
+     503,
+     "ec_unsupported",
+     "the connected amuled does not serve the client history"
+    ],
+    [
+     503,
+     "ec_unavailable",
+     "the EC connection is unavailable"
+    ],
+    [
+     502,
+     "amuled_response_invalid",
+     "the core answered the history request with an unknown reply"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "DecodeKnownClient",
+    "ErrorResponse",
+    "ListResponseFromPtrsUnlocked",
+    "ParseListParams",
+    "QueryOf",
+    "RequireSnapshot"
+   ],
+   "auth": true,
+   "admin": false,
+   "snapshot_gate": true,
+   "list_params": true,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleClientDetail": {
+   "loc": [
+    "Api.cpp:6306-6332"
+   ],
+   "lines": 27,
+   "errors": [
+    [
+     404,
+     "not_found",
+     "no client with that ECID in the current snapshot"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "FinalizeJsonBody",
+    "FindClientByEcid",
+    "RequireEcidPath",
+    "RequireSnapshot",
+    "WriteClientDetailObject"
+   ],
+   "auth": true,
+   "admin": false,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "200"
+   ]
+  },
+  "HandleChats": {
+   "loc": [
+    "Api.cpp:6334-6371"
+   ],
+   "lines": 38,
+   "errors": [
+    [
+     503,
+     "ec_unsupported",
+     "the connected amuled does not serve chat sessions"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [
+    "last_message_at",
+    "name"
+   ],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "ListResponse",
+    "ParseListParams",
+    "QueryOf"
+   ],
+   "auth": true,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": true,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleChatMessages": {
+   "loc": [
+    "Api.cpp:6373-6452"
+   ],
+   "lines": 80,
+   "errors": [
+    [
+     503,
+     "ec_unsupported",
+     "the connected amuled does not serve chat sessions"
+    ],
+    [
+     400,
+     "bad_request",
+     "path `{client_address}` must be `<ip>:<port>`"
+    ],
+    [
+     404,
+     "not_found",
+     "no chat session with that peer"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "client_address",
+    "messages",
+    "total",
+    "last_message_id"
+   ],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "FinalizeJsonBody",
+    "FindChat",
+    "ParseChatPeerKey",
+    "ParseUintParam",
+    "QueryOf",
+    "RequireSnapshot",
+    "WriteChatMessageObject"
+   ],
+   "auth": true,
+   "admin": false,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "200"
+   ]
+  },
+  "SendChatMessageTo": {
+   "loc": [
+    "Api.cpp:6458-6526"
+   ],
+   "lines": 69,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "parse_err.c_str()"
+    ],
+    [
+     400,
+     "bad_request",
+     "required string field `text` is missing"
+    ],
+    [
+     400,
+     "bad_request",
+     "`text` must be a non-empty string"
+    ],
+    [
+     400,
+     "bad_request",
+     "`text` exceeds 1024 bytes"
+    ],
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed for chat send"
+    ],
+    [
+     404,
+     "not_found",
+     "ec_err_msg.c_str()"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [
+    "text"
+   ],
+   "sort_keys": [],
+   "keys": [
+    "client_address",
+    "message",
+    "id",
+    "direction",
+    "text"
+   ],
+   "calls": [
+    "ErrorResponse",
+    "FinalizeJsonBody",
+    "IsEcFailedResponse",
+    "ParseJsonObjectBody"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": true,
+   "status_literals": [
+    "202"
+   ]
+  },
+  "HandleChatSend": {
+   "loc": [
+    "Api.cpp:6528-6546"
+   ],
+   "lines": 19,
+   "errors": [
+    [
+     503,
+     "ec_unsupported",
+     "the connected amuled does not serve chat sessions"
+    ],
+    [
+     400,
+     "bad_request",
+     "path `{client_address}` must be `<ip>:<port>`"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "ParseChatPeerKey",
+    "RequireAdmin",
+    "SendChatMessageTo"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleFriendMessageSend": {
+   "loc": [
+    "Api.cpp:6548-6564"
+   ],
+   "lines": 17,
+   "errors": [
+    [
+     503,
+     "ec_unsupported",
+     "the connected amuled does not serve chat sessions"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "RequireAdmin",
+    "RequireEcidPath",
+    "SendChatMessageTo"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleClientMessageSend": {
+   "loc": [
+    "Api.cpp:6566-6582"
+   ],
+   "lines": 17,
+   "errors": [
+    [
+     503,
+     "ec_unsupported",
+     "the connected amuled does not serve chat sessions"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "RequireAdmin",
+    "RequireEcidPath",
+    "SendChatMessageTo"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleChatClose": {
+   "loc": [
+    "Api.cpp:6584-6620"
+   ],
+   "lines": 37,
+   "errors": [
+    [
+     503,
+     "ec_unsupported",
+     "the connected amuled does not serve chat sessions"
+    ],
+    [
+     400,
+     "bad_request",
+     "path `{client_address}` must be `<ip>:<port>`"
+    ],
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed for chat close"
+    ],
+    [
+     404,
+     "not_found",
+     "ec_err_msg.c_str()"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "IsEcFailedResponse",
+    "ParseChatPeerKey",
+    "RequireAdmin"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "204"
+   ]
+  },
+  "HandleFriends": {
+   "loc": [
+    "Api.cpp:6622-6645"
+   ],
+   "lines": 24,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [
+    "online"
+   ],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ListResponse",
+    "ParseListParams",
+    "QueryOf"
+   ],
+   "auth": true,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": true,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleFriendAdd": {
+   "loc": [
+    "Api.cpp:6647-6781"
+   ],
+   "lines": 135,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "parse_err.c_str()"
+    ],
+    [
+     400,
+     "bad_request",
+     "`client_ecid` and the ip/port/user_hash form are mutually exclusive"
+    ],
+    [
+     400,
+     "bad_request",
+     "`client_ecid` must be a non-negative integer"
+    ],
+    [
+     404,
+     "not_found",
+     "no connected client with that `client_ecid`"
+    ],
+    [
+     400,
+     "bad_request",
+     "required string field `ip` is missing"
+    ],
+    [
+     400,
+     "bad_request",
+     "`ip` must be a non-zero dotted IPv4 address"
+    ],
+    [
+     400,
+     "bad_request",
+     "required integer field `port` is missing"
+    ],
+    [
+     400,
+     "bad_request",
+     "`port` must be in 1..65535"
+    ],
+    [
+     400,
+     "bad_request",
+     "`user_hash` must be a string"
+    ],
+    [
+     400,
+     "bad_request",
+     "`user_hash` must be 32 hexadecimal characters"
+    ],
+    [
+     400,
+     "bad_request",
+     "`name` must be a string"
+    ],
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed for FRIEND add"
+    ],
+    [
+     400,
+     "amuled_rejected",
+     "ec_err_msg.c_str()"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [
+    "client_ecid",
+    "ip",
+    "name",
+    "port",
+    "user_hash"
+   ],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "FindClientByEcid",
+    "IsEcFailedResponse",
+    "ParseIpv4Dotted",
+    "ParseJsonObjectBody",
+    "RequireAdmin",
+    "RequireSnapshot"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": true,
+   "status_literals": [
+    "202"
+   ]
+  },
+  "HandleFriendRemove": {
+   "loc": [
+    "Api.cpp:6783-6828"
+   ],
+   "lines": 46,
+   "errors": [
+    [
+     404,
+     "not_found",
+     "no friend with that ecid"
+    ],
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed for FRIEND remove"
+    ],
+    [
+     400,
+     "amuled_rejected",
+     "ec_err_msg.c_str()"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "FindFriendByEcid",
+    "IsEcFailedResponse",
+    "RequireAdmin",
+    "RequireEcidPath",
+    "RequireSnapshot"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "204"
+   ]
+  },
+  "HandleFriendPatch": {
+   "loc": [
+    "Api.cpp:6830-6895"
+   ],
+   "lines": 66,
+   "errors": [
+    [
+     404,
+     "not_found",
+     "no friend with that ecid"
+    ],
+    [
+     400,
+     "bad_request",
+     "parse_err.c_str()"
+    ],
+    [
+     400,
+     "bad_request",
+     "required boolean field `friend_slot` is missing"
+    ],
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed for FRIEND slot"
+    ],
+    [
+     400,
+     "amuled_rejected",
+     "ec_err_msg.c_str()"
+    ],
+    [
+     404,
+     "not_found",
+     "friend disappeared while setting the slot"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [
+    "friend_slot"
+   ],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "FinalizeJsonBody",
+    "FindFriendByEcid",
+    "IsEcFailedResponse",
+    "ParseJsonObjectBody",
+    "RequireAdmin",
+    "RequireEcidPath",
+    "RequireSnapshot",
+    "WriteFriendObject"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": true,
+   "status_literals": [
+    "200"
+   ]
+  },
+  "HandleServerAdd": {
+   "loc": [
+    "Api.cpp:6897-6967"
+   ],
+   "lines": 71,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "parse_err.c_str()"
+    ],
+    [
+     400,
+     "bad_request",
+     "required string field `address` is missing (\"host:port\")"
+    ],
+    [
+     400,
+     "bad_request",
+     "`address` must be in \"host:port\" form"
+    ],
+    [
+     400,
+     "bad_request",
+     "`name` must be a string"
+    ],
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed for SERVER_ADD"
+    ],
+    [
+     400,
+     "amuled_rejected",
+     "ec_err_msg.c_str()"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [
+    "address",
+    "name"
+   ],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "IsEcFailedResponse",
+    "ParseJsonObjectBody",
+    "RequireAdmin"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": true,
+   "status_literals": [
+    "202"
+   ]
+  },
+  "HandleServerConnect": {
+   "loc": [
+    "Api.cpp:6969-7016"
+   ],
+   "lines": 48,
+   "errors": [
+    [
+     404,
+     "not_found",
+     "no server with that ECID in the current snapshot"
+    ],
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed for SERVER_CONNECT"
+    ],
+    [
+     400,
+     "amuled_rejected",
+     "ec_err_msg.c_str()"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "FindServerByEcid",
+    "IsEcFailedResponse",
+    "RequireAdmin",
+    "RequireEcidPath",
+    "RequireSnapshot"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "202"
+   ]
+  },
+  "HandleServerDelete": {
+   "loc": [
+    "Api.cpp:7018-7060"
+   ],
+   "lines": 43,
+   "errors": [
+    [
+     404,
+     "not_found",
+     "no server with that ECID in the current snapshot"
+    ],
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed for SERVER_REMOVE"
+    ],
+    [
+     400,
+     "amuled_rejected",
+     "ec_err_msg.c_str()"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "FindServerByEcid",
+    "IsEcFailedResponse",
+    "RequireAdmin",
+    "RequireEcidPath",
+    "RequireSnapshot"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "204"
+   ]
+  },
+  "HandleServerUpdateFromUrl": {
+   "loc": [
+    "Api.cpp:7062-7084"
+   ],
+   "lines": 23,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "RequireAdmin",
+    "ResolveFetchUrl",
+    "UrlFetchOp"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "ParseIpPortSelector": {
+   "loc": [
+    "Api.cpp:7107-7137"
+   ],
+   "lines": 31,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "ParseIpv4Dotted"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "ResolveServerEcid": {
+   "loc": [
+    "Api.cpp:7145-7176"
+   ],
+   "lines": 32,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "malformed ip:port selector: expected a dotted quad and a port in 1..65535"
+    ],
+    [
+     400,
+     "bad_request",
+     "0.0.0.0 is not a server address"
+    ],
+    [
+     404,
+     "not_found",
+     "no server matches that ip:port"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "ErrorResponse",
+    "ParseIpPortSelector"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleServerConnectByAddress": {
+   "loc": [
+    "Api.cpp:7178-7196"
+   ],
+   "lines": 19,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "HandleServerConnect",
+    "RequireAdmin",
+    "RequireSnapshot",
+    "ResolveServerEcid"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleServerPatch": {
+   "loc": [
+    "Api.cpp:7209-7308"
+   ],
+   "lines": 100,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "parse_err.c_str()"
+    ],
+    [
+     400,
+     "bad_request",
+     "`priority` must be a string"
+    ],
+    [
+     400,
+     "bad_request",
+     "`priority` must be one of low, normal, high"
+    ],
+    [
+     400,
+     "bad_request",
+     "`permanent` must be a bool"
+    ],
+    [
+     400,
+     "bad_request",
+     "body must include at least one of `priority`, `permanent`"
+    ],
+    [
+     404,
+     "not_found",
+     "no server with that ECID in the current snapshot"
+    ],
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed for SERVER_SET_STATIC_PRIO"
+    ],
+    [
+     400,
+     "amuled_rejected",
+     "ec_err_msg.c_str()"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [
+    "permanent",
+    "priority"
+   ],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "FinalizeJsonBody",
+    "FindServerByEcid",
+    "IsEcFailedResponse",
+    "ParseJsonObjectBody",
+    "RequireAdmin",
+    "RequireEcidPath",
+    "RequireSnapshot",
+    "WriteServerObject"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": true,
+   "status_literals": [
+    "200",
+    "204"
+   ]
+  },
+  "HandleServerPatchByAddress": {
+   "loc": [
+    "Api.cpp:7311-7327"
+   ],
+   "lines": 17,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "HandleServerPatch",
+    "RequireAdmin",
+    "RequireSnapshot",
+    "ResolveServerEcid"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleServerDeleteByAddress": {
+   "loc": [
+    "Api.cpp:7329-7345"
+   ],
+   "lines": 17,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "HandleServerDelete",
+    "RequireAdmin",
+    "RequireSnapshot",
+    "ResolveServerEcid"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleCategories": {
+   "loc": [
+    "Api.cpp:7347-7366"
+   ],
+   "lines": 20,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "CategoriesWithDefault",
+    "CategoryComparators",
+    "ListResponse",
+    "ParseListParams",
+    "QueryOf"
+   ],
+   "auth": true,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": true,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleKad": {
+   "loc": [
+    "Api.cpp:7368-7437"
+   ],
+   "lines": 70,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "state",
+    "node_id",
+    "connected_since_at",
+    "public_ip",
+    "indexed",
+    "buddy"
+   ],
+   "calls": [
+    "Authenticate",
+    "FinalizeJsonBody",
+    "RequireSnapshot",
+    "WriteBoolOrNull",
+    "WriteIntOrNull",
+    "WriteKadNetworkObject",
+    "WriteStringOrNull"
+   ],
+   "auth": true,
+   "admin": false,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "200"
+   ]
+  },
+  "ParseTailParam": {
+   "loc": [
+    "Api.cpp:7449-7457"
+   ],
+   "lines": 9,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "ParseUintParam"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "SliceTail": {
+   "loc": [
+    "Api.cpp:7461-7466"
+   ],
+   "lines": 6,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "TailString": {
+   "loc": [
+    "Api.cpp:7471-7490"
+   ],
+   "lines": 20,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "WriteStatsValue": {
+   "loc": [
+    "Api.cpp:7497-7531"
+   ],
+   "lines": 35,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "type",
+    "value",
+    "extra"
+   ],
+   "calls": [
+    "WriteStringOrNull"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "WriteStatsNode": {
+   "loc": [
+    "Api.cpp:7533-7582"
+   ],
+   "lines": 50,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "key",
+    "label",
+    "values",
+    "ratio",
+    "session",
+    "total",
+    "children"
+   ],
+   "calls": [
+    "WriteStatsValue",
+    "WriteStringOrNull"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "WritePointArray": {
+   "loc": [
+    "Api.cpp:7593-7635"
+   ],
+   "lines": 43,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "at",
+    "value"
+   ],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "WriteSearchObject": {
+   "loc": [
+    "Api.cpp:7640-7645"
+   ],
+   "lines": 6,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "WriteSearchResultFields"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "SearchKindToString": {
+   "loc": [
+    "Api.cpp:7657-7673"
+   ],
+   "lines": 17,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "SearchLifecycleStateToString": {
+   "loc": [
+    "Api.cpp:7681-7691"
+   ],
+   "lines": 11,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleStatsTree": {
+   "loc": [
+    "Api.cpp:7694-7770"
+   ],
+   "lines": 77,
+   "errors": [
+    [
+     503,
+     "ec_unavailable",
+     "EC fetch failed for stats tree; amuled may be disconnected"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "nodes"
+   ],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "FinalizeJsonBody",
+    "ParseUintParam",
+    "WriteStatsNode"
+   ],
+   "auth": true,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "200"
+   ]
+  },
+  "HandleStatsGraph": {
+   "loc": [
+    "Api.cpp:7772-7923"
+   ],
+   "lines": 152,
+   "errors": [
+    [
+     404,
+     "not_found",
+     "unknown graph; expected one of: download_speed, upload_speed, connections, kad_nodes"
+    ],
+    [
+     503,
+     "ec_unavailable",
+     "EC fetch failed for stats graphs; amuled may be disconnected"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "graph",
+    "unit",
+    "interval_seconds",
+    "max_points",
+    "points",
+    "session",
+    "download_bytes",
+    "upload_bytes",
+    "kad_node_seconds",
+    "duration_seconds"
+   ],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "FinalizeJsonBody",
+    "ParseUintParam",
+    "WritePointArray"
+   ],
+   "auth": true,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "200"
+   ]
+  },
+  "HandleSearchResults": {
+   "loc": [
+    "Api.cpp:7925-8019"
+   ],
+   "lines": 95,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "results",
+    "search_id",
+    "query",
+    "progress",
+    "state",
+    "type",
+    "percent"
+   ],
+   "calls": [
+    "Authenticate",
+    "BuildListWindow",
+    "FinalizeJsonBody",
+    "ParseListParams",
+    "QueryOf",
+    "RefreshSearchIfStale",
+    "RequireSearch",
+    "SearchLifecycleStateToString",
+    "WritePageMeta",
+    "WriteSearchObject"
+   ],
+   "auth": true,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": true,
+   "json_body": false,
+   "status_literals": [
+    "200"
+   ]
+  },
+  "RequireSearch": {
+   "loc": [
+    "Api.cpp:8021-8032"
+   ],
+   "lines": 12,
+   "errors": [
+    [
+     404,
+     "not_found",
+     "no search with that search_id (never started, freed or expired)"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "DiscoverSearchIfHeldByCore",
+    "ErrorResponse"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "RefreshSearchIfStale": {
+   "loc": [
+    "Api.cpp:8034-8063"
+   ],
+   "lines": 30,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "DiscoverSearchIfHeldByCore": {
+   "loc": [
+    "Api.cpp:8067-8119"
+   ],
+   "lines": 53,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "SearchKindToString"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleSearchList": {
+   "loc": [
+    "Api.cpp:8129-8179"
+   ],
+   "lines": 51,
+   "errors": [
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed for SEARCH_LIST"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "ListResponse",
+    "ParseListParams",
+    "QueryOf",
+    "SearchKindToString",
+    "SearchLifecycleStateToString",
+    "SearchListComparators"
+   ],
+   "auth": true,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": true,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleLogAmule": {
+   "loc": [
+    "Api.cpp:8181-8221"
+   ],
+   "lines": 41,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "lines",
+    "total_lines",
+    "returned_lines"
+   ],
+   "calls": [
+    "Authenticate",
+    "FinalizeJsonBody",
+    "ParseTailParam",
+    "SliceTail"
+   ],
+   "auth": true,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "200"
+   ]
+  },
+  "HandleLogAmuleReset": {
+   "loc": [
+    "Api.cpp:8223-8255"
+   ],
+   "lines": 33,
+   "errors": [
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed"
+    ],
+    [
+     400,
+     "amuled_rejected",
+     "ec_err.c_str()"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "IsEcFailedResponse",
+    "RequireAdmin"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "204"
+   ]
+  },
+  "HandleLogServerinfo": {
+   "loc": [
+    "Api.cpp:8257-8317"
+   ],
+   "lines": 61,
+   "errors": [
+    [
+     503,
+     "ec_unavailable",
+     "EC fetch failed for server info; amuled may be disconnected"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "text",
+    "total_bytes",
+    "returned_bytes"
+   ],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "FinalizeJsonBody",
+    "ParseTailParam",
+    "TailString"
+   ],
+   "auth": true,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "200"
+   ]
+  },
+  "HandleLogServerinfoReset": {
+   "loc": [
+    "Api.cpp:8319-8347"
+   ],
+   "lines": 29,
+   "errors": [
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed"
+    ],
+    [
+     400,
+     "amuled_rejected",
+     "ec_err.c_str()"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "IsEcFailedResponse",
+    "RequireAdmin"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "204"
+   ]
+  },
+  "WritePrefFieldValue": {
+   "loc": [
+    "Api.cpp:8361-8388"
+   ],
+   "lines": 28,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "PrefFieldIsEmitted": {
+   "loc": [
+    "Api.cpp:8390-8393"
+   ],
+   "lines": 4,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "WritePrefCategoryFields": {
+   "loc": [
+    "Api.cpp:8395-8404"
+   ],
+   "lines": 10,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "PrefFieldIsEmitted",
+    "WritePrefFieldValue"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "WritePreferencesBody": {
+   "loc": [
+    "Api.cpp:8406-8437"
+   ],
+   "lines": 32,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "WritePrefCategoryFields"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandlePreferences": {
+   "loc": [
+    "Api.cpp:8441-8457"
+   ],
+   "lines": 17,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "FinalizeJsonBody",
+    "RequireSnapshot",
+    "WritePreferencesBody"
+   ],
+   "auth": true,
+   "admin": false,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "200"
+   ]
+  },
+  "PrefTakeUint": {
+   "loc": [
+    "Api.cpp:8491-8530"
+   ],
+   "lines": 40,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "PrefTakeBool": {
+   "loc": [
+    "Api.cpp:8536-8555"
+   ],
+   "lines": 20,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "PrefTakeEnum": {
+   "loc": [
+    "Api.cpp:8562-8593"
+   ],
+   "lines": 32,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "PrefTakeString": {
+   "loc": [
+    "Api.cpp:8595-8612"
+   ],
+   "lines": 18,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "PrefTakeStringArray": {
+   "loc": [
+    "Api.cpp:8616-8642"
+   ],
+   "lines": 27,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "PrefTakePassword": {
+   "loc": [
+    "Api.cpp:8647-8670"
+   ],
+   "lines": 24,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "HashFromHex"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "PrefFindSubObject": {
+   "loc": [
+    "Api.cpp:8674-8686"
+   ],
+   "lines": 13,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandlePreferencesPatch": {
+   "loc": [
+    "Api.cpp:8689-8948"
+   ],
+   "lines": 260,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "parse_err.c_str()"
+    ],
+    [
+     400,
+     "bad_request",
+     "`geoip.update_now` is an action, not a setting: POST /geoip/update instead"
+    ],
+    [
+     400,
+     "bad_request",
+     "amuleapi passwords are managed through PATCH /auth/passwords, not through /preferences"
+    ],
+    [
+     409,
+     "option_not_supported",
+     "this daemon was built without support for that option"
+    ],
+    [
+     400,
+     "bad_request",
+     "err.c_str()"
+    ],
+    [
+     400,
+     "bad_request",
+     "guest_enabled must be a bool"
+    ],
+    [
+     400,
+     "bad_request",
+     "guest_password must be a string"
+    ],
+    [
+     400,
+     "bad_request",
+     "msg.c_str()"
+    ],
+    [
+     400,
+     "bad_request",
+     "request body did not include any known pref fields"
+    ],
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed for SET_PREFERENCES"
+    ],
+    [
+     400,
+     "amuled_rejected",
+     "ec_err_msg.c_str()"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "FinalizeJsonBody",
+    "HashFromHex",
+    "IsEcFailedResponse",
+    "ParseJsonObjectBody",
+    "PrefFindSubObject",
+    "PrefTakeBool",
+    "PrefTakeEnum",
+    "PrefTakePassword",
+    "PrefTakeString",
+    "PrefTakeStringArray",
+    "PrefTakeUint",
+    "RequireAdmin",
+    "WritePreferencesBody"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": true,
+   "status_literals": [
+    "200"
+   ]
+  },
+  "SimpleConnControlOp": {
+   "loc": [
+    "Api.cpp:8963-9009"
+   ],
+   "lines": 47,
+   "errors": [
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed"
+    ],
+    [
+     400,
+     "amuled_rejected",
+     "ec_err_msg.c_str()"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "message"
+   ],
+   "calls": [
+    "ErrorResponse",
+    "FinalizeJsonBody",
+    "IsEcFailedResponse"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleNetworksConnect": {
+   "loc": [
+    "Api.cpp:9013-9056"
+   ],
+   "lines": 44,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "parse_err.c_str()"
+    ],
+    [
+     400,
+     "bad_request",
+     "\"`network` must be one of \\\"ed2k\\\", \\\"kad\\\", \\\"both\\"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [
+    "network"
+   ],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "ParseJsonObjectBody",
+    "RequireAdmin",
+    "SimpleConnControlOp"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": true,
+   "status_literals": []
+  },
+  "HandleNetworksDisconnect": {
+   "loc": [
+    "Api.cpp:9058-9103"
+   ],
+   "lines": 46,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "parse_err.c_str()"
+    ],
+    [
+     400,
+     "bad_request",
+     "\"`network` must be one of \\\"ed2k\\\", \\\"kad\\\", \\\"both\\"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [
+    "network"
+   ],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "ParseJsonObjectBody",
+    "RequireAdmin",
+    "SimpleConnControlOp"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": true,
+   "status_literals": []
+  },
+  "HandleKadUpdateFromUrl": {
+   "loc": [
+    "Api.cpp:9123-9143"
+   ],
+   "lines": 21,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "RequireAdmin",
+    "ResolveFetchUrl",
+    "UrlFetchOp"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleIpfilterReload": {
+   "loc": [
+    "Api.cpp:9154-9162"
+   ],
+   "lines": 9,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "RequireAdmin",
+    "SimpleConnControlOp"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleIpfilterUpdate": {
+   "loc": [
+    "Api.cpp:9175-9199"
+   ],
+   "lines": 25,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "RequireAdmin",
+    "ResolveFetchUrl",
+    "UrlFetchOp"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleGeoipUpdate": {
+   "loc": [
+    "Api.cpp:9217-9257"
+   ],
+   "lines": 41,
+   "errors": [
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed"
+    ],
+    [
+     400,
+     "amuled_rejected",
+     "ec_err_msg.c_str()"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "FinalizeJsonBody",
+    "IsEcFailedResponse",
+    "RequireAdmin"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "202"
+   ]
+  },
+  "HandleKadBootstrap": {
+   "loc": [
+    "Api.cpp:9259-9348"
+   ],
+   "lines": 90,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "parse_err.c_str()"
+    ],
+    [
+     400,
+     "bad_request",
+     "required field `ip` is missing"
+    ],
+    [
+     400,
+     "bad_request",
+     "\"`ip` must be a dotted-quad IPv4 address string, e.g. \\\"127.0.0.1\\"
+    ],
+    [
+     400,
+     "bad_request",
+     "`ip` must be a dotted-quad IPv4 address"
+    ],
+    [
+     400,
+     "bad_request",
+     "required numeric field `port` is missing"
+    ],
+    [
+     400,
+     "bad_request",
+     "`port` must be in [0, 65535]"
+    ],
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed for KAD_BOOTSTRAP_FROM_IP"
+    ],
+    [
+     400,
+     "amuled_rejected",
+     "ec_err_msg.c_str()"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [
+    "ip",
+    "port"
+   ],
+   "sort_keys": [],
+   "keys": [
+    "ip",
+    "port"
+   ],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "FinalizeJsonBody",
+    "IsEcFailedResponse",
+    "ParseIpv4Dotted",
+    "ParseJsonObjectBody",
+    "RequireAdmin"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": true,
+   "status_literals": [
+    "202"
+   ]
+  },
+  "HandleSharedPatch": {
+   "loc": [
+    "Api.cpp:9356-9457"
+   ],
+   "lines": 102,
+   "errors": [
+    [
+     404,
+     "not_found",
+     "no shared file with that hash"
+    ],
+    [
+     400,
+     "bad_request",
+     "parse_err.c_str()"
+    ],
+    [
+     400,
+     "bad_request",
+     "`priority` must be a wire-string enum"
+    ],
+    [
+     400,
+     "bad_request",
+     "FilePriorityAccepted(kPrioShared).c_str()"
+    ],
+    [
+     500,
+     "internal_error",
+     "failed to decode file hash"
+    ],
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed for SHARED_SET_PRIO"
+    ],
+    [
+     400,
+     "amuled_rejected",
+     "ec_err_msg.c_str()"
+    ],
+    [
+     400,
+     "bad_request",
+     "request body must include `priority`, `comment`+`rating`, or `name`"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [
+    "priority"
+   ],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "FilePriorityAccepted",
+    "FilePriorityToCode",
+    "FinalizeJsonBody",
+    "FindSharedByKey",
+    "HashFromHex",
+    "IsEcFailedResponse",
+    "ParseJsonObjectBody",
+    "RequireAdmin",
+    "RequireSnapshot",
+    "TryRename",
+    "TrySetCommentRating",
+    "WriteSharedDetailObject"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": true,
+   "status_literals": [
+    "200"
+   ]
+  },
+  "HandleDownloadsBulkPatch": {
+   "loc": [
+    "Api.cpp:9469-9603"
+   ],
+   "lines": 135,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "parse_err.c_str()"
+    ],
+    [
+     400,
+     "bad_request",
+     "\"`action` must be one of \\\"pause\\\", \\\"resume\\\" or \\\"stop\\"
+    ],
+    [
+     400,
+     "bad_request",
+     "`priority` must be a wire-string enum"
+    ],
+    [
+     400,
+     "bad_request",
+     "FilePriorityAccepted(kPrioDownload).c_str()"
+    ],
+    [
+     400,
+     "bad_request",
+     "`category_index` must be a non-negative integer"
+    ],
+    [
+     400,
+     "bad_request",
+     "`category_index` must be in [0, 255]"
+    ],
+    [
+     400,
+     "bad_request",
+     "request body must include at least one of `action`, `priority`, or `category_index`"
+    ]
+   ],
+   "bulk_errors": [
+    [
+     404,
+     "not_found",
+     "no download with that hash"
+    ],
+    [
+     500,
+     "internal_error",
+     "failed to decode partfile hash"
+    ],
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed"
+    ],
+    [
+     400,
+     "amuled_rejected",
+     "ec_err"
+    ]
+   ],
+   "query": [],
+   "body_fields": [
+    "action",
+    "category_index",
+    "priority"
+   ],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "BulkErr",
+    "BulkOk",
+    "BulkResultsResponse",
+    "ErrorResponse",
+    "FilePriorityAccepted",
+    "FilePriorityToCode",
+    "HashFromHex",
+    "IsEcFailedResponse",
+    "LowerHexKey",
+    "ParseBulkHashes",
+    "ParseJsonObjectBody",
+    "RequireAdmin",
+    "RequireSnapshot"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": true,
+   "status_literals": []
+  },
+  "HandleDownloadsBulkDelete": {
+   "loc": [
+    "Api.cpp:9605-9670"
+   ],
+   "lines": 66,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "parse_err.c_str()"
+    ]
+   ],
+   "bulk_errors": [
+    [
+     404,
+     "not_found",
+     "no download with that hash"
+    ],
+    [
+     409,
+     "download_completed",
+     "DELETE only removes active downloads; use POST /downloads_clear_completed to clear a completed entry"
+    ],
+    [
+     500,
+     "internal_error",
+     "failed to decode partfile hash"
+    ],
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed for DELETE"
+    ],
+    [
+     400,
+     "amuled_rejected",
+     "ec_err"
+    ]
+   ],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "BulkErr",
+    "BulkOk",
+    "BulkResultsResponse",
+    "ErrorResponse",
+    "HashFromHex",
+    "IsEcFailedResponse",
+    "LowerHexKey",
+    "ParseBulkHashes",
+    "ParseJsonObjectBody",
+    "RequireAdmin",
+    "RequireSnapshot"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": true,
+   "status_literals": []
+  },
+  "HandleSharedBulkPatch": {
+   "loc": [
+    "Api.cpp:9672-9738"
+   ],
+   "lines": 67,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "parse_err.c_str()"
+    ],
+    [
+     400,
+     "bad_request",
+     "request body must include `priority`"
+    ],
+    [
+     400,
+     "bad_request",
+     "`priority` must be a wire-string enum"
+    ],
+    [
+     400,
+     "bad_request",
+     "FilePriorityAccepted(kPrioShared).c_str()"
+    ]
+   ],
+   "bulk_errors": [
+    [
+     404,
+     "not_found",
+     "no shared file with that hash"
+    ],
+    [
+     500,
+     "internal_error",
+     "failed to decode file hash"
+    ],
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed for SHARED_SET_PRIO"
+    ],
+    [
+     400,
+     "amuled_rejected",
+     "ec_err"
+    ]
+   ],
+   "query": [],
+   "body_fields": [
+    "priority"
+   ],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "BulkErr",
+    "BulkOk",
+    "BulkResultsResponse",
+    "ErrorResponse",
+    "FilePriorityAccepted",
+    "FilePriorityToCode",
+    "HashFromHex",
+    "IsEcFailedResponse",
+    "LowerHexKey",
+    "ParseBulkHashes",
+    "ParseJsonObjectBody",
+    "RequireAdmin",
+    "RequireSnapshot"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": true,
+   "status_literals": []
+  },
+  "HandleSharedVerify": {
+   "loc": [
+    "Api.cpp:9740-9800"
+   ],
+   "lines": 61,
+   "errors": [
+    [
+     404,
+     "not_found",
+     "no shared file with that hash"
+    ],
+    [
+     409,
+     "partfile_unsupported",
+     "verify local data is not supported on a partfile"
+    ],
+    [
+     500,
+     "internal_error",
+     "failed to decode file hash"
+    ],
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed for VERIFY_LOCAL_DATA"
+    ],
+    [
+     400,
+     "amuled_rejected",
+     "ec_err_msg.c_str()"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "FindSharedByKey",
+    "HashFromHex",
+    "IsEcFailedResponse",
+    "RequireAdmin",
+    "RequireSnapshot"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "202"
+   ]
+  },
+  "ShareRootsFromPrefs": {
+   "loc": [
+    "Api.cpp:9841-9862"
+   ],
+   "lines": 22,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleSharedContent": {
+   "loc": [
+    "Api.cpp:9874-10127"
+   ],
+   "lines": 254,
+   "errors": [
+    [
+     404,
+     "not_found",
+     "no shared file with that hash"
+    ],
+    [
+     409,
+     "partfile_unsupported",
+     "content download is not supported on a partfile"
+    ],
+    [
+     503,
+     "path_unavailable",
+     "the file's on-disk path is not known yet"
+    ],
+    [
+     503,
+     "ec_content_unreachable",
+     "the file is not present on the filesystem running amuleapi"
+    ],
+    [
+     503,
+     "ec_content_mismatch",
+     "the file on disk does not match the shared file's size"
+    ],
+    [
+     416,
+     "range_not_satisfiable",
+     "the requested range lies outside the file"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "FindHeaderCaseInsensitive",
+    "FindSharedByKey",
+    "RequireSnapshot",
+    "ShareRootsFromPrefs"
+   ],
+   "auth": true,
+   "admin": false,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "200",
+    "206",
+    "304"
+   ]
+  },
+  "FetchSharedDirs": {
+   "loc": [
+    "Api.cpp:10147-10173"
+   ],
+   "lines": 27,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "IsEcFailedResponse"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "ApplySharedDirs": {
+   "loc": [
+    "Api.cpp:10177-10228"
+   ],
+   "lines": 52,
+   "errors": [
+    [
+     503,
+     "ec_unavailable",
+     "no reply from amuled"
+    ],
+    [
+     502,
+     "amuled_rejected",
+     "ec_err_msg.c_str()"
+    ]
+   ],
+   "bulk_errors": [
+    [
+     403,
+     "not_readable",
+     "amuled cannot read that path"
+    ],
+    [
+     404,
+     "not_found",
+     "no such directory"
+    ]
+   ],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "BulkErr",
+    "BulkOk",
+    "BulkResultsResponse",
+    "ErrorResponse",
+    "IsEcFailedResponse"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleSharedDirectories": {
+   "loc": [
+    "Api.cpp:10235-10276"
+   ],
+   "lines": 42,
+   "errors": [
+    [
+     503,
+     "ec_unavailable",
+     "no reply from amuled"
+    ],
+    [
+     502,
+     "amuled_rejected",
+     "ec_err_msg.c_str()"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "directories",
+    "path",
+    "recursive"
+   ],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "FinalizeJsonBody",
+    "IsEcFailedResponse"
+   ],
+   "auth": true,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "200"
+   ]
+  },
+  "HandleSharedDirectoriesPut": {
+   "loc": [
+    "Api.cpp:10284-10329"
+   ],
+   "lines": 46,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "parse_err.c_str()"
+    ],
+    [
+     400,
+     "bad_request",
+     "`directories` must be an array"
+    ],
+    [
+     400,
+     "bad_request",
+     "each directory must be an object"
+    ],
+    [
+     400,
+     "bad_request",
+     "each directory needs a non-empty `path`"
+    ],
+    [
+     400,
+     "bad_request",
+     "`recursive` must be a boolean"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [
+    "directories"
+   ],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "ApplySharedDirs",
+    "Authenticate",
+    "ErrorResponse",
+    "ParseJsonObjectBody",
+    "RequireAdmin"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": true,
+   "status_literals": []
+  },
+  "HandleSharedDirectoriesAdd": {
+   "loc": [
+    "Api.cpp:10334-10384"
+   ],
+   "lines": 51,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "parse_err.c_str()"
+    ],
+    [
+     400,
+     "bad_request",
+     "`path` must be a non-empty string"
+    ],
+    [
+     400,
+     "bad_request",
+     "`recursive` must be a boolean"
+    ],
+    [
+     503,
+     "ec_unavailable",
+     "ec_err.c_str()"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [
+    "path",
+    "recursive"
+   ],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "ApplySharedDirs",
+    "Authenticate",
+    "ErrorResponse",
+    "FetchSharedDirs",
+    "ParseJsonObjectBody",
+    "RequireAdmin"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": true,
+   "status_literals": []
+  },
+  "HandleSharedDirectoriesDelete": {
+   "loc": [
+    "Api.cpp:10390-10428"
+   ],
+   "lines": 39,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "`path` query parameter is required"
+    ],
+    [
+     503,
+     "ec_unavailable",
+     "ec_err.c_str()"
+    ],
+    [
+     404,
+     "not_found",
+     "no such shared directory"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [
+    "path"
+   ],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "ApplySharedDirs",
+    "Authenticate",
+    "ErrorResponse",
+    "FetchSharedDirs",
+    "RequireAdmin"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "SendMediaRefresh": {
+   "loc": [
+    "Api.cpp:10441-10492"
+   ],
+   "lines": 52,
+   "errors": [
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed for media refresh"
+    ],
+    [
+     503,
+     "ec_unsupported",
+     "the connected amuled does not implement media metadata refresh"
+    ],
+    [
+     400,
+     "amuled_rejected",
+     "ec_err_msg.c_str()"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "scope",
+    "queued_file_count"
+   ],
+   "calls": [
+    "ErrorResponse",
+    "FinalizeJsonBody",
+    "IsEcFailedResponse"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "202"
+   ]
+  },
+  "HandleSharedMediaRefresh": {
+   "loc": [
+    "Api.cpp:10496-10504"
+   ],
+   "lines": 9,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "RequireAdmin",
+    "SendMediaRefresh"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleSharedMediaRefreshOne": {
+   "loc": [
+    "Api.cpp:10506-10537"
+   ],
+   "lines": 32,
+   "errors": [
+    [
+     404,
+     "not_found",
+     "no shared file with that hash"
+    ],
+    [
+     409,
+     "partfile_unsupported",
+     "media metadata cannot be extracted from an incomplete download"
+    ],
+    [
+     500,
+     "internal_error",
+     "failed to decode file hash"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "FindSharedByKey",
+    "HashFromHex",
+    "RequireAdmin",
+    "RequireSnapshot",
+    "SendMediaRefresh"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleSharedReload": {
+   "loc": [
+    "Api.cpp:10539-10568"
+   ],
+   "lines": 30,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "RequireAdmin",
+    "SimpleConnControlOp"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "ParseCategoryIndex": {
+   "loc": [
+    "Api.cpp:10576-10588"
+   ],
+   "lines": 13,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "BuildCategoryTag": {
+   "loc": [
+    "Api.cpp:10602-10616"
+   ],
+   "lines": 15,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "ParseCategoryFields": {
+   "loc": [
+    "Api.cpp:10637-10707"
+   ],
+   "lines": 71,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "category field must be a string"
+    ],
+    [
+     400,
+     "bad_request",
+     "`color` must be a \"#rrggbb\" string"
+    ],
+    [
+     400,
+     "bad_request",
+     "`priority` must be a wire-string enum"
+    ],
+    [
+     400,
+     "bad_request",
+     "FilePriorityAccepted(kPrioCategory).c_str()"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [
+    "color",
+    "priority"
+   ],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "ErrorResponse",
+    "FilePriorityAccepted",
+    "FilePriorityToCode"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "0",
+    "200"
+   ]
+  },
+  "HandleCategoryCreate": {
+   "loc": [
+    "Api.cpp:10711-10772"
+   ],
+   "lines": 62,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "parse_err.c_str()"
+    ],
+    [
+     400,
+     "bad_request",
+     "required string field `name` is missing"
+    ],
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed for CREATE_CATEGORY"
+    ],
+    [
+     400,
+     "amuled_rejected",
+     "ec_err_msg.c_str()"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "BuildCategoryTag",
+    "EcCategoryPathKept",
+    "ErrorResponse",
+    "IsEcFailedResponse",
+    "ParseCategoryFields",
+    "ParseJsonObjectBody",
+    "RequireAdmin"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": true,
+   "status_literals": [
+    "202"
+   ]
+  },
+  "HandleCategoryOne": {
+   "loc": [
+    "Api.cpp:10778-10814"
+   ],
+   "lines": 37,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "path `{index}` must be a uint8 in [0, 255]"
+    ],
+    [
+     404,
+     "not_found",
+     "no category with that index"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "CategoriesWithDefault",
+    "ErrorResponse",
+    "FinalizeJsonBody",
+    "ParseCategoryIndex",
+    "RequireSnapshot",
+    "WriteCategoryObject"
+   ],
+   "auth": true,
+   "admin": false,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "200"
+   ]
+  },
+  "HandleCategoryUpdate": {
+   "loc": [
+    "Api.cpp:10816-10893"
+   ],
+   "lines": 78,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "path `{index}` must be a uint8 in [0, 255]"
+    ],
+    [
+     404,
+     "not_found",
+     "no category with that index"
+    ],
+    [
+     400,
+     "bad_request",
+     "parse_err.c_str()"
+    ],
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed for UPDATE_CATEGORY"
+    ],
+    [
+     400,
+     "amuled_rejected",
+     "ec_err_msg.c_str()"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "BuildCategoryTag",
+    "EcCategoryPathKept",
+    "ErrorResponse",
+    "FinalizeJsonBody",
+    "FindCategoryByIndex",
+    "IsEcFailedResponse",
+    "ParseCategoryFields",
+    "ParseCategoryIndex",
+    "ParseJsonObjectBody",
+    "RequireAdmin",
+    "RequireSnapshot",
+    "WriteCategoryObject"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": true,
+   "status_literals": [
+    "200"
+   ]
+  },
+  "HandleCategoryDelete": {
+   "loc": [
+    "Api.cpp:10895-10969"
+   ],
+   "lines": 75,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "path `{index}` must be a uint8 in [0, 255]"
+    ],
+    [
+     400,
+     "bad_request",
+     "cannot delete the default (index=0) category"
+    ],
+    [
+     404,
+     "not_found",
+     "no category with that index"
+    ],
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed for DELETE_CATEGORY"
+    ],
+    [
+     400,
+     "amuled_rejected",
+     "ec_err_msg.c_str()"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "FindCategoryByIndex",
+    "IsEcFailedResponse",
+    "ParseCategoryIndex",
+    "RequireAdmin",
+    "RequireSnapshot"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "204"
+   ]
+  },
+  "SearchTypeFromString": {
+   "loc": [
+    "Api.cpp:10977-10990"
+   ],
+   "lines": 14,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleClientBrowse": {
+   "loc": [
+    "Api.cpp:10994-10998"
+   ],
+   "lines": 5,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "HandleBrowse"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleFriendBrowse": {
+   "loc": [
+    "Api.cpp:11000-11004"
+   ],
+   "lines": 5,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "HandleBrowse"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleBrowse": {
+   "loc": [
+    "Api.cpp:11012-11107"
+   ],
+   "lines": 96,
+   "errors": [
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed for browse"
+    ],
+    [
+     404,
+     "not_found",
+     "ec_err_msg.c_str()"
+    ],
+    [
+     502,
+     "amuled_rejected",
+     "daemon did not return a search_id for browse"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "FinalizeJsonBody",
+    "IsEcFailedResponse",
+    "RequireAdmin",
+    "RequireEcidPath",
+    "WriteSearchListRow"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "202"
+   ]
+  },
+  "HandleSearchStart": {
+   "loc": [
+    "Api.cpp:11109-11294"
+   ],
+   "lines": 186,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "parse_err.c_str()"
+    ],
+    [
+     400,
+     "bad_request",
+     "required string field `query` is missing"
+    ],
+    [
+     400,
+     "bad_request",
+     "`query` must be non-empty"
+    ],
+    [
+     400,
+     "bad_request",
+     "\"`type` must be one of \\\"local\\\", \\\"global\\\", \\\"kad\\"
+    ],
+    [
+     400,
+     "bad_request",
+     "`file_type` must be a string"
+    ],
+    [
+     400,
+     "bad_request",
+     "`extension` must be a string"
+    ],
+    [
+     400,
+     "bad_request",
+     "`min_size_bytes` must be a non-negative integer (bytes)"
+    ],
+    [
+     400,
+     "bad_request",
+     "`min_size_bytes` must be >= 0"
+    ],
+    [
+     400,
+     "bad_request",
+     "`max_size_bytes` must be a non-negative integer (bytes; 0 = no cap)"
+    ],
+    [
+     400,
+     "bad_request",
+     "`max_size_bytes` must be >= 0"
+    ],
+    [
+     400,
+     "bad_request",
+     "`min_source_count` must be a non-negative integer"
+    ],
+    [
+     400,
+     "bad_request",
+     "`min_source_count` out of range"
+    ],
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed for SEARCH_START"
+    ],
+    [
+     400,
+     "amuled_rejected",
+     "ec_err_msg.c_str()"
+    ],
+    [
+     502,
+     "amuled_rejected",
+     "daemon did not return a search_id for SEARCH_START"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [
+    "extension",
+    "file_type",
+    "max_size_bytes",
+    "min_size_bytes",
+    "min_source_count",
+    "query",
+    "type"
+   ],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "FinalizeJsonBody",
+    "IsEcFailedResponse",
+    "ParseJsonObjectBody",
+    "RequireAdmin",
+    "SearchTypeFromString",
+    "WriteSearchListRow"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": true,
+   "status_literals": [
+    "202"
+   ]
+  },
+  "SendSearchOp": {
+   "loc": [
+    "Api.cpp:11300-11337"
+   ],
+   "lines": 38,
+   "errors": [
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed for the search operation"
+    ],
+    [
+     400,
+     "amuled_rejected",
+     "ec_err_msg.c_str()"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "ErrorResponse",
+    "IsEcFailedResponse"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleSearchStop": {
+   "loc": [
+    "Api.cpp:11339-11358"
+   ],
+   "lines": 20,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "RequireAdmin",
+    "RequireSearch",
+    "SendSearchOp"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleSearchClose": {
+   "loc": [
+    "Api.cpp:11360-11380"
+   ],
+   "lines": 21,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "RequireAdmin",
+    "RequireSearch",
+    "SendSearchOp"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleSearchMore": {
+   "loc": [
+    "Api.cpp:11382-11430"
+   ],
+   "lines": 49,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "`more` applies to Kad searches only"
+    ],
+    [
+     400,
+     "bad_request",
+     "`more` applies to a running search; this one has finished"
+    ],
+    [
+     409,
+     "kad_more_exhausted",
+     "this Kad search cannot be widened any further (reask budget spent, or the search is in its final seconds)"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "RequireAdmin",
+    "RequireSearch",
+    "SendSearchOp"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "HandleSearchDownload": {
+   "loc": [
+    "Api.cpp:11432-11531"
+   ],
+   "lines": 100,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "`{hash}` must be a 32-char hex MD4"
+    ],
+    [
+     400,
+     "bad_request",
+     "parse_err.c_str()"
+    ],
+    [
+     400,
+     "bad_request",
+     "`category_index` must be a non-negative integer"
+    ],
+    [
+     400,
+     "bad_request",
+     "`category_index` must be in [0, 255]"
+    ],
+    [
+     400,
+     "bad_request",
+     "`ecid` must be a non-negative integer"
+    ],
+    [
+     400,
+     "bad_request",
+     "`ecid` out of range"
+    ],
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed for DOWNLOAD_SEARCH_RESULT"
+    ],
+    [
+     400,
+     "amuled_rejected",
+     "ec_err_msg.c_str()"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [
+    "category_index",
+    "ecid"
+   ],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "HashFromHex",
+    "IsEcFailedResponse",
+    "LowerHexKey",
+    "ParseJsonObjectBody",
+    "RequireAdmin"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": true,
+   "status_literals": [
+    "202"
+   ]
+  },
+  "HandleSearchComments": {
+   "loc": [
+    "Api.cpp:11536-11600"
+   ],
+   "lines": 65,
+   "errors": [
+    [
+     404,
+     "not_found",
+     "no search result with that hash"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "count",
+    "kad_comment_lookup_running",
+    "comments",
+    "username",
+    "filename",
+    "rating",
+    "comment"
+   ],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "FinalizeJsonBody",
+    "LowerHexKey",
+    "RefreshSearchIfStale",
+    "RequireSnapshot"
+   ],
+   "auth": true,
+   "admin": false,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "200"
+   ]
+  },
+  "HandleSearchCommentsKadSearch": {
+   "loc": [
+    "Api.cpp:11606-11670"
+   ],
+   "lines": 65,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "`{hash}` must be a 32-char hex MD4"
+    ],
+    [
+     404,
+     "not_found",
+     "no search result with that hash"
+    ],
+    [
+     503,
+     "ec_unavailable",
+     "EC roundtrip failed for SEARCH_KAD_NOTES"
+    ],
+    [
+     400,
+     "amuled_rejected",
+     "ec_err.c_str()"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "Authenticate",
+    "ErrorResponse",
+    "HashFromHex",
+    "IsEcFailedResponse",
+    "LowerHexKey",
+    "RefreshSearchIfStale",
+    "RequireAdmin",
+    "RequireSnapshot"
+   ],
+   "auth": true,
+   "admin": true,
+   "snapshot_gate": true,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "202"
+   ]
+  },
+  "StampCorsForTransport": {
+   "loc": [
+    "Api.cpp:11683-11692"
+   ],
+   "lines": 10,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "ApplyCorsHeaders",
+    "ResolveCorsOrigin"
+   ],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "PreflightEvents": {
+   "loc": [
+    "Api.cpp:11694-11777"
+   ],
+   "lines": 84,
+   "errors": [
+    [
+     400,
+     "bad_request",
+     "`channels` must not be empty; omit it to receive every channel"
+    ]
+   ],
+   "bulk_errors": [],
+   "query": [
+    "channels"
+   ],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "ApplyCorsHeaders",
+    "Authenticate",
+    "ErrorResponse",
+    "FindHeaderCaseInsensitive",
+    "ResolveCorsOrigin"
+   ],
+   "auth": true,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": [
+    "200"
+   ]
+  },
+  "DispatchEvents": {
+   "loc": [
+    "Api.cpp:11779-12079"
+   ],
+   "lines": 301,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [
+    "channels"
+   ],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [],
+   "calls": [
+    "ApplyCorsHeaders",
+    "Authenticate",
+    "FindHeaderCaseInsensitive",
+    "ResolveCorsOrigin"
+   ],
+   "auth": true,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  },
+  "WriteSearchResultFields": {
+   "loc": [
+    "SearchJson.cpp:36-142"
+   ],
+   "lines": 107,
+   "errors": [],
+   "bulk_errors": [],
+   "query": [],
+   "body_fields": [],
+   "sort_keys": [],
+   "keys": [
+    "hash",
+    "name",
+    "size_bytes",
+    "sources",
+    "total",
+    "complete",
+    "already_downloaded",
+    "rating",
+    "status",
+    "file_type",
+    "directory",
+    "media",
+    "duration_seconds",
+    "bitrate_kilobits_per_second",
+    "codec",
+    "artist",
+    "album",
+    "title",
+    "alternate_names",
+    "ecid",
+    "kad_comment_lookup_running",
+    "comments",
+    "username",
+    "filename",
+    "comment"
+   ],
+   "calls": [],
+   "auth": false,
+   "admin": false,
+   "snapshot_gate": false,
+   "list_params": false,
+   "json_body": false,
+   "status_literals": []
+  }
+ },
+ "shapes": {
+  "WriteIntOrNull": "int",
+  "WriteUIntOrNull": "uint",
+  "WriteBoolOrNull": "bool",
+  "WriteStringOrNull": "string",
+  "ErrorResponse": {
+   "error": {
+    "code": "string",
+    "message": "string"
+   }
+  },
+  "WriteKadNetworkObject": {
+   "network": {
+    "user_count": "int|null",
+    "file_count": "int|null",
+    "node_count": "int|null"
+   }
+  },
+  "HandleHealth": {
+   "status": "string",
+   "ec_connected": "bool",
+   "snapshot": "bool"
+  },
+  "HandleVersion": {
+   "service": "string",
+   "api_version": "string",
+   "amuleapi_version": "string",
+   "daemon_version": "string",
+   "update": {
+    "check_enabled": "bool",
+    "checked": "bool",
+    "latest_version": "string|null",
+    "available": "bool",
+    "last_checked_at": "int|null"
+   }
+  },
+  "HandleLogin": {},
+  "BeginSession": {
+   "token": "string",
+   "role": "string",
+   "expires_at": "int",
+   "session_id": "string"
+  },
+  "HandleSession": {
+   "role": "string",
+   "session_id": "string",
+   "expires_at": "int"
+  },
+  "HandleAuthPasswords": {
+   "admin_password_set": "bool",
+   "guest_access_enabled": "bool"
+  },
+  "HandleAuthPasswordsPatch": {
+   "admin_password_set": "bool",
+   "guest_access_enabled": "bool"
+  },
+  "HandleStatus": {
+   "ec_connected": "bool",
+   "ed2k": {
+    "state": "string",
+    "high_id": "bool",
+    "user_id": "int",
+    "public_ip": "string",
+    "connected_since_at": "int",
+    "server_name": "string",
+    "server_ip": "string",
+    "server_port": "int",
+    "network": {
+     "user_count": "int|null",
+     "file_count": "int|null"
+    }
+   },
+   "kad": {
+    "state": "string",
+    "firewalled_tcp": "bool|null",
+    "connected_since_at": "int",
+    "network": {
+     "user_count": "int|null",
+     "file_count": "int|null",
+     "node_count": "int|null"
+    }
+   },
+   "speeds": {
+    "download_bytes_per_second": "int",
+    "upload_bytes_per_second": "int",
+    "download_overhead_bytes_per_second": "int",
+    "upload_overhead_bytes_per_second": "int"
+   },
+   "disk": {
+    "temp_free_bytes": "int|null",
+    "incoming_free_bytes": "int|null"
+   },
+   "queue": {
+    "upload_clients_waiting": "int",
+    "download_sources_total": "int"
+   }
+  },
+  "WriteProgressParts": {
+   "parts": []
+  },
+  "WriteSharedAvailabilityParts": {
+   "parts": [
+    {
+     "sources": "int"
+    }
+   ]
+  },
+  "WriteMediaIfPresent": {
+   "media": {
+    "duration_seconds": "int",
+    "bitrate_kilobits_per_second": "int",
+    "codec": "string",
+    "artist": "string",
+    "album": "string",
+    "title": "string"
+   }
+  },
+  "WriteDownloadObject": {
+   "hash": "string",
+   "name": "string",
+   "ed2k_link": "string",
+   "size_bytes": "int",
+   "completed_bytes": "int",
+   "transferred_bytes": "int",
+   "speed_bytes_per_second": "int",
+   "status": "string",
+   "priority": "string",
+   "priority_auto": "bool",
+   "category_index": "int",
+   "sources": {
+    "total": "int",
+    "unavailable": "int",
+    "transferring": "int",
+    "a4af": "int"
+   },
+   "progress": {
+    "percent": "number",
+    "parts": []
+   },
+   "kad_comment_lookup_running": "bool",
+   "hashed_part_count": "int",
+   "parts_total_count": "int",
+   "source_ecids": [
+    "int"
+   ],
+   "last_seen_complete_at": "int|null",
+   "last_received_at": "int",
+   "active_seconds": "int",
+   "parts_available_count": "int",
+   "remaining_seconds": "int|null",
+   "lost_to_corruption_bytes": "int",
+   "gained_by_compression_bytes": "int",
+   "ich_recovered_packet_count": "int",
+   "aich_hash": "string|null",
+   "part_file_name": "string",
+   "directory": "string",
+   "upload_queue_count": "int",
+   "my_comment": "string",
+   "my_rating": "int",
+   "a4af_auto": "bool",
+   "media": {
+    "duration_seconds": "int",
+    "bitrate_kilobits_per_second": "int",
+    "codec": "string",
+    "artist": "string",
+    "album": "string",
+    "title": "string"
+   }
+  },
+  "WriteClientBaseFields": {
+   "ecid": "int",
+   "name": "string",
+   "user_hash": "string",
+   "ip": "string",
+   "port": "int",
+   "country_code": "string|null",
+   "software": "string",
+   "software_version": "string",
+   "reported_os": "string",
+   "upload_state": "string",
+   "download_state": "string",
+   "ident_state": "string",
+   "download_file_name": "string",
+   "upload_file_name": "string",
+   "upload_file_hash": "string",
+   "download_file_hash": "string",
+   "uploaded_bytes_session": "int",
+   "downloaded_bytes_session": "int",
+   "uploaded_bytes_total": "int",
+   "downloaded_bytes_total": "int",
+   "upload_speed_bytes_per_second": "int",
+   "download_speed_bytes_per_second": "int",
+   "upload_queue_position": "int",
+   "remote_queue_position": "int|null",
+   "upload_queue_score": "int",
+   "obfuscation_state": "string",
+   "friend_slot": "bool",
+   "source_origin": "string",
+   "parts_offered_count": "int|null",
+   "client_mod_name": "string",
+   "shared_files_browsable": "bool",
+   "part_progress_percent": "number"
+  },
+  "WriteClientObject": {
+   "ecid": "int",
+   "name": "string",
+   "user_hash": "string",
+   "ip": "string",
+   "port": "int",
+   "country_code": "string|null",
+   "software": "string",
+   "software_version": "string",
+   "reported_os": "string",
+   "upload_state": "string",
+   "download_state": "string",
+   "ident_state": "string",
+   "download_file_name": "string",
+   "upload_file_name": "string",
+   "upload_file_hash": "string",
+   "download_file_hash": "string",
+   "uploaded_bytes_session": "int",
+   "downloaded_bytes_session": "int",
+   "uploaded_bytes_total": "int",
+   "downloaded_bytes_total": "int",
+   "upload_speed_bytes_per_second": "int",
+   "download_speed_bytes_per_second": "int",
+   "upload_queue_position": "int",
+   "remote_queue_position": "int|null",
+   "upload_queue_score": "int",
+   "obfuscation_state": "string",
+   "friend_slot": "bool",
+   "source_origin": "string",
+   "parts_offered_count": "int|null",
+   "client_mod_name": "string",
+   "shared_files_browsable": "bool",
+   "part_progress_percent": "number"
+  },
+  "WriteKnownClientObject": {
+   "user_hash": "string",
+   "name": "string|null",
+   "ip": "string|null",
+   "port": "int|null",
+   "kad_port": "int|null",
+   "country_code": "string|null",
+   "software": "string|null",
+   "software_version": "string|null",
+   "source_origin": "string|null",
+   "obfuscation_state": "string|null",
+   "uploaded_bytes_total": "uint",
+   "downloaded_bytes_total": "uint",
+   "last_seen_at": "uint",
+   "first_seen_at": "uint|null",
+   "session_count": "uint|null",
+   "online": "bool"
+  },
+  "WriteClientDetailObject": {
+   "ecid": "int",
+   "name": "string",
+   "user_hash": "string",
+   "ip": "string",
+   "port": "int",
+   "country_code": "string|null",
+   "software": "string",
+   "software_version": "string",
+   "reported_os": "string",
+   "upload_state": "string",
+   "download_state": "string",
+   "ident_state": "string",
+   "download_file_name": "string",
+   "upload_file_name": "string",
+   "upload_file_hash": "string",
+   "download_file_hash": "string",
+   "uploaded_bytes_session": "int",
+   "downloaded_bytes_session": "int",
+   "uploaded_bytes_total": "int",
+   "downloaded_bytes_total": "int",
+   "upload_speed_bytes_per_second": "int",
+   "download_speed_bytes_per_second": "int",
+   "upload_queue_position": "int",
+   "remote_queue_position": "int|null",
+   "upload_queue_score": "int",
+   "obfuscation_state": "string",
+   "friend_slot": "bool",
+   "source_origin": "string",
+   "parts_offered_count": "int|null",
+   "client_mod_name": "string",
+   "shared_files_browsable": "bool",
+   "part_progress_percent": "number",
+   "ed2k_user_id": "uint",
+   "high_id": "bool",
+   "server_ip": "string",
+   "server_port": "int",
+   "server_name": "string",
+   "kad_port": "int",
+   "friend": "bool",
+   "credit_ratio": "number"
+  },
+  "WriteSharedBaseFields": {
+   "hash": "string",
+   "name": "string",
+   "ed2k_link": "string",
+   "size_bytes": "int",
+   "priority": "string",
+   "priority_auto": "bool",
+   "sources": {
+    "complete": "int",
+    "complete_min": "int",
+    "complete_max": "int"
+   },
+   "uploaded_bytes_session": "int",
+   "uploaded_bytes_total": "int",
+   "request_count_session": "int",
+   "request_count_total": "int",
+   "accepted_request_count_session": "int",
+   "accepted_request_count_total": "int",
+   "upload_speed_bytes_per_second": "int",
+   "uploading_client_count": "int",
+   "last_upload_at": "int|null",
+   "shared_since_at": "int|null",
+   "hashed_part_count": "int"
+  },
+  "WriteSharedObject": {
+   "hash": "string",
+   "name": "string",
+   "ed2k_link": "string",
+   "size_bytes": "int",
+   "priority": "string",
+   "priority_auto": "bool",
+   "sources": {
+    "complete": "int",
+    "complete_min": "int",
+    "complete_max": "int"
+   },
+   "uploaded_bytes_session": "int",
+   "uploaded_bytes_total": "int",
+   "request_count_session": "int",
+   "request_count_total": "int",
+   "accepted_request_count_session": "int",
+   "accepted_request_count_total": "int",
+   "upload_speed_bytes_per_second": "int",
+   "uploading_client_count": "int",
+   "last_upload_at": "int|null",
+   "shared_since_at": "int|null",
+   "hashed_part_count": "int",
+   "media": {
+    "duration_seconds": "int",
+    "bitrate_kilobits_per_second": "int",
+    "codec": "string",
+    "artist": "string",
+    "album": "string",
+    "title": "string"
+   }
+  },
+  "WriteSharedDetailObject": {
+   "hash": "string",
+   "name": "string",
+   "ed2k_link": "string",
+   "size_bytes": "int",
+   "priority": "string",
+   "priority_auto": "bool",
+   "sources": {
+    "complete": "int",
+    "complete_min": "int",
+    "complete_max": "int"
+   },
+   "uploaded_bytes_session": "int",
+   "uploaded_bytes_total": "int",
+   "request_count_session": "int",
+   "request_count_total": "int",
+   "accepted_request_count_session": "int",
+   "accepted_request_count_total": "int",
+   "upload_speed_bytes_per_second": "int",
+   "uploading_client_count": "int",
+   "last_upload_at": "int|null",
+   "shared_since_at": "int|null",
+   "hashed_part_count": "int",
+   "file_type": "string",
+   "upload_ratio": "number",
+   "directory": "string",
+   "incomplete": "bool",
+   "aich_hash": "string|null",
+   "parts_total_count": "int",
+   "parts": [
+    {
+     "sources": "int"
+    }
+   ],
+   "upload_queue_count": "int",
+   "my_comment": "string",
+   "my_rating": "int",
+   "media": {
+    "duration_seconds": "int",
+    "bitrate_kilobits_per_second": "int",
+    "codec": "string",
+    "artist": "string",
+    "album": "string",
+    "title": "string"
+   }
+  },
+  "WriteSearchListRow": {
+   "id": "int",
+   "query": "string",
+   "type": "string",
+   "state": "string",
+   "client_ecid": "int|null",
+   "started_at": "int",
+   "result_count": "int"
+  },
+  "WritePageMeta": {
+   "total": "uint",
+   "offset": "uint",
+   "limit": "uint"
+  },
+  "ListResponseFromPtrsUnlocked": {
+   "total": "uint",
+   "offset": "uint",
+   "limit": "uint"
+  },
+  "ListResponse": {
+   "total": "uint",
+   "offset": "uint",
+   "limit": "uint"
+  },
+  "HandleDownloads": {
+   "hash": "string",
+   "name": "string",
+   "ed2k_link": "string",
+   "size_bytes": "int",
+   "completed_bytes": "int",
+   "transferred_bytes": "int",
+   "speed_bytes_per_second": "int",
+   "status": "string",
+   "priority": "string",
+   "priority_auto": "bool",
+   "category_index": "int",
+   "sources": {
+    "total": "int",
+    "unavailable": "int",
+    "transferring": "int",
+    "a4af": "int"
+   },
+   "progress": {
+    "percent": "number",
+    "parts": []
+   },
+   "kad_comment_lookup_running": "bool",
+   "hashed_part_count": "int",
+   "parts_total_count": "int",
+   "source_ecids": [
+    "int"
+   ],
+   "last_seen_complete_at": "int|null",
+   "last_received_at": "int",
+   "active_seconds": "int",
+   "parts_available_count": "int",
+   "remaining_seconds": "int|null",
+   "lost_to_corruption_bytes": "int",
+   "gained_by_compression_bytes": "int",
+   "ich_recovered_packet_count": "int",
+   "aich_hash": "string|null",
+   "part_file_name": "string",
+   "directory": "string",
+   "upload_queue_count": "int",
+   "my_comment": "string",
+   "my_rating": "int",
+   "a4af_auto": "bool",
+   "media": {
+    "duration_seconds": "int",
+    "bitrate_kilobits_per_second": "int",
+    "codec": "string",
+    "artist": "string",
+    "album": "string",
+    "title": "string"
+   }
+  },
+  "WriteFileClientRow": {
+   "ecid": "int",
+   "name": "string",
+   "user_hash": "string",
+   "ip": "string",
+   "port": "int",
+   "country_code": "string|null",
+   "software": "string",
+   "software_version": "string",
+   "reported_os": "string",
+   "upload_state": "string",
+   "download_state": "string",
+   "ident_state": "string",
+   "download_file_name": "string",
+   "upload_file_name": "string",
+   "upload_file_hash": "string",
+   "download_file_hash": "string",
+   "uploaded_bytes_session": "int",
+   "downloaded_bytes_session": "int",
+   "uploaded_bytes_total": "int",
+   "downloaded_bytes_total": "int",
+   "upload_speed_bytes_per_second": "int",
+   "download_speed_bytes_per_second": "int",
+   "upload_queue_position": "int",
+   "remote_queue_position": "int|null",
+   "upload_queue_score": "int",
+   "obfuscation_state": "string",
+   "friend_slot": "bool",
+   "source_origin": "string",
+   "parts_offered_count": "int|null",
+   "client_mod_name": "string",
+   "shared_files_browsable": "bool",
+   "part_progress_percent": "number",
+   "role": "string",
+   "a4af": "bool",
+   "parts": [
+    "bool"
+   ],
+   "next_requested_part_index": "int|null",
+   "downloading_part_index": "int|null"
+  },
+  "HandleFileClients": {
+   "ecid": "int",
+   "name": "string",
+   "user_hash": "string",
+   "ip": "string",
+   "port": "int",
+   "country_code": "string|null",
+   "software": "string",
+   "software_version": "string",
+   "reported_os": "string",
+   "upload_state": "string",
+   "download_state": "string",
+   "ident_state": "string",
+   "download_file_name": "string",
+   "upload_file_name": "string",
+   "upload_file_hash": "string",
+   "download_file_hash": "string",
+   "uploaded_bytes_session": "int",
+   "downloaded_bytes_session": "int",
+   "uploaded_bytes_total": "int",
+   "downloaded_bytes_total": "int",
+   "upload_speed_bytes_per_second": "int",
+   "download_speed_bytes_per_second": "int",
+   "upload_queue_position": "int",
+   "remote_queue_position": "int|null",
+   "upload_queue_score": "int",
+   "obfuscation_state": "string",
+   "friend_slot": "bool",
+   "source_origin": "string",
+   "parts_offered_count": "int|null",
+   "client_mod_name": "string",
+   "shared_files_browsable": "bool",
+   "part_progress_percent": "number",
+   "role": "string",
+   "a4af": "bool",
+   "parts": [
+    "bool"
+   ],
+   "next_requested_part_index": "int|null",
+   "downloading_part_index": "int|null"
+  },
+  "HandleDownloadDetail": {
+   "hash": "string",
+   "name": "string",
+   "ed2k_link": "string",
+   "size_bytes": "int",
+   "completed_bytes": "int",
+   "transferred_bytes": "int",
+   "speed_bytes_per_second": "int",
+   "status": "string",
+   "priority": "string",
+   "priority_auto": "bool",
+   "category_index": "int",
+   "sources": {
+    "total": "int",
+    "unavailable": "int",
+    "transferring": "int",
+    "a4af": "int"
+   },
+   "progress": {
+    "percent": "number",
+    "parts": []
+   },
+   "kad_comment_lookup_running": "bool",
+   "hashed_part_count": "int",
+   "parts_total_count": "int",
+   "source_ecids": [
+    "int"
+   ],
+   "last_seen_complete_at": "int|null",
+   "last_received_at": "int",
+   "active_seconds": "int",
+   "parts_available_count": "int",
+   "remaining_seconds": "int|null",
+   "lost_to_corruption_bytes": "int",
+   "gained_by_compression_bytes": "int",
+   "ich_recovered_packet_count": "int",
+   "aich_hash": "string|null",
+   "part_file_name": "string",
+   "directory": "string",
+   "upload_queue_count": "int",
+   "my_comment": "string",
+   "my_rating": "int",
+   "a4af_auto": "bool",
+   "media": {
+    "duration_seconds": "int",
+    "bitrate_kilobits_per_second": "int",
+    "codec": "string",
+    "artist": "string",
+    "album": "string",
+    "title": "string"
+   }
+  },
+  "HandleSharedDetail": {
+   "hash": "string",
+   "name": "string",
+   "ed2k_link": "string",
+   "size_bytes": "int",
+   "priority": "string",
+   "priority_auto": "bool",
+   "sources": {
+    "complete": "int",
+    "complete_min": "int",
+    "complete_max": "int"
+   },
+   "uploaded_bytes_session": "int",
+   "uploaded_bytes_total": "int",
+   "request_count_session": "int",
+   "request_count_total": "int",
+   "accepted_request_count_session": "int",
+   "accepted_request_count_total": "int",
+   "upload_speed_bytes_per_second": "int",
+   "uploading_client_count": "int",
+   "last_upload_at": "int|null",
+   "shared_since_at": "int|null",
+   "hashed_part_count": "int",
+   "file_type": "string",
+   "upload_ratio": "number",
+   "directory": "string",
+   "incomplete": "bool",
+   "aich_hash": "string|null",
+   "parts_total_count": "int",
+   "parts": [
+    {
+     "sources": "int"
+    }
+   ],
+   "upload_queue_count": "int",
+   "my_comment": "string",
+   "my_rating": "int",
+   "media": {
+    "duration_seconds": "int",
+    "bitrate_kilobits_per_second": "int",
+    "codec": "string",
+    "artist": "string",
+    "album": "string",
+    "title": "string"
+   }
+  },
+  "HandleDownloadComments": {
+   "total": "int",
+   "kad_comment_lookup_running": "bool",
+   "comments": [
+    {
+     "username": "string",
+     "filename": "string",
+     "rating": "int",
+     "comment": "string"
+    }
+   ]
+  },
+  "HandleDownloadFilenames": {
+   "filenames": [
+    {
+     "filename": "string",
+     "source_count": "int"
+    }
+   ]
+  },
+  "WriteA4afObject": {
+   "a4af_auto": "bool",
+   "source_ecids": [
+    "int"
+   ]
+  },
+  "HandleDownloadA4afAction": {
+   "a4af_auto": "bool",
+   "source_ecids": [
+    "int"
+   ]
+  },
+  "BulkResultsResponse": {
+   "results": [
+    {
+     "id": "string",
+     "ok": "bool",
+     "error": {
+      "code": "string",
+      "message": "string"
+     }
+    }
+   ]
+  },
+  "HandleDownloadPatch": {
+   "hash": "string",
+   "name": "string",
+   "ed2k_link": "string",
+   "size_bytes": "int",
+   "completed_bytes": "int",
+   "transferred_bytes": "int",
+   "speed_bytes_per_second": "int",
+   "status": "string",
+   "priority": "string",
+   "priority_auto": "bool",
+   "category_index": "int",
+   "sources": {
+    "total": "int",
+    "unavailable": "int",
+    "transferring": "int",
+    "a4af": "int"
+   },
+   "progress": {
+    "percent": "number",
+    "parts": []
+   },
+   "kad_comment_lookup_running": "bool",
+   "hashed_part_count": "int",
+   "parts_total_count": "int",
+   "source_ecids": [
+    "int"
+   ],
+   "last_seen_complete_at": "int|null",
+   "last_received_at": "int",
+   "active_seconds": "int",
+   "parts_available_count": "int",
+   "remaining_seconds": "int|null",
+   "lost_to_corruption_bytes": "int",
+   "gained_by_compression_bytes": "int",
+   "ich_recovered_packet_count": "int",
+   "aich_hash": "string|null",
+   "part_file_name": "string",
+   "directory": "string",
+   "upload_queue_count": "int",
+   "my_comment": "string",
+   "my_rating": "int",
+   "a4af_auto": "bool",
+   "media": {
+    "duration_seconds": "int",
+    "bitrate_kilobits_per_second": "int",
+    "codec": "string",
+    "artist": "string",
+    "album": "string",
+    "title": "string"
+   }
+  },
+  "WriteServerObject": {
+   "ecid": "int",
+   "name": "string",
+   "description": "string",
+   "version": "string",
+   "address": "string",
+   "ip": "string",
+   "country_code": "string|null",
+   "port": "int",
+   "user_count": "int",
+   "max_user_count": "int",
+   "file_count": "int",
+   "soft_file_limit": "int",
+   "hard_file_limit": "int",
+   "priority": "string",
+   "ping_ms": "int",
+   "failed_count": "int",
+   "permanent": "bool",
+   "tcp_flags": "raw",
+   "udp_flags": "raw"
+  },
+  "WriteCategoryObject": {
+   "index": "int",
+   "name": "string",
+   "save_path": "string",
+   "comment": "string",
+   "color": "string",
+   "priority": "string"
+  },
+  "WriteFriendObject": {
+   "ecid": "int",
+   "name": "string",
+   "user_hash": "string",
+   "ip": "string|null",
+   "port": "int",
+   "client_ecid": "int|null",
+   "online": "bool",
+   "friend_slot": "bool"
+  },
+  "WriteChatMessageObject": {
+   "id": "int",
+   "direction": "string",
+   "text": "string",
+   "sent_at": "int"
+  },
+  "WriteChatObject": {
+   "client_address": "string",
+   "ip": "string",
+   "port": "int",
+   "name": "string",
+   "client_ecid": "int|null",
+   "friend_ecid": "int|null",
+   "online": "bool",
+   "message_count": "int",
+   "last_message_id": "int",
+   "last_message_at": "int|null",
+   "last_message": {
+    "id": "int",
+    "direction": "string",
+    "text": "string",
+    "sent_at": "int"
+   }
+  },
+  "HandleClientDetail": {
+   "ecid": "int",
+   "name": "string",
+   "user_hash": "string",
+   "ip": "string",
+   "port": "int",
+   "country_code": "string|null",
+   "software": "string",
+   "software_version": "string",
+   "reported_os": "string",
+   "upload_state": "string",
+   "download_state": "string",
+   "ident_state": "string",
+   "download_file_name": "string",
+   "upload_file_name": "string",
+   "upload_file_hash": "string",
+   "download_file_hash": "string",
+   "uploaded_bytes_session": "int",
+   "downloaded_bytes_session": "int",
+   "uploaded_bytes_total": "int",
+   "downloaded_bytes_total": "int",
+   "upload_speed_bytes_per_second": "int",
+   "download_speed_bytes_per_second": "int",
+   "upload_queue_position": "int",
+   "remote_queue_position": "int|null",
+   "upload_queue_score": "int",
+   "obfuscation_state": "string",
+   "friend_slot": "bool",
+   "source_origin": "string",
+   "parts_offered_count": "int|null",
+   "client_mod_name": "string",
+   "shared_files_browsable": "bool",
+   "part_progress_percent": "number",
+   "ed2k_user_id": "uint",
+   "high_id": "bool",
+   "server_ip": "string",
+   "server_port": "int",
+   "server_name": "string",
+   "kad_port": "int",
+   "friend": "bool",
+   "credit_ratio": "number"
+  },
+  "HandleChatMessages": {
+   "client_address": "string",
+   "messages": [
+    {
+     "id": "int",
+     "direction": "string",
+     "text": "string",
+     "sent_at": "int"
+    }
+   ],
+   "total": "int",
+   "last_message_id": "int"
+  },
+  "SendChatMessageTo": {
+   "client_address": "string",
+   "message": {
+    "id": "int",
+    "direction": "string",
+    "text": "string"
+   }
+  },
+  "HandleFriendPatch": {
+   "ecid": "int",
+   "name": "string",
+   "user_hash": "string",
+   "ip": "string|null",
+   "port": "int",
+   "client_ecid": "int|null",
+   "online": "bool",
+   "friend_slot": "bool"
+  },
+  "HandleServerPatch": {
+   "ecid": "int",
+   "name": "string",
+   "description": "string",
+   "version": "string",
+   "address": "string",
+   "ip": "string",
+   "country_code": "string|null",
+   "port": "int",
+   "user_count": "int",
+   "max_user_count": "int",
+   "file_count": "int",
+   "soft_file_limit": "int",
+   "hard_file_limit": "int",
+   "priority": "string",
+   "ping_ms": "int",
+   "failed_count": "int",
+   "permanent": "bool",
+   "tcp_flags": "raw",
+   "udp_flags": "raw"
+  },
+  "HandleKad": {
+   "state": "string",
+   "node_id": "string",
+   "firewalled_tcp": "bool|null",
+   "firewalled_udp": "bool|null",
+   "lan_mode": "bool|null",
+   "connected_since_at": "int",
+   "public_ip": "string",
+   "network": {
+    "user_count": "int|null",
+    "file_count": "int|null",
+    "node_count": "int|null"
+   },
+   "indexed": {
+    "sources": "int|null",
+    "keywords": "int|null",
+    "notes": "int|null",
+    "load_percent": "int|null"
+   },
+   "buddy": {
+    "state": "string|null",
+    "ip": "string|null",
+    "port": "int|null"
+   }
+  },
+  "WriteStatsValue": {
+   "type": "string",
+   "value": "uint",
+   "token": "string|null",
+   "extra": "<WriteStatsValue>"
+  },
+  "WriteStatsNode": {
+   "key": "string",
+   "label_value": "string|null",
+   "label": "string",
+   "values": [
+    {
+     "type": "string",
+     "value": "uint",
+     "token": "string|null",
+     "extra": "<WriteStatsValue>"
+    }
+   ],
+   "ratio": {
+    "session": "number",
+    "total": "number"
+   },
+   "children": [
+    "<WriteStatsNode>"
+   ]
+  },
+  "WritePointArray": [
+   {
+    "at": "int",
+    "value": "int"
+   }
+  ],
+  "WriteSearchObject": {
+   "hash": "string",
+   "name": "string",
+   "size_bytes": "int",
+   "sources": {
+    "total": "int",
+    "complete": "int"
+   },
+   "already_downloaded": "bool",
+   "rating": "int",
+   "status": "string",
+   "file_type": "string",
+   "directory": "string",
+   "media": "null",
+   "alternate_names": [
+    {
+     "ecid": "int",
+     "name": "string",
+     "sources": {
+      "total": "int",
+      "complete": "int"
+     },
+     "directory": "string"
+    }
+   ],
+   "kad_comment_lookup_running": "bool",
+   "comments": [
+    {
+     "username": "string",
+     "filename": "string",
+     "rating": "int",
+     "comment": "string"
+    }
+   ]
+  },
+  "HandleStatsTree": {
+   "nodes": [
+    {
+     "key": "string",
+     "label_value": "string|null",
+     "label": "string",
+     "values": [
+      {
+       "type": "string",
+       "value": "uint",
+       "token": "string|null",
+       "extra": "<WriteStatsValue>"
+      }
+     ],
+     "ratio": {
+      "session": "number",
+      "total": "number"
+     },
+     "children": [
+      "<WriteStatsNode>"
+     ]
+    }
+   ]
+  },
+  "HandleStatsGraph": {
+   "graph": "string",
+   "unit": "string",
+   "interval_seconds": "int",
+   "max_points": "int",
+   "points": [],
+   "session": {
+    "download_bytes": "int",
+    "upload_bytes": "int",
+    "kad_node_seconds": "int",
+    "duration_seconds": "int"
+   }
+  },
+  "HandleSearchResults": {
+   "results": [
+    {
+     "hash": "string",
+     "name": "string",
+     "size_bytes": "int",
+     "sources": {
+      "total": "int",
+      "complete": "int"
+     },
+     "already_downloaded": "bool",
+     "rating": "int",
+     "status": "string",
+     "file_type": "string",
+     "directory": "string",
+     "media": "null",
+     "alternate_names": [
+      {
+       "ecid": "int",
+       "name": "string",
+       "sources": {
+        "total": "int",
+        "complete": "int"
+       },
+       "directory": "string"
+      }
+     ],
+     "kad_comment_lookup_running": "bool",
+     "comments": [
+      {
+       "username": "string",
+       "filename": "string",
+       "rating": "int",
+       "comment": "string"
+      }
+     ]
+    }
+   ],
+   "total": "uint",
+   "offset": "uint",
+   "limit": "uint",
+   "search_id": "int",
+   "query": "string",
+   "progress": {
+    "state": "string",
+    "type": "string",
+    "percent": "int"
+   }
+  },
+  "HandleLogAmule": {
+   "lines": [
+    "string"
+   ],
+   "total_lines": "int",
+   "returned_lines": "int"
+  },
+  "HandleLogServerinfo": {
+   "text": "string",
+   "total_bytes": "int",
+   "returned_bytes": "int"
+  },
+  "WritePrefFieldValue": "bool",
+  "WritePrefCategoryFields": "bool",
+  "WritePreferencesBody": {},
+  "HandlePreferences": {},
+  "HandlePreferencesPatch": {},
+  "SimpleConnControlOp": {
+   "message": "string"
+  },
+  "HandleGeoipUpdate": {},
+  "HandleKadBootstrap": {
+   "ip": "string",
+   "port": "int"
+  },
+  "HandleSharedPatch": {
+   "hash": "string",
+   "name": "string",
+   "ed2k_link": "string",
+   "size_bytes": "int",
+   "priority": "string",
+   "priority_auto": "bool",
+   "sources": {
+    "complete": "int",
+    "complete_min": "int",
+    "complete_max": "int"
+   },
+   "uploaded_bytes_session": "int",
+   "uploaded_bytes_total": "int",
+   "request_count_session": "int",
+   "request_count_total": "int",
+   "accepted_request_count_session": "int",
+   "accepted_request_count_total": "int",
+   "upload_speed_bytes_per_second": "int",
+   "uploading_client_count": "int",
+   "last_upload_at": "int|null",
+   "shared_since_at": "int|null",
+   "hashed_part_count": "int",
+   "file_type": "string",
+   "upload_ratio": "number",
+   "directory": "string",
+   "incomplete": "bool",
+   "aich_hash": "string|null",
+   "parts_total_count": "int",
+   "parts": [
+    {
+     "sources": "int"
+    }
+   ],
+   "upload_queue_count": "int",
+   "my_comment": "string",
+   "my_rating": "int",
+   "media": {
+    "duration_seconds": "int",
+    "bitrate_kilobits_per_second": "int",
+    "codec": "string",
+    "artist": "string",
+    "album": "string",
+    "title": "string"
+   }
+  },
+  "HandleSharedDirectories": {
+   "directories": [
+    {
+     "path": "string",
+     "recursive": "bool"
+    }
+   ]
+  },
+  "SendMediaRefresh": {
+   "scope": "string",
+   "queued_file_count": "int"
+  },
+  "HandleCategoryOne": {
+   "index": "int",
+   "name": "string",
+   "save_path": "string",
+   "comment": "string",
+   "color": "string",
+   "priority": "string"
+  },
+  "HandleCategoryUpdate": {
+   "index": "int",
+   "name": "string",
+   "save_path": "string",
+   "comment": "string",
+   "color": "string",
+   "priority": "string"
+  },
+  "HandleBrowse": {
+   "id": "int",
+   "query": "string",
+   "type": "string",
+   "state": "string",
+   "client_ecid": "int|null",
+   "started_at": "int",
+   "result_count": "int"
+  },
+  "HandleSearchStart": {
+   "id": "int",
+   "query": "string",
+   "type": "string",
+   "state": "string",
+   "client_ecid": "int|null",
+   "started_at": "int",
+   "result_count": "int"
+  },
+  "HandleSearchComments": {
+   "count": "int",
+   "kad_comment_lookup_running": "bool",
+   "comments": [
+    {
+     "username": "string",
+     "filename": "string",
+     "rating": "int",
+     "comment": "string"
+    }
+   ]
+  },
+  "WriteSearchResultFields": {
+   "hash": "string",
+   "name": "string",
+   "size_bytes": "int",
+   "sources": {
+    "total": "int",
+    "complete": "int"
+   },
+   "already_downloaded": "bool",
+   "rating": "int",
+   "status": "string",
+   "file_type": "string",
+   "directory": "string",
+   "media": "null",
+   "alternate_names": [
+    {
+     "ecid": "int",
+     "name": "string",
+     "sources": {
+      "total": "int",
+      "complete": "int"
+     },
+     "directory": "string"
+    }
+   ],
+   "kad_comment_lookup_running": "bool",
+   "comments": [
+    {
+     "username": "string",
+     "filename": "string",
+     "rating": "int",
+     "comment": "string"
+    }
+   ]
+  }
+ }
+}

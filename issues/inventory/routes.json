@@ -1,0 +1,1019 @@
+[
+ {
+  "path": "/api/",
+  "kind": "prefix",
+  "line": 988,
+  "methods_eq": [],
+  "methods_ne": [],
+  "handlers": [],
+  "errors": [],
+  "src": "\tif (path.compare(0, 5, \"/api/\") == 0) {\n\t\tpath = web_api_path::StripTrailingSlash(path);\n\t}\n"
+ },
+ {
+  "path": "/api/v0/health",
+  "kind": "literal",
+  "line": 992,
+  "methods_eq": [],
+  "methods_ne": [
+   "GET",
+   "HEAD"
+  ],
+  "handlers": [
+   "HandleHealth"
+  ],
+  "errors": [],
+  "src": "\tif (path == \"/api/v0/health\") {\n\t\tif (req.method != \"GET\" && req.method != \"HEAD\") {\n\t\t\treturn MethodNotAllowed(\"GET, HEAD\", \"only GET / HEAD on /health\");\n\t\t}\n\t\treturn HandleHealth(req);\n\t}\n"
+ },
+ {
+  "path": "/api/v0/version",
+  "kind": "literal",
+  "line": 999,
+  "methods_eq": [],
+  "methods_ne": [
+   "GET",
+   "HEAD"
+  ],
+  "handlers": [
+   "HandleVersion"
+  ],
+  "errors": [],
+  "src": "\tif (path == \"/api/v0/version\") {\n\t\tif (req.method != \"GET\" && req.method != \"HEAD\") {\n\t\t\treturn MethodNotAllowed(\"GET, HEAD\", \"method not allowed on /api/v0/version\");\n\t\t}\n\t\treturn HandleVersion(req);\n\t}\n"
+ },
+ {
+  "path": "/api/v0/version/check",
+  "kind": "literal",
+  "line": 1006,
+  "methods_eq": [],
+  "methods_ne": [
+   "POST"
+  ],
+  "handlers": [
+   "HandleVersionCheck"
+  ],
+  "errors": [],
+  "src": "\tif (path == \"/api/v0/version/check\") {\n\t\tif (req.method != \"POST\") {\n\t\t\treturn MethodNotAllowed(\"POST\", \"only POST on /api/v0/version/check\");\n\t\t}\n\t\treturn HandleVersionCheck(req);\n\t}\n"
+ },
+ {
+  "path": "/api/v0/auth/login",
+  "kind": "literal",
+  "line": 1013,
+  "methods_eq": [],
+  "methods_ne": [
+   "POST"
+  ],
+  "handlers": [
+   "HandleLogin"
+  ],
+  "errors": [],
+  "src": "\tif (path == \"/api/v0/auth/login\") {\n\t\tif (req.method != \"POST\") {\n\t\t\treturn MethodNotAllowed(\"POST\", \"only POST on /auth/login\");\n\t\t}\n\t\treturn HandleLogin(req);\n\t}\n"
+ },
+ {
+  "path": "/api/v0/auth/logout",
+  "kind": "literal",
+  "line": 1020,
+  "methods_eq": [],
+  "methods_ne": [
+   "POST"
+  ],
+  "handlers": [
+   "HandleLogout"
+  ],
+  "errors": [],
+  "src": "\tif (path == \"/api/v0/auth/logout\") {\n\t\tif (req.method != \"POST\") {\n\t\t\treturn MethodNotAllowed(\"POST\", \"only POST on /auth/logout\");\n\t\t}\n\t\treturn HandleLogout(req);\n\t}\n"
+ },
+ {
+  "path": "/api/v0/auth/session",
+  "kind": "literal",
+  "line": 1027,
+  "methods_eq": [],
+  "methods_ne": [
+   "GET",
+   "HEAD"
+  ],
+  "handlers": [
+   "HandleSession"
+  ],
+  "errors": [],
+  "src": "\tif (path == \"/api/v0/auth/session\") {\n\t\tif (req.method != \"GET\" && req.method != \"HEAD\") {\n\t\t\treturn MethodNotAllowed(\"GET, HEAD\", \"only GET on /auth/session\");\n\t\t}\n\t\treturn HandleSession(req);\n\t}\n"
+ },
+ {
+  "path": "/api/v0/auth/passwords",
+  "kind": "literal",
+  "line": 1034,
+  "methods_eq": [
+   "GET",
+   "HEAD",
+   "PATCH"
+  ],
+  "methods_ne": [],
+  "handlers": [
+   "HandleAuthPasswords",
+   "HandleAuthPasswordsPatch"
+  ],
+  "errors": [],
+  "src": "\tif (path == \"/api/v0/auth/passwords\") {\n\t\tif (req.method == \"GET\" || req.method == \"HEAD\") {\n\t\t\treturn HandleAuthPasswords(req);\n\t\t}\n\t\tif (req.method == \"PATCH\") {\n\t\t\treturn HandleAuthPasswordsPatch(req);\n\t\t}\n\t\treturn MethodNotAllowed(\"GET, HEAD, PATCH\", \"only GET or PATCH on /auth/passwords\");\n\t}\n\n\t// /events reaches the dispatcher only on a method the streaming\n\t// resolver declined, since it diverts GET and HEAD before this point.\n\t// Without an arm here the request fell through to the catch-all 404,\n\t// so the one endpoint a client is most likely to probe reported that\n\t// it does not exist -- and it was the only route to escape the Allow\n\t// sweep, while the docs promise the header on every 405."
+ },
+ {
+  "path": "/api/v0/events",
+  "kind": "literal",
+  "line": 1050,
+  "methods_eq": [],
+  "methods_ne": [],
+  "handlers": [],
+  "errors": [],
+  "src": "\tif (path == \"/api/v0/events\") {\n\t\treturn MethodNotAllowed(\"GET, HEAD\", \"only GET / HEAD on /events\");\n\t}\n"
+ },
+ {
+  "path": "/api/v0/status",
+  "kind": "literal",
+  "line": 1054,
+  "methods_eq": [],
+  "methods_ne": [
+   "GET",
+   "HEAD"
+  ],
+  "handlers": [
+   "HandleStatus"
+  ],
+  "errors": [],
+  "src": "\tif (path == \"/api/v0/status\") {\n\t\tif (req.method != \"GET\" && req.method != \"HEAD\") {\n\t\t\treturn MethodNotAllowed(\"GET, HEAD\", \"only GET on /status\");\n\t\t}\n\t\treturn HandleStatus(req);\n\t}\n"
+ },
+ {
+  "path": "/api/v0/downloads",
+  "kind": "literal",
+  "line": 1061,
+  "methods_eq": [
+   "DELETE",
+   "GET",
+   "HEAD",
+   "PATCH",
+   "POST"
+  ],
+  "methods_ne": [],
+  "handlers": [
+   "HandleDownloads",
+   "HandleDownloadAdd",
+   "HandleDownloadsBulkPatch",
+   "HandleDownloadsBulkDelete"
+  ],
+  "errors": [],
+  "src": "\tif (path == \"/api/v0/downloads\") {\n\t\tif (req.method == \"GET\" || req.method == \"HEAD\") {\n\t\t\treturn HandleDownloads(req);\n\t\t}\n\t\tif (req.method == \"POST\") {\n\t\t\t// add a download by ed2k link.\n\t\t\treturn HandleDownloadAdd(req);\n\t\t}\n\t\tif (req.method == \"PATCH\") {\n\t\t\t// bulk pause/resume/priority/category over {hashes:[...]}.\n\t\t\treturn HandleDownloadsBulkPatch(req);\n\t\t}\n\t\tif (req.method == \"DELETE\") {\n\t\t\t// bulk cancel+remove over {hashes:[...]}.\n\t\t\treturn HandleDownloadsBulkDelete(req);\n\t\t}\n\t\treturn MethodNotAllowed(\"GET, HEAD, POST, PATCH, DELETE\",\n\t\t\t\"only GET / HEAD / POST / PATCH / DELETE on /downloads\");\n\t}\n\n\t// bulk clear-completed."
+ },
+ {
+  "path": "/api/v0/downloads_clear_completed",
+  "kind": "literal",
+  "line": 1082,
+  "methods_eq": [],
+  "methods_ne": [
+   "POST"
+  ],
+  "handlers": [
+   "HandleDownloadsClearCompleted"
+  ],
+  "errors": [],
+  "src": "\tif (path == \"/api/v0/downloads_clear_completed\") {\n\t\tif (req.method != \"POST\") {\n\t\t\treturn MethodNotAllowed(\"POST\", \"only POST on /downloads_clear_completed\");\n\t\t}\n\t\treturn HandleDownloadsClearCompleted(req);\n\t}\n\n\t// /clients is the whole peer surface: every upload_state, including\n\t// queue waiters and download peers. Consumers filter client-side by\n\t// upload_state rather than asking for a pre-filtered view."
+ },
+ {
+  "path": "/api/v0/clients",
+  "kind": "literal",
+  "line": 1092,
+  "methods_eq": [],
+  "methods_ne": [
+   "GET",
+   "HEAD"
+  ],
+  "handlers": [
+   "HandleClients"
+  ],
+  "errors": [],
+  "src": "\tif (path == \"/api/v0/clients\") {\n\t\tif (req.method != \"GET\" && req.method != \"HEAD\") {\n\t\t\treturn MethodNotAllowed(\"GET, HEAD\", \"only GET on /clients\");\n\t\t}\n\t\treturn HandleClients(req);\n\t}\n\n\t// /known_clients \u2014 the daemon's credit store, every peer it has ever\n\t// exchanged data with. A separate resource rather than a sub-path of\n\t// /clients: these are keyed by user hash, outlive the daemon process that\n\t// would have issued an ECID, and carry stored history instead of live\n\t// transfer state. Matched before /clients/{ecid} regardless, since that\n\t// pattern accepts any single segment."
+ },
+ {
+  "path": "/api/v0/known_clients",
+  "kind": "literal",
+  "line": 1105,
+  "methods_eq": [],
+  "methods_ne": [
+   "GET",
+   "HEAD"
+  ],
+  "handlers": [
+   "HandleKnownClients"
+  ],
+  "errors": [],
+  "src": "\tif (path == \"/api/v0/known_clients\") {\n\t\tif (req.method != \"GET\" && req.method != \"HEAD\") {\n\t\t\treturn MethodNotAllowed(\"GET, HEAD\", \"only GET on /known_clients\");\n\t\t}\n\t\treturn HandleKnownClients(req);\n\t}\n\n\t// /clients/{ecid} \u2014 single-peer detail (issue #422). GET/HEAD only;\n\t// {ecid} is the EC connection id (unique per live connection).\n\t{"
+ },
+ {
+  "path": "/api/v0/clients/{ecid}",
+  "kind": "pattern",
+  "line": 1115,
+  "methods_eq": [
+   "GET",
+   "HEAD"
+  ],
+  "methods_ne": [],
+  "handlers": [
+   "HandleClientDetail"
+  ],
+  "errors": [],
+  "src": "\t\tstatic const auto client_detail = web_api_path::ParsePattern(\"/api/v0/clients/{ecid}\");\n\t\tconst auto path_segs = web_api_path::SplitPath(path);\n\t\tstd::map<std::string, std::string> caps;\n\t\tif (web_api_path::Match(client_detail, path_segs, caps)) {\n\t\t\tif (req.method == \"GET\" || req.method == \"HEAD\") {\n\t\t\t\treturn HandleClientDetail(req, caps[\"ecid\"]);\n\t\t\t}\n\t\t\treturn MethodNotAllowed(\"GET, HEAD\", \"only GET / HEAD on /clients/{ecid}\");\n\t\t}\n\t}\n\n\t// /clients/{ecid}/shared_files \u2014 browse (\"View Files\") the peer's shared\n\t// file list (#399). POST starts the browse and returns a search_id.\n\t{\n\t\tstatic const auto client_browse ="
+ },
+ {
+  "path": "/api/v0/clients/{ecid}/shared_files",
+  "kind": "pattern",
+  "line": 1130,
+  "methods_eq": [
+   "POST"
+  ],
+  "methods_ne": [],
+  "handlers": [
+   "HandleClientBrowse"
+  ],
+  "errors": [],
+  "src": "\t\t\tweb_api_path::ParsePattern(\"/api/v0/clients/{ecid}/shared_files\");\n\t\tconst auto path_segs = web_api_path::SplitPath(path);\n\t\tstd::map<std::string, std::string> caps;\n\t\tif (web_api_path::Match(client_browse, path_segs, caps)) {\n\t\t\tif (req.method == \"POST\") {\n\t\t\t\treturn HandleClientBrowse(req, caps[\"ecid\"]);\n\t\t\t}\n\t\t\treturn MethodNotAllowed(\"POST\", \"only POST on /clients/{ecid}/shared_files\");\n\t\t}\n\t}\n"
+ },
+ {
+  "path": "/api/v0/shared",
+  "kind": "literal",
+  "line": 1141,
+  "methods_eq": [
+   "GET",
+   "HEAD",
+   "PATCH"
+  ],
+  "methods_ne": [],
+  "handlers": [
+   "HandleSharedList",
+   "HandleSharedBulkPatch"
+  ],
+  "errors": [],
+  "src": "\tif (path == \"/api/v0/shared\") {\n\t\tif (req.method == \"GET\" || req.method == \"HEAD\") {\n\t\t\treturn HandleSharedList(req);\n\t\t}\n\t\tif (req.method == \"PATCH\") {\n\t\t\t// bulk upload-priority PATCH over {hashes:[...], priority}.\n\t\t\treturn HandleSharedBulkPatch(req);\n\t\t}\n\t\treturn MethodNotAllowed(\"GET, HEAD, PATCH\", \"only GET / HEAD / PATCH on /shared\");\n\t}\n"
+ },
+ {
+  "path": "/api/v0/shared_reload",
+  "kind": "literal",
+  "line": 1152,
+  "methods_eq": [],
+  "methods_ne": [
+   "POST"
+  ],
+  "handlers": [
+   "HandleSharedReload"
+  ],
+  "errors": [],
+  "src": "\tif (path == \"/api/v0/shared_reload\") {\n\t\tif (req.method != \"POST\") {\n\t\t\treturn MethodNotAllowed(\"POST\", \"only POST on /shared_reload\");\n\t\t}\n\t\treturn HandleSharedReload(req);\n\t}\n\n\t// /shared/media/refresh \u2014 re-extract media metadata for the whole share.\n\t// Literal path, so it has to be matched before the /shared/{hash} patterns\n\t// below or \"media\" would be captured as a hash."
+ },
+ {
+  "path": "/api/v0/shared/media/refresh",
+  "kind": "literal",
+  "line": 1162,
+  "methods_eq": [],
+  "methods_ne": [
+   "POST"
+  ],
+  "handlers": [
+   "HandleSharedMediaRefresh"
+  ],
+  "errors": [],
+  "src": "\tif (path == \"/api/v0/shared/media/refresh\") {\n\t\tif (req.method != \"POST\") {\n\t\t\treturn MethodNotAllowed(\"POST\", \"only POST on /shared/media/refresh\");\n\t\t}\n\t\treturn HandleSharedMediaRefresh(req);\n\t}\n\n\t// /share_directories \u2014 the configured share roots, as opposed to /shared\n\t// which lists the files those roots produced. It used to be /shared/\n\t// directories, one segment away from being read as a file hash; its own\n\t// top-level path is why no ordering against /shared/{hash} is needed here."
+ },
+ {
+  "path": "/api/v0/share_directories",
+  "kind": "literal",
+  "line": 1173,
+  "methods_eq": [
+   "DELETE",
+   "GET",
+   "HEAD",
+   "POST",
+   "PUT"
+  ],
+  "methods_ne": [],
+  "handlers": [
+   "HandleSharedDirectories",
+   "HandleSharedDirectoriesPut",
+   "HandleSharedDirectoriesAdd",
+   "HandleSharedDirectoriesDelete"
+  ],
+  "errors": [],
+  "src": "\tif (path == \"/api/v0/share_directories\") {\n\t\tif (req.method == \"GET\" || req.method == \"HEAD\") {\n\t\t\treturn HandleSharedDirectories(req);\n\t\t}\n\t\tif (req.method == \"PUT\") {\n\t\t\treturn HandleSharedDirectoriesPut(req);\n\t\t}\n\t\tif (req.method == \"POST\") {\n\t\t\treturn HandleSharedDirectoriesAdd(req);\n\t\t}\n\t\tif (req.method == \"DELETE\") {\n\t\t\treturn HandleSharedDirectoriesDelete(req);\n\t\t}\n\t\treturn MethodNotAllowed(\"GET, HEAD, POST, PUT, DELETE\",\n\t\t\t\"only GET / HEAD / PUT / POST / DELETE on /share_directories\");\n\t}\n"
+ },
+ {
+  "path": "/api/v0/servers",
+  "kind": "literal",
+  "line": 1190,
+  "methods_eq": [
+   "GET",
+   "HEAD",
+   "POST"
+  ],
+  "methods_ne": [],
+  "handlers": [
+   "HandleServers",
+   "HandleServerAdd"
+  ],
+  "errors": [],
+  "src": "\tif (path == \"/api/v0/servers\") {\n\t\tif (req.method == \"GET\" || req.method == \"HEAD\") {\n\t\t\treturn HandleServers(req);\n\t\t}\n\t\tif (req.method == \"POST\") {\n\t\t\t// add a server by host:port.\n\t\t\treturn HandleServerAdd(req);\n\t\t}\n\t\treturn MethodNotAllowed(\"GET, HEAD, POST\", \"only GET / HEAD / POST on /servers\");\n\t}\n"
+ },
+ {
+  "path": "/api/v0/friends",
+  "kind": "literal",
+  "line": 1201,
+  "methods_eq": [
+   "GET",
+   "HEAD",
+   "POST"
+  ],
+  "methods_ne": [],
+  "handlers": [
+   "HandleFriends",
+   "HandleFriendAdd"
+  ],
+  "errors": [],
+  "src": "\tif (path == \"/api/v0/friends\") {\n\t\tif (req.method == \"GET\" || req.method == \"HEAD\") {\n\t\t\treturn HandleFriends(req);\n\t\t}\n\t\tif (req.method == \"POST\") {\n\t\t\treturn HandleFriendAdd(req);\n\t\t}\n\t\treturn MethodNotAllowed(\"GET, HEAD, POST\", \"only GET / HEAD / POST on /friends\");\n\t}\n\n\t// One friend by ECID: remove, set the friend slot, or browse their shared\n\t// files. The browse form is checked first, same ordering rationale as the\n\t// server routes above.\n\t{\n\t\tstatic const auto friend_browse ="
+ },
+ {
+  "path": "/api/v0/friends/{ecid}/shared_files",
+  "kind": "pattern",
+  "line": 1216,
+  "methods_eq": [],
+  "methods_ne": [],
+  "handlers": [],
+  "errors": [],
+  "src": "\t\t\tweb_api_path::ParsePattern(\"/api/v0/friends/{ecid}/shared_files\");"
+ },
+ {
+  "path": "/api/v0/friends/{ecid}",
+  "kind": "pattern",
+  "line": 1217,
+  "methods_eq": [
+   "DELETE",
+   "PATCH"
+  ],
+  "methods_ne": [
+   "POST"
+  ],
+  "handlers": [
+   "HandleFriendBrowse",
+   "HandleFriendRemove",
+   "HandleFriendPatch"
+  ],
+  "errors": [],
+  "src": "\t\tstatic const auto friend_one = web_api_path::ParsePattern(\"/api/v0/friends/{ecid}\");\n\t\tconst auto path_segs = web_api_path::SplitPath(path);\n\t\tstd::map<std::string, std::string> caps;\n\t\tif (web_api_path::Match(friend_browse, path_segs, caps)) {\n\t\t\tif (req.method != \"POST\") {\n\t\t\t\treturn MethodNotAllowed(\"POST\", \"only POST on /friends/{ecid}/shared_files\");\n\t\t\t}\n\t\t\treturn HandleFriendBrowse(req, caps[\"ecid\"]);\n\t\t}\n\t\tif (web_api_path::Match(friend_one, path_segs, caps)) {\n\t\t\tif (req.method == \"DELETE\") {\n\t\t\t\treturn HandleFriendRemove(req, caps[\"ecid\"]);\n\t\t\t}\n\t\t\tif (req.method == \"PATCH\") {\n\t\t\t\treturn HandleFriendPatch(req, caps[\"ecid\"]);\n\t\t\t}\n\t\t\treturn MethodNotAllowed(\"PATCH, DELETE\", \"only DELETE / PATCH on /friends/{ecid}\");\n\t\t}\n\t}\n"
+ },
+ {
+  "path": "/api/v0/chats",
+  "kind": "literal",
+  "line": 1237,
+  "methods_eq": [
+   "GET",
+   "HEAD"
+  ],
+  "methods_ne": [],
+  "handlers": [
+   "HandleChats"
+  ],
+  "errors": [],
+  "src": "\tif (path == \"/api/v0/chats\") {\n\t\tif (req.method == \"GET\" || req.method == \"HEAD\") {\n\t\t\treturn HandleChats(req);\n\t\t}\n\t\treturn MethodNotAllowed(\"GET, HEAD\", \"only GET / HEAD on /chats\");\n\t}\n\n\t// One conversation, keyed on \"<ip>:<port>\". The messages sub-resource is\n\t// matched first, same ordering rationale as the server / friend routes:\n\t// the longer pattern would otherwise be shadowed.\n\t{\n\t\tstatic const auto chat_messages ="
+ },
+ {
+  "path": "/api/v0/chats/{client_address}/messages",
+  "kind": "pattern",
+  "line": 1249,
+  "methods_eq": [],
+  "methods_ne": [],
+  "handlers": [],
+  "errors": [],
+  "src": "\t\t\tweb_api_path::ParsePattern(\"/api/v0/chats/{client_address}/messages\");"
+ },
+ {
+  "path": "/api/v0/chats/{client_address}",
+  "kind": "pattern",
+  "line": 1250,
+  "methods_eq": [
+   "DELETE",
+   "GET",
+   "HEAD",
+   "POST"
+  ],
+  "methods_ne": [],
+  "handlers": [
+   "HandleChatMessages",
+   "HandleChatSend",
+   "HandleChatClose"
+  ],
+  "errors": [],
+  "src": "\t\tstatic const auto chat_one = web_api_path::ParsePattern(\"/api/v0/chats/{client_address}\");\n\t\tconst auto path_segs = web_api_path::SplitPath(path);\n\t\tstd::map<std::string, std::string> caps;\n\t\tif (web_api_path::Match(chat_messages, path_segs, caps)) {\n\t\t\tif (req.method == \"GET\" || req.method == \"HEAD\") {\n\t\t\t\treturn HandleChatMessages(req, caps[\"client_address\"]);\n\t\t\t}\n\t\t\tif (req.method == \"POST\") {\n\t\t\t\treturn HandleChatSend(req, caps[\"client_address\"]);\n\t\t\t}\n\t\t\treturn MethodNotAllowed(\"GET, HEAD, POST\",\n\t\t\t\t\"only GET / HEAD / POST on /chats/{client_address}/messages\");\n\t\t}\n\t\tif (web_api_path::Match(chat_one, path_segs, caps)) {\n\t\t\tif (req.method == \"DELETE\") {\n\t\t\t\treturn HandleChatClose(req, caps[\"client_address\"]);\n\t\t\t}\n\t\t\treturn MethodNotAllowed(\"DELETE\", \"only DELETE on /chats/{client_address}\");\n\t\t}\n\t}\n\n\t// Address a conversation by ECID instead of ip:port, for a caller holding\n\t// a peer or friend row and no wish to compose the key. The friend form is\n\t// the one that reaches an OFFLINE friend.\n\t{\n\t\tstatic const auto friend_messages ="
+ },
+ {
+  "path": "/api/v0/friends/{ecid}/messages",
+  "kind": "pattern",
+  "line": 1276,
+  "methods_eq": [],
+  "methods_ne": [],
+  "handlers": [],
+  "errors": [],
+  "src": "\t\t\tweb_api_path::ParsePattern(\"/api/v0/friends/{ecid}/messages\");\n\t\tstatic const auto client_messages ="
+ },
+ {
+  "path": "/api/v0/clients/{ecid}/messages",
+  "kind": "pattern",
+  "line": 1278,
+  "methods_eq": [],
+  "methods_ne": [
+   "POST"
+  ],
+  "handlers": [
+   "HandleFriendMessageSend",
+   "HandleClientMessageSend"
+  ],
+  "errors": [],
+  "src": "\t\t\tweb_api_path::ParsePattern(\"/api/v0/clients/{ecid}/messages\");\n\t\tconst auto path_segs = web_api_path::SplitPath(path);\n\t\tstd::map<std::string, std::string> caps;\n\t\tif (web_api_path::Match(friend_messages, path_segs, caps)) {\n\t\t\tif (req.method != \"POST\") {\n\t\t\t\treturn MethodNotAllowed(\"POST\", \"only POST on /friends/{ecid}/messages\");\n\t\t\t}\n\t\t\treturn HandleFriendMessageSend(req, caps[\"ecid\"]);\n\t\t}\n\t\tif (web_api_path::Match(client_messages, path_segs, caps)) {\n\t\t\tif (req.method != \"POST\") {\n\t\t\t\treturn MethodNotAllowed(\"POST\", \"only POST on /clients/{ecid}/messages\");\n\t\t\t}\n\t\t\treturn HandleClientMessageSend(req, caps[\"ecid\"]);\n\t\t}\n\t}\n"
+ },
+ {
+  "path": "/api/v0/servers_update",
+  "kind": "literal",
+  "line": 1295,
+  "methods_eq": [],
+  "methods_ne": [
+   "POST"
+  ],
+  "handlers": [
+   "HandleServerUpdateFromUrl"
+  ],
+  "errors": [],
+  "src": "\tif (path == \"/api/v0/servers_update\") {\n\t\tif (req.method != \"POST\") {\n\t\t\treturn MethodNotAllowed(\"POST\", \"only POST on /servers_update\");\n\t\t}\n\t\treturn HandleServerUpdateFromUrl(req);\n\t}\n\n\t// server connect & remove, by ECID or by address. The two forms share their\n\t// handlers and differ only in how they look the server up, so they live in\n\t// one block. The address patterns are tried FIRST because they have the same\n\t// segment count as their ECID counterparts: a request for the address form\n\t// with \"connect\" as the address would otherwise match the ECID+connect\n\t// pattern with `ecid == \"by-address\"`, and the literal segment has to win.\n\t{\n\t\tstatic const auto server_connect ="
+ },
+ {
+  "path": "/api/v0/servers/{ecid}/connect",
+  "kind": "pattern",
+  "line": 1310,
+  "methods_eq": [],
+  "methods_ne": [],
+  "handlers": [],
+  "errors": [],
+  "src": "\t\t\tweb_api_path::ParsePattern(\"/api/v0/servers/{ecid}/connect\");"
+ },
+ {
+  "path": "/api/v0/servers/{ecid}",
+  "kind": "pattern",
+  "line": 1311,
+  "methods_eq": [],
+  "methods_ne": [],
+  "handlers": [],
+  "errors": [],
+  "src": "\t\tstatic const auto server_one = web_api_path::ParsePattern(\"/api/v0/servers/{ecid}\");\n\t\tstatic const auto server_addr_connect ="
+ },
+ {
+  "path": "/api/v0/servers/by-address/{address}/connect",
+  "kind": "pattern",
+  "line": 1313,
+  "methods_eq": [],
+  "methods_ne": [],
+  "handlers": [],
+  "errors": [],
+  "src": "\t\t\tweb_api_path::ParsePattern(\"/api/v0/servers/by-address/{address}/connect\");\n\t\tstatic const auto server_addr_one ="
+ },
+ {
+  "path": "/api/v0/servers/by-address/{address}",
+  "kind": "pattern",
+  "line": 1315,
+  "methods_eq": [
+   "PATCH"
+  ],
+  "methods_ne": [
+   "DELETE",
+   "PATCH",
+   "POST"
+  ],
+  "handlers": [
+   "HandleServerConnectByAddress",
+   "HandleServerPatchByAddress",
+   "HandleServerDeleteByAddress",
+   "HandleServerConnect",
+   "HandleServerPatch",
+   "HandleServerDelete"
+  ],
+  "errors": [],
+  "src": "\t\t\tweb_api_path::ParsePattern(\"/api/v0/servers/by-address/{address}\");\n\t\tconst auto path_segs = web_api_path::SplitPath(path);\n\t\tstd::map<std::string, std::string> caps;\n\t\t// The address form has its own path rather than sharing {ecid}.\n\t\t// One capture with two identity domains, disambiguated by sniffing\n\t\t// for a colon, is a dispatch rule invisible from outside -- and it\n\t\t// forecloses ever accepting an IPv6 literal here, since those are\n\t\t// all colons.\n\t\tif (web_api_path::Match(server_addr_connect, path_segs, caps)) {\n\t\t\tif (req.method != \"POST\") {\n\t\t\t\treturn MethodNotAllowed(\n\t\t\t\t\t\"POST\", \"only POST on /servers/by-address/{address}/connect\");\n\t\t\t}\n\t\t\treturn HandleServerConnectByAddress(req, caps[\"address\"]);\n\t\t}\n\t\tif (web_api_path::Match(server_addr_one, path_segs, caps)) {\n\t\t\tif (req.method != \"DELETE\" && req.method != \"PATCH\") {\n\t\t\t\treturn MethodNotAllowed(\"PATCH, DELETE\",\n\t\t\t\t\t\"only DELETE / PATCH on /servers/by-address/{address}\");\n\t\t\t}\n\t\t\treturn req.method == \"PATCH\" ? HandleServerPatchByAddress(req, caps[\"address\"])\n\t\t\t\t\t\t     : HandleServerDeleteByAddress(req, caps[\"address\"]);\n\t\t}\n\t\tif (web_api_path::Match(server_connect, path_segs, caps)) {\n\t\t\tif (req.method != \"POST\") {\n\t\t\t\treturn MethodNotAllowed(\"POST\", \"only POST on /servers/{ecid}/connect\");\n\t\t\t}\n\t\t\treturn HandleServerConnect(req, caps[\"ecid\"]);\n\t\t}\n\t\tif (web_api_path::Match(server_one, path_segs, caps)) {\n\t\t\tif (req.method != \"DELETE\" && req.method != \"PATCH\") {\n\t\t\t\treturn MethodNotAllowed(\n\t\t\t\t\t\"PATCH, DELETE\", \"only DELETE / PATCH on /servers/{ecid}\");\n\t\t\t}\n\t\t\treturn req.method == \"PATCH\" ? HandleServerPatch(req, caps[\"ecid\"])\n\t\t\t\t\t\t     : HandleServerDelete(req, caps[\"ecid\"]);\n\t\t}\n\t}\n"
+ },
+ {
+  "path": "/api/v0/kad",
+  "kind": "literal",
+  "line": 1354,
+  "methods_eq": [],
+  "methods_ne": [
+   "GET",
+   "HEAD"
+  ],
+  "handlers": [
+   "HandleKad"
+  ],
+  "errors": [],
+  "src": "\tif (path == \"/api/v0/kad\") {\n\t\tif (req.method != \"GET\" && req.method != \"HEAD\") {\n\t\t\treturn MethodNotAllowed(\"GET, HEAD\", \"only GET on /kad\");\n\t\t}\n\t\treturn HandleKad(req);\n\t}\n\n\t// connection control."
+ },
+ {
+  "path": "/api/v0/networks/connect",
+  "kind": "literal",
+  "line": 1362,
+  "methods_eq": [],
+  "methods_ne": [
+   "POST"
+  ],
+  "handlers": [
+   "HandleNetworksConnect"
+  ],
+  "errors": [],
+  "src": "\tif (path == \"/api/v0/networks/connect\") {\n\t\tif (req.method != \"POST\") {\n\t\t\treturn MethodNotAllowed(\"POST\", \"only POST on /networks/connect\");\n\t\t}\n\t\treturn HandleNetworksConnect(req);\n\t}"
+ },
+ {
+  "path": "/api/v0/networks/disconnect",
+  "kind": "literal",
+  "line": 1368,
+  "methods_eq": [],
+  "methods_ne": [
+   "POST"
+  ],
+  "handlers": [
+   "HandleNetworksDisconnect"
+  ],
+  "errors": [],
+  "src": "\tif (path == \"/api/v0/networks/disconnect\") {\n\t\tif (req.method != \"POST\") {\n\t\t\treturn MethodNotAllowed(\"POST\", \"only POST on /networks/disconnect\");\n\t\t}\n\t\treturn HandleNetworksDisconnect(req);\n\t}\n\t// /api/v0/kad/connect and /api/v0/kad/disconnect were dropped in\n\t// favour of /networks/{connect,disconnect} with `{\"network\":\"kad\"}`\n\t// \u2014 the two were strict aliases and the granular-selector form on\n\t// /networks/* makes the dedicated shortcut redundant."
+ },
+ {
+  "path": "/api/v0/kad/update",
+  "kind": "literal",
+  "line": 1378,
+  "methods_eq": [],
+  "methods_ne": [
+   "POST"
+  ],
+  "handlers": [
+   "HandleKadUpdateFromUrl"
+  ],
+  "errors": [],
+  "src": "\tif (path == \"/api/v0/kad/update\") {\n\t\tif (req.method != \"POST\") {\n\t\t\treturn MethodNotAllowed(\"POST\", \"only POST on /kad/update\");\n\t\t}\n\t\treturn HandleKadUpdateFromUrl(req);\n\t}\n"
+ },
+ {
+  "path": "/api/v0/kad/bootstrap",
+  "kind": "literal",
+  "line": 1385,
+  "methods_eq": [],
+  "methods_ne": [
+   "POST"
+  ],
+  "handlers": [
+   "HandleKadBootstrap"
+  ],
+  "errors": [],
+  "src": "\tif (path == \"/api/v0/kad/bootstrap\") {\n\t\tif (req.method != \"POST\") {\n\t\t\treturn MethodNotAllowed(\"POST\", \"only POST on /kad/bootstrap\");\n\t\t}\n\t\treturn HandleKadBootstrap(req);\n\t}\n\n\t// IP filter actions. The IP-filter *settings* are ordinary\n\t// preferences; these two are the standalone operations behind the\n\t// desktop Security page's \"Reload List\" and \"Update now\" buttons."
+ },
+ {
+  "path": "/api/v0/ipfilter/reload",
+  "kind": "literal",
+  "line": 1395,
+  "methods_eq": [],
+  "methods_ne": [
+   "POST"
+  ],
+  "handlers": [
+   "HandleIpfilterReload"
+  ],
+  "errors": [],
+  "src": "\tif (path == \"/api/v0/ipfilter/reload\") {\n\t\tif (req.method != \"POST\") {\n\t\t\treturn MethodNotAllowed(\"POST\", \"only POST on /ipfilter/reload\");\n\t\t}\n\t\treturn HandleIpfilterReload(req);\n\t}\n"
+ },
+ {
+  "path": "/api/v0/ipfilter/update",
+  "kind": "literal",
+  "line": 1402,
+  "methods_eq": [],
+  "methods_ne": [
+   "POST"
+  ],
+  "handlers": [
+   "HandleIpfilterUpdate"
+  ],
+  "errors": [],
+  "src": "\tif (path == \"/api/v0/ipfilter/update\") {\n\t\tif (req.method != \"POST\") {\n\t\t\treturn MethodNotAllowed(\"POST\", \"only POST on /ipfilter/update\");\n\t\t}\n\t\treturn HandleIpfilterUpdate(req);\n\t}\n\n\t// GeoIP action. The GeoIP *settings* are ordinary preferences under\n\t// [geoip]; this is the standalone \"update now\" operation, a route\n\t// rather than a write-only boolean inside PATCH /preferences."
+ },
+ {
+  "path": "/api/v0/geoip/update",
+  "kind": "literal",
+  "line": 1412,
+  "methods_eq": [],
+  "methods_ne": [
+   "POST"
+  ],
+  "handlers": [
+   "HandleGeoipUpdate"
+  ],
+  "errors": [],
+  "src": "\tif (path == \"/api/v0/geoip/update\") {\n\t\tif (req.method != \"POST\") {\n\t\t\treturn MethodNotAllowed(\"POST\", \"only POST on /geoip/update\");\n\t\t}\n\t\treturn HandleGeoipUpdate(req);\n\t}\n\n\t// re-hash one shared file against its on-disk data. Matched before the\n\t// single-segment `/shared/{hash}` pattern below purely for locality \u2014\n\t// the two can't collide, this one carries an extra path segment.\n\t{\n\t\tstatic const auto shared_media_refresh ="
+ },
+ {
+  "path": "/api/v0/shared/{hash}/media/refresh",
+  "kind": "pattern",
+  "line": 1424,
+  "methods_eq": [],
+  "methods_ne": [],
+  "handlers": [],
+  "errors": [],
+  "src": "\t\t\tweb_api_path::ParsePattern(\"/api/v0/shared/{hash}/media/refresh\");"
+ },
+ {
+  "path": "/api/v0/shared/{hash}/verify",
+  "kind": "pattern",
+  "line": 1425,
+  "methods_eq": [],
+  "methods_ne": [
+   "POST"
+  ],
+  "handlers": [
+   "HandleSharedMediaRefreshOne",
+   "HandleSharedVerify"
+  ],
+  "errors": [],
+  "src": "\t\tstatic const auto shared_verify = web_api_path::ParsePattern(\"/api/v0/shared/{hash}/verify\");\n\t\tconst auto path_segs = web_api_path::SplitPath(path);\n\t\tstd::map<std::string, std::string> caps;\n\t\tif (web_api_path::Match(shared_media_refresh, path_segs, caps)) {\n\t\t\tif (req.method != \"POST\") {\n\t\t\t\treturn MethodNotAllowed(\"POST\", \"only POST on /shared/{hash}/media/refresh\");\n\t\t\t}\n\t\t\treturn HandleSharedMediaRefreshOne(req, caps[\"hash\"]);\n\t\t}\n\t\tif (web_api_path::Match(shared_verify, path_segs, caps)) {\n\t\t\tif (req.method != \"POST\") {\n\t\t\t\treturn MethodNotAllowed(\"POST\", \"only POST on /shared/{hash}/verify\");\n\t\t\t}\n\t\t\treturn HandleSharedVerify(req, caps[\"hash\"]);\n\t\t}\n\t}\n\n\t// peers of one shared file. Same rows as /clients, selected by hash and\n\t// carrying their relation to the file; matched before `/shared/{hash}`.\n\t{\n\t\tstatic const auto shared_clients ="
+ },
+ {
+  "path": "/api/v0/shared/{hash}/clients",
+  "kind": "pattern",
+  "line": 1446,
+  "methods_eq": [],
+  "methods_ne": [
+   "GET",
+   "HEAD"
+  ],
+  "handlers": [
+   "HandleFileClients"
+  ],
+  "errors": [],
+  "src": "\t\t\tweb_api_path::ParsePattern(\"/api/v0/shared/{hash}/clients\");\n\t\tconst auto path_segs = web_api_path::SplitPath(path);\n\t\tstd::map<std::string, std::string> caps;\n\t\tif (web_api_path::Match(shared_clients, path_segs, caps)) {\n\t\t\tif (req.method != \"GET\" && req.method != \"HEAD\") {\n\t\t\t\treturn MethodNotAllowed(\n\t\t\t\t\t\"GET, HEAD\", \"only GET / HEAD on /shared/{hash}/clients\");\n\t\t\t}\n\t\t\treturn HandleFileClients(req, caps[\"hash\"], /*require_downloading=*/false);\n\t\t}\n\t}\n\n\t// the file's own bytes. Two-segment like its neighbours above and for the\n\t// same reason matched before `/shared/{hash}`; \"content\" cannot be read\n\t// as a hash, so the ordering is locality rather than necessity.\n\t{\n\t\tstatic const auto shared_content ="
+ },
+ {
+  "path": "/api/v0/shared/{hash}/content",
+  "kind": "pattern",
+  "line": 1463,
+  "methods_eq": [],
+  "methods_ne": [
+   "GET",
+   "HEAD"
+  ],
+  "handlers": [
+   "HandleSharedContent"
+  ],
+  "errors": [],
+  "src": "\t\t\tweb_api_path::ParsePattern(\"/api/v0/shared/{hash}/content\");\n\t\tconst auto path_segs = web_api_path::SplitPath(path);\n\t\tstd::map<std::string, std::string> caps;\n\t\tif (web_api_path::Match(shared_content, path_segs, caps)) {\n\t\t\tif (req.method != \"GET\" && req.method != \"HEAD\") {\n\t\t\t\treturn MethodNotAllowed(\n\t\t\t\t\t\"GET, HEAD\", \"only GET / HEAD on /shared/{hash}/content\");\n\t\t\t}\n\t\t\treturn HandleSharedContent(req, caps[\"hash\"]);\n\t\t}\n\t}\n\n\t// shared file priority PATCH. `{hash}` is the lowercase 32-char hex\n\t// MD4 hash.\n\t{"
+ },
+ {
+  "path": "/api/v0/shared/{hash}",
+  "kind": "pattern",
+  "line": 1478,
+  "methods_eq": [
+   "GET",
+   "HEAD"
+  ],
+  "methods_ne": [
+   "PATCH"
+  ],
+  "handlers": [
+   "HandleSharedDetail",
+   "HandleSharedPatch"
+  ],
+  "errors": [],
+  "src": "\t\tstatic const auto shared_detail = web_api_path::ParsePattern(\"/api/v0/shared/{hash}\");\n\t\tconst auto path_segs = web_api_path::SplitPath(path);\n\t\tstd::map<std::string, std::string> caps;\n\t\tif (web_api_path::Match(shared_detail, path_segs, caps)) {\n\t\t\tif (req.method == \"GET\" || req.method == \"HEAD\") {\n\t\t\t\treturn HandleSharedDetail(req, caps[\"hash\"]);\n\t\t\t}\n\t\t\tif (req.method != \"PATCH\") {\n\t\t\t\treturn MethodNotAllowed(\n\t\t\t\t\t\"GET, HEAD, PATCH\", \"only GET / HEAD / PATCH on /shared/{hash}\");\n\t\t\t}\n\t\t\treturn HandleSharedPatch(req, caps[\"hash\"]);\n\t\t}\n\t}\n"
+ },
+ {
+  "path": "/api/v0/categories",
+  "kind": "literal",
+  "line": 1493,
+  "methods_eq": [
+   "GET",
+   "HEAD",
+   "POST"
+  ],
+  "methods_ne": [],
+  "handlers": [
+   "HandleCategories",
+   "HandleCategoryCreate"
+  ],
+  "errors": [],
+  "src": "\tif (path == \"/api/v0/categories\") {\n\t\tif (req.method == \"GET\" || req.method == \"HEAD\") {\n\t\t\treturn HandleCategories(req);\n\t\t}\n\t\tif (req.method == \"POST\") {\n\t\t\treturn HandleCategoryCreate(req);\n\t\t}\n\t\treturn MethodNotAllowed(\"GET, HEAD, POST\", \"only GET / HEAD / POST on /categories\");\n\t}\n\n\t// single-category PATCH/DELETE.\n\t{"
+ },
+ {
+  "path": "/api/v0/categories/{index}",
+  "kind": "pattern",
+  "line": 1505,
+  "methods_eq": [
+   "DELETE",
+   "GET",
+   "HEAD",
+   "PATCH"
+  ],
+  "methods_ne": [],
+  "handlers": [
+   "HandleCategoryOne",
+   "HandleCategoryUpdate",
+   "HandleCategoryDelete"
+  ],
+  "errors": [],
+  "src": "\t\tstatic const auto category_one = web_api_path::ParsePattern(\"/api/v0/categories/{index}\");\n\t\tconst auto path_segs = web_api_path::SplitPath(path);\n\t\tstd::map<std::string, std::string> caps;\n\t\tif (web_api_path::Match(category_one, path_segs, caps)) {\n\t\t\tif (req.method == \"GET\" || req.method == \"HEAD\") {\n\t\t\t\treturn HandleCategoryOne(req, caps[\"index\"]);\n\t\t\t}\n\t\t\tif (req.method == \"PATCH\") {\n\t\t\t\treturn HandleCategoryUpdate(req, caps[\"index\"]);\n\t\t\t}\n\t\t\tif (req.method == \"DELETE\") {\n\t\t\t\treturn HandleCategoryDelete(req, caps[\"index\"]);\n\t\t\t}\n\t\t\treturn MethodNotAllowed(\"GET, HEAD, PATCH, DELETE\",\n\t\t\t\t\"only GET / PATCH / DELETE on /categories/{index}\");\n\t\t}\n\t}\n"
+ },
+ {
+  "path": "/api/v0/preferences",
+  "kind": "literal",
+  "line": 1523,
+  "methods_eq": [
+   "GET",
+   "HEAD",
+   "PATCH"
+  ],
+  "methods_ne": [],
+  "handlers": [
+   "HandlePreferences",
+   "HandlePreferencesPatch"
+  ],
+  "errors": [],
+  "src": "\tif (path == \"/api/v0/preferences\") {\n\t\tif (req.method == \"GET\" || req.method == \"HEAD\") {\n\t\t\treturn HandlePreferences(req);\n\t\t}\n\t\tif (req.method == \"PATCH\") {\n\t\t\treturn HandlePreferencesPatch(req);\n\t\t}\n\t\treturn MethodNotAllowed(\"GET, HEAD, PATCH\", \"only GET / HEAD / PATCH on /preferences\");\n\t}\n"
+ },
+ {
+  "path": "/api/v0/logs/amule",
+  "kind": "literal",
+  "line": 1533,
+  "methods_eq": [
+   "DELETE",
+   "GET",
+   "HEAD"
+  ],
+  "methods_ne": [],
+  "handlers": [
+   "HandleLogAmule",
+   "HandleLogAmuleReset"
+  ],
+  "errors": [],
+  "src": "\tif (path == \"/api/v0/logs/amule\") {\n\t\tif (req.method == \"GET\" || req.method == \"HEAD\") {\n\t\t\treturn HandleLogAmule(req);\n\t\t}\n\t\tif (req.method == \"DELETE\") {\n\t\t\treturn HandleLogAmuleReset(req);\n\t\t}\n\t\treturn MethodNotAllowed(\"GET, HEAD, DELETE\", \"only GET / HEAD / DELETE on /logs/amule\");\n\t}\n"
+ },
+ {
+  "path": "/api/v0/logs/server_info",
+  "kind": "literal",
+  "line": 1543,
+  "methods_eq": [
+   "DELETE",
+   "GET",
+   "HEAD"
+  ],
+  "methods_ne": [],
+  "handlers": [
+   "HandleLogServerinfo",
+   "HandleLogServerinfoReset"
+  ],
+  "errors": [],
+  "src": "\tif (path == \"/api/v0/logs/server_info\") {\n\t\tif (req.method == \"GET\" || req.method == \"HEAD\") {\n\t\t\treturn HandleLogServerinfo(req);\n\t\t}\n\t\tif (req.method == \"DELETE\") {\n\t\t\treturn HandleLogServerinfoReset(req);\n\t\t}\n\t\treturn MethodNotAllowed(\"GET, HEAD, DELETE\", \"only GET / HEAD / DELETE on /logs/server_info\");\n\t}\n"
+ },
+ {
+  "path": "/api/v0/stats/tree",
+  "kind": "literal",
+  "line": 1553,
+  "methods_eq": [],
+  "methods_ne": [
+   "GET",
+   "HEAD"
+  ],
+  "handlers": [
+   "HandleStatsTree"
+  ],
+  "errors": [],
+  "src": "\tif (path == \"/api/v0/stats/tree\") {\n\t\tif (req.method != \"GET\" && req.method != \"HEAD\") {\n\t\t\treturn MethodNotAllowed(\"GET, HEAD\", \"only GET on /stats/tree\");\n\t\t}\n\t\treturn HandleStatsTree(req);\n\t}\n\n\t// search. Every search-scoped operation names its search in the path;\n\t// there is no implicit \"current search\" to fall back to."
+ },
+ {
+  "path": "/api/v0/search",
+  "kind": "literal",
+  "line": 1562,
+  "methods_eq": [
+   "GET",
+   "HEAD"
+  ],
+  "methods_ne": [
+   "POST"
+  ],
+  "handlers": [
+   "HandleSearchList",
+   "HandleSearchStart"
+  ],
+  "errors": [],
+  "src": "\tif (path == \"/api/v0/search\") {\n\t\tif (req.method == \"GET\" || req.method == \"HEAD\") {\n\t\t\treturn HandleSearchList(req);\n\t\t}\n\t\tif (req.method != \"POST\") {\n\t\t\treturn MethodNotAllowed(\"GET, HEAD, POST\",\n\t\t\t\t\"only GET or POST on /search (GET lists searches, POST starts one; \"\n\t\t\t\t\"read one search at GET /search/{id}/results)\");\n\t\t}\n\t\treturn HandleSearchStart(req);\n\t}\n\n\t// The two hash-addressed routes are matched before anything capturing\n\t// {id}. They cannot actually collide (different segment counts, and {id}\n\t// is numeric), but ordering them first keeps that independent of the\n\t// matcher's internals. Both are deliberately search-AGNOSTIC: the daemon\n\t// resolves a download by hash against its whole search list, and a Kad\n\t// note fetched for a hash is fanned out to every result carrying it.\n\t// Nesting them under {id} would advertise a scoping that does not exist.\n\t{\n\t\tstatic const auto search_download ="
+ },
+ {
+  "path": "/api/v0/search/results/{hash}/download",
+  "kind": "pattern",
+  "line": 1583,
+  "methods_eq": [],
+  "methods_ne": [
+   "POST"
+  ],
+  "handlers": [
+   "HandleSearchDownload"
+  ],
+  "errors": [],
+  "src": "\t\t\tweb_api_path::ParsePattern(\"/api/v0/search/results/{hash}/download\");\n\t\tconst auto path_segs = web_api_path::SplitPath(path);\n\t\tstd::map<std::string, std::string> caps;\n\t\tif (web_api_path::Match(search_download, path_segs, caps)) {\n\t\t\tif (req.method != \"POST\") {\n\t\t\t\treturn MethodNotAllowed(\n\t\t\t\t\t\"POST\", \"only POST on /search/results/{hash}/download\");\n\t\t\t}\n\t\t\treturn HandleSearchDownload(req, caps[\"hash\"]);\n\t\t}\n\t}\n\n\t// /search/results/{hash}/comments \u2014 community ratings/comments for a search\n\t// result (issue #434). POST triggers an on-demand Kad NOTES lookup; GET\n\t// returns the notes retrieved so far plus the running flag. The result's\n\t// `comments` also ride the results list, but this per-result path mirrors\n\t// /downloads/{hash}/comments for polling a single hash. Matched before\n\t// /search/results/{hash}/download (distinct trailing segment).\n\t{\n\t\tstatic const auto search_comments ="
+ },
+ {
+  "path": "/api/v0/search/results/{hash}/comments",
+  "kind": "pattern",
+  "line": 1603,
+  "methods_eq": [
+   "POST"
+  ],
+  "methods_ne": [
+   "GET",
+   "HEAD"
+  ],
+  "handlers": [
+   "HandleSearchCommentsKadSearch",
+   "HandleSearchComments"
+  ],
+  "errors": [],
+  "src": "\t\t\tweb_api_path::ParsePattern(\"/api/v0/search/results/{hash}/comments\");\n\t\tconst auto path_segs = web_api_path::SplitPath(path);\n\t\tstd::map<std::string, std::string> caps;\n\t\tif (web_api_path::Match(search_comments, path_segs, caps)) {\n\t\t\tif (req.method == \"POST\") {\n\t\t\t\treturn HandleSearchCommentsKadSearch(req, caps[\"hash\"]);\n\t\t\t}\n\t\t\tif (req.method != \"GET\" && req.method != \"HEAD\") {\n\t\t\t\treturn MethodNotAllowed(\"GET, HEAD, POST\",\n\t\t\t\t\t\"only GET / HEAD / POST on /search/results/{hash}/comments\");\n\t\t\t}\n\t\t\treturn HandleSearchComments(req, caps[\"hash\"]);\n\t\t}\n\t}\n\n\t// /search/{id} \u2014 DELETE stops the search AND frees it (results included).\n\t{"
+ },
+ {
+  "path": "/api/v0/search/{id}",
+  "kind": "pattern",
+  "line": 1620,
+  "methods_eq": [],
+  "methods_ne": [
+   "DELETE"
+  ],
+  "handlers": [
+   "HandleSearchClose"
+  ],
+  "errors": [
+   [
+    400,
+    "bad_request",
+    "kBadSearchIdMessage"
+   ]
+  ],
+  "src": "\t\tstatic const auto search_one = web_api_path::ParsePattern(\"/api/v0/search/{id}\");\n\t\tconst auto path_segs = web_api_path::SplitPath(path);\n\t\tstd::map<std::string, std::string> caps;\n\t\tif (web_api_path::Match(search_one, path_segs, caps)) {\n\t\t\tstd::uint32_t sid = 0;\n\t\t\tif (!ParseSearchIdSegment(caps[\"id\"], sid)) {\n\t\t\t\treturn ErrorResponse(400, \"bad_request\", kBadSearchIdMessage);\n\t\t\t}\n\t\t\tif (req.method != \"DELETE\") {\n\t\t\t\treturn MethodNotAllowed(\"DELETE\",\n\t\t\t\t\t\"only DELETE on /search/{id} (read its results at \"\n\t\t\t\t\t\"GET /search/{id}/results)\");\n\t\t\t}\n\t\t\treturn HandleSearchClose(req, sid);\n\t\t}\n\t}\n\n\t// /search/{id}/{action} \u2014 results / stop / more.\n\t{"
+ },
+ {
+  "path": "/api/v0/search/{id}/{action}",
+  "kind": "pattern",
+  "line": 1639,
+  "methods_eq": [],
+  "methods_ne": [
+   "GET",
+   "HEAD",
+   "POST"
+  ],
+  "handlers": [
+   "HandleSearchResults",
+   "HandleSearchStop",
+   "HandleSearchMore"
+  ],
+  "errors": [
+   [
+    400,
+    "bad_request",
+    "kBadSearchIdMessage"
+   ],
+   [
+    404,
+    "not_found",
+    "unknown search action (expected results, stop or more)"
+   ]
+  ],
+  "src": "\t\tstatic const auto search_action = web_api_path::ParsePattern(\"/api/v0/search/{id}/{action}\");\n\t\tconst auto path_segs = web_api_path::SplitPath(path);\n\t\tstd::map<std::string, std::string> caps;\n\t\tif (web_api_path::Match(search_action, path_segs, caps)) {\n\t\t\tstd::uint32_t sid = 0;\n\t\t\tif (!ParseSearchIdSegment(caps[\"id\"], sid)) {\n\t\t\t\treturn ErrorResponse(400, \"bad_request\", kBadSearchIdMessage);\n\t\t\t}\n\t\t\tconst std::string &action = caps[\"action\"];\n\t\t\tif (action == \"results\") {\n\t\t\t\tif (req.method != \"GET\" && req.method != \"HEAD\") {\n\t\t\t\t\treturn MethodNotAllowed(\n\t\t\t\t\t\t\"GET, HEAD\", \"only GET / HEAD on /search/{id}/results\");\n\t\t\t\t}\n\t\t\t\treturn HandleSearchResults(req, sid);\n\t\t\t}\n\t\t\tif (action == \"stop\") {\n\t\t\t\tif (req.method != \"POST\") {\n\t\t\t\t\treturn MethodNotAllowed(\"POST\", \"only POST on /search/{id}/stop\");\n\t\t\t\t}\n\t\t\t\treturn HandleSearchStop(req, sid);\n\t\t\t}\n\t\t\tif (action == \"more\") {\n\t\t\t\tif (req.method != \"POST\") {\n\t\t\t\t\treturn MethodNotAllowed(\"POST\", \"only POST on /search/{id}/more\");\n\t\t\t\t}\n\t\t\t\treturn HandleSearchMore(req, sid);\n\t\t\t}\n\t\t\treturn ErrorResponse(\n\t\t\t\t404, \"not_found\", \"unknown search action (expected results, stop or more)\");\n\t\t}\n\t}\n\n\t// /stats/graphs/{graph} \u2014 path-pattern matches the four allowed\n\t// graph names (\"download_speed\" / \"upload_speed\" / \"connections\" /\n\t// \"kad_nodes\" -- HandleStatsGraph rejects anything else).\n\t{"
+ },
+ {
+  "path": "/api/v0/stats/graphs/{graph}",
+  "kind": "pattern",
+  "line": 1676,
+  "methods_eq": [],
+  "methods_ne": [
+   "GET",
+   "HEAD"
+  ],
+  "handlers": [
+   "HandleStatsGraph"
+  ],
+  "errors": [],
+  "src": "\t\tstatic const auto graph_pattern = web_api_path::ParsePattern(\"/api/v0/stats/graphs/{graph}\");\n\t\tconst auto segs = web_api_path::SplitPath(path);\n\t\tstd::map<std::string, std::string> caps;\n\t\tif (web_api_path::Match(graph_pattern, segs, caps)) {\n\t\t\tif (req.method != \"GET\" && req.method != \"HEAD\") {\n\t\t\t\treturn MethodNotAllowed(\"GET, HEAD\", \"only GET on /stats/graphs/{graph}\");\n\t\t\t}\n\t\t\treturn HandleStatsGraph(req, caps[\"graph\"]);\n\t\t}\n\t}\n\n\t// /downloads/{hash}/comments \u2014 per-source comments/ratings list\n\t// (issue #419). Downloads-only: needs a live source list. Matched\n\t// before /downloads/{hash} (more segments).\n\t{\n\t\tstatic const auto dl_comments ="
+ },
+ {
+  "path": "/api/v0/downloads/{hash}/comments",
+  "kind": "pattern",
+  "line": 1692,
+  "methods_eq": [
+   "POST"
+  ],
+  "methods_ne": [
+   "GET",
+   "HEAD"
+  ],
+  "handlers": [
+   "HandleDownloadCommentsKadSearch",
+   "HandleDownloadComments"
+  ],
+  "errors": [],
+  "src": "\t\t\tweb_api_path::ParsePattern(\"/api/v0/downloads/{hash}/comments\");\n\t\tconst auto path_segs = web_api_path::SplitPath(path);\n\t\tstd::map<std::string, std::string> caps;\n\t\tif (web_api_path::Match(dl_comments, path_segs, caps)) {\n\t\t\tif (req.method == \"POST\") {\n\t\t\t\t// POST triggers an on-demand Kad NOTES lookup; retrieved\n\t\t\t\t// community ratings/comments then appear on GET (issue #434).\n\t\t\t\treturn HandleDownloadCommentsKadSearch(req, caps[\"hash\"]);\n\t\t\t}\n\t\t\tif (req.method != \"GET\" && req.method != \"HEAD\") {\n\t\t\t\treturn MethodNotAllowed(\"GET, HEAD, POST\",\n\t\t\t\t\t\"only GET / HEAD / POST on /downloads/{hash}/comments\");\n\t\t\t}\n\t\t\treturn HandleDownloadComments(req, caps[\"hash\"]);\n\t\t}\n\t}\n\n\t// /downloads/{hash}/filenames \u2014 source-reported filenames + counts\n\t// (issue #420). Downloads-only.\n\t{\n\t\tstatic const auto dl_filenames ="
+ },
+ {
+  "path": "/api/v0/downloads/{hash}/filenames",
+  "kind": "pattern",
+  "line": 1713,
+  "methods_eq": [],
+  "methods_ne": [
+   "GET",
+   "HEAD"
+  ],
+  "handlers": [
+   "HandleDownloadFilenames"
+  ],
+  "errors": [],
+  "src": "\t\t\tweb_api_path::ParsePattern(\"/api/v0/downloads/{hash}/filenames\");\n\t\tconst auto path_segs = web_api_path::SplitPath(path);\n\t\tstd::map<std::string, std::string> caps;\n\t\tif (web_api_path::Match(dl_filenames, path_segs, caps)) {\n\t\t\tif (req.method != \"GET\" && req.method != \"HEAD\") {\n\t\t\t\treturn MethodNotAllowed(\n\t\t\t\t\t\"GET, HEAD\", \"only GET / HEAD on /downloads/{hash}/filenames\");\n\t\t\t}\n\t\t\treturn HandleDownloadFilenames(req, caps[\"hash\"]);\n\t\t}\n\t}\n\n\t// /downloads/{hash}/a4af \u2014 A4AF source list (GET) + swap actions\n\t// (POST). Downloads-only (issue #421).\n\t{"
+ },
+ {
+  "path": "/api/v0/downloads/{hash}/a4af",
+  "kind": "pattern",
+  "line": 1728,
+  "methods_eq": [
+   "POST"
+  ],
+  "methods_ne": [],
+  "handlers": [
+   "HandleDownloadA4afAction"
+  ],
+  "errors": [],
+  "src": "\t\tstatic const auto dl_a4af = web_api_path::ParsePattern(\"/api/v0/downloads/{hash}/a4af\");\n\t\tconst auto path_segs = web_api_path::SplitPath(path);\n\t\tstd::map<std::string, std::string> caps;\n\t\tif (web_api_path::Match(dl_a4af, path_segs, caps)) {\n\t\t\tif (req.method == \"POST\") {\n\t\t\t\treturn HandleDownloadA4afAction(req, caps[\"hash\"]);\n\t\t\t}\n\t\t\t// POST only. A4AF sources are rows of /downloads/{hash}/clients,\n\t\t\t// carrying the whole peer object rather than a bare ECID, and\n\t\t\t// `a4af_auto` is on the download detail object, so there is\n\t\t\t// nothing for a GET here to add. The swap actions have no\n\t\t\t// equivalent on those routes, and this reply is still the A4AF\n\t\t\t// view.\n\t\t\treturn MethodNotAllowed(\"POST\", \"only POST on /downloads/{hash}/a4af\");\n\t\t}\n\t}\n\n\t// sources and A4AF rows of one partfile. Matched before the bare\n\t// `/downloads/{hash}` pattern, which accepts any single segment.\n\t{"
+ },
+ {
+  "path": "/api/v0/downloads/{hash}/clients",
+  "kind": "pattern",
+  "line": 1748,
+  "methods_eq": [],
+  "methods_ne": [
+   "GET",
+   "HEAD"
+  ],
+  "handlers": [
+   "HandleFileClients"
+  ],
+  "errors": [],
+  "src": "\t\tstatic const auto dl_clients = web_api_path::ParsePattern(\"/api/v0/downloads/{hash}/clients\");\n\t\tconst auto path_segs = web_api_path::SplitPath(path);\n\t\tstd::map<std::string, std::string> caps;\n\t\tif (web_api_path::Match(dl_clients, path_segs, caps)) {\n\t\t\tif (req.method != \"GET\" && req.method != \"HEAD\") {\n\t\t\t\treturn MethodNotAllowed(\n\t\t\t\t\t\"GET, HEAD\", \"only GET / HEAD on /downloads/{hash}/clients\");\n\t\t\t}\n\t\t\treturn HandleFileClients(req, caps[\"hash\"], /*require_downloading=*/true);\n\t\t}\n\t}\n\n\t// /downloads/{hash} \u2014 single-resource detail (GET / HEAD) and the\n\t// mutation surface (PATCH for status/priority/category, DELETE for\n\t// clear-completed single). `{hash}` is the lowercase 32-char hex\n\t// MD4 hash (dispatcher lower-cases input on the way in).\n\t{"
+ },
+ {
+  "path": "/api/v0/downloads/{hash}",
+  "kind": "pattern",
+  "line": 1765,
+  "methods_eq": [
+   "DELETE",
+   "GET",
+   "HEAD",
+   "PATCH"
+  ],
+  "methods_ne": [],
+  "handlers": [
+   "HandleDownloadDetail",
+   "HandleDownloadPatch",
+   "HandleDownloadDelete"
+  ],
+  "errors": [],
+  "src": "\t\tstatic const auto download_detail = web_api_path::ParsePattern(\"/api/v0/downloads/{hash}\");\n\t\tconst auto path_segs = web_api_path::SplitPath(path);\n\t\tstd::map<std::string, std::string> caps;\n\t\tif (web_api_path::Match(download_detail, path_segs, caps)) {\n\t\t\tif (req.method == \"GET\" || req.method == \"HEAD\") {\n\t\t\t\treturn HandleDownloadDetail(req, caps[\"hash\"]);\n\t\t\t}\n\t\t\tif (req.method == \"PATCH\") {\n\t\t\t\treturn HandleDownloadPatch(req, caps[\"hash\"]);\n\t\t\t}\n\t\t\tif (req.method == \"DELETE\") {\n\t\t\t\treturn HandleDownloadDelete(req, caps[\"hash\"]);\n\t\t\t}\n\t\t\treturn MethodNotAllowed(\"GET, HEAD, PATCH, DELETE\",\n\t\t\t\t\"only GET / HEAD / PATCH / DELETE on /downloads/{hash}\");\n\t\t}\n\t}\n\n\t// Country-flag artwork. Sits ahead of the static fallthrough so the\n\t// route answers identically whether or not StaticRoot is set \u2014 the\n\t// bytes are compiled in, not read from disk. Deliberately outside\n\t// /api/v0/: it is an image an <img src> points at, not a JSON\n\t// resource, and it carries no per-installation data."
+ },
+ {
+  "path": "/flags/",
+  "kind": "prefix",
+  "line": 1788,
+  "methods_eq": [],
+  "methods_ne": [
+   "GET",
+   "HEAD"
+  ],
+  "handlers": [
+   "ServeCountryFlag"
+  ],
+  "errors": [],
+  "src": "\tif (path.compare(0, 7, \"/flags/\") == 0) {\n\t\tif (req.method != \"GET\" && req.method != \"HEAD\") {\n\t\t\treturn MethodNotAllowed(\"GET, HEAD\", \"only GET / HEAD on /flags/{code}.png\");\n\t\t}\n\t\treturn ServeCountryFlag(req, path);\n\t}\n\n\t// Static-frontend fallthrough. Anything that didn't match an\n\t// /api/v0/* route and is a safe-method request for a non-API path\n\t// is a candidate. ServeStaticFile is a no-op (404) when StaticRoot\n\t// is unset, so API-only deployments keep their historical\n\t// behaviour. Auth is intentionally NOT required here \u2014 the shell\n\t// itself is public; the API calls it makes still go through the\n\t// per-handler role gates."
+ },
+ {
+  "path": "/api/",
+  "kind": "prefix",
+  "line": 1802,
+  "methods_eq": [
+   "GET",
+   "HEAD"
+  ],
+  "methods_ne": [],
+  "handlers": [
+   "ServeStaticFile"
+  ],
+  "errors": [
+   [
+    404,
+    "not_found",
+    "no such endpoint"
+   ]
+  ],
+  "src": "\tif ((req.method == \"GET\" || req.method == \"HEAD\") && path.compare(0, 5, \"/api/\") != 0) {\n\t\treturn ServeStaticFile(req, path);\n\t}\n\n\treturn ErrorResponse(404, \"not_found\", \"no such endpoint\");\n}"
+ }
+]

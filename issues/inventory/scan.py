@@ -118,9 +118,10 @@ TOK = re.compile(
     r'\.Key\("([^"]+)"\)'
     r'|\.(BeginObject|EndObject|BeginArray|EndArray)\(\)'
     r'|\.(ValueString|ValueInt|ValueUInt|ValueBool|ValueDouble|ValueNull|ValueRaw)\('
-    # `WriteIntOrNull(w, "key", known, value)` writes the key itself, so the
-    # generic Write* recursion below sees only a variable and drops the field.
-    r'|\bWrite(Int)OrNull\s*\(\s*w\s*,\s*"([^"]+)"'
+    # `Write{Int,UInt,String,Bool}OrNull(w, "key", known, value)` writes the key
+    # itself, so the generic Write* recursion below sees only a variable and
+    # drops the field unless the key is captured here.
+    r'|\bWrite(Int|UInt|String|Bool)OrNull\s*\(\s*w\s*,\s*"([^"]+)"'
     r'|\b(Write[A-Za-z0-9_]*|ToJson[A-Za-z0-9_]*)\s*\(')
 VT = {"ValueString": "string", "ValueInt": "int", "ValueUInt": "uint", "ValueBool": "bool",
       "ValueDouble": "number", "ValueNull": "null", "ValueRaw": "raw"}
