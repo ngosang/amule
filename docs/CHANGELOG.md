@@ -4,7 +4,7 @@ The history of every aMule release. Versions are listed newest first.
 
 ---
 
-## Version 3.1.1 - "The secure until proven otherwise edition"
+## Version 3.2.0 - "The secure until proven otherwise edition"
 2026-10-28
 
 A security release first: it fixes 15 vulnerabilities reported through GitHub Security Advisories, and 10 of them are also present in aMule 2.3.3. If you still run 2.3.x or any 3.x release, please upgrade. The release is 454 merged PRs on top of 3.1.0, including the 12 advisory fixes merged at release time. Around those fixes: uploads that no longer stall behind a slow disk, new downloads that find sources sooner, an "All" search across eD2k and Kad, chat spam protection everywhere, an appearance setting, a working Linux tray, and the Web UI in seven languages.
@@ -39,7 +39,7 @@ Upgrading is a drop-in, but a few defaults changed for safety. Read [Before you 
 
 ### Security
 
-All 15 problems below are fixed in 3.1.1. "Also in 2.3.3" tells you whether the old 2.3.3 release has the same problem. Every problem is also in 3.0.0, 3.0.1 and 3.1.0, except where the last column says otherwise.
+All 15 problems below are fixed in 3.2.0. "Also in 2.3.3" tells you whether the old 2.3.3 release has the same problem. Every problem is also in 3.0.0, 3.0.1 and 3.1.0, except where the last column says otherwise.
 
 "Remote control" below means the connection that amulegui, amulecmd, amuleweb and amuleapi use to control aMule (External Connections, port 4712 by default).
 
@@ -67,7 +67,7 @@ Since 3.0.0, the remote-control port only accepts connections from the same comp
 
 ### Performance, measured
 
-These numbers come from the tests in each PR, comparing the code just before and just after it. They are not one 3.1.0 against 3.1.1 benchmark, and your results depend on your disks, line and peers.
+These numbers come from the tests in each PR, comparing the code just before and just after it. They are not one 3.1.0 against 3.2.0 benchmark, and your results depend on your disks, line and peers.
 
 **aMule stays responsive when the disk is slow.** In 3.1.0 a slow disk could freeze the GUI and every remote control for seconds.
 
@@ -199,7 +199,7 @@ Measured gains for the changes below are in [Performance, measured](#performance
 
 ### Groundwork, not switched on
 
-kno continued the addressing work: native IPv6 peers and sources, IPv6 in the server login and Kad, server-coordinated NAT traversal with Lugdunum and ed2k-server, uTP hole punching, and a QUIC transport (#1604 through #2143). It all sits behind `ENABLE_IPV6`, `ENABLE_NATT_SERVER_COORDINATION`, `ENABLE_UTP` and `ENABLE_QUIC`, which are off by default, so a stock 3.1.1 build connects exactly as before.
+kno continued the addressing work: native IPv6 peers and sources, IPv6 in the server login and Kad, server-coordinated NAT traversal with Lugdunum and ed2k-server, uTP hole punching, and a QUIC transport (#1604 through #2143). It all sits behind `ENABLE_IPV6`, `ENABLE_NATT_SERVER_COORDINATION`, `ENABLE_UTP` and `ENABLE_QUIC`, which are off by default, so a stock 3.2.0 build connects exactly as before.
 
 ### Known Limitations
 
@@ -250,7 +250,7 @@ Several developers also carried catalogues: adem4ik, ngosang, mrjimenez, LSalami
 
 ### Merged PRs in this release
 
-The entries above cover the changes users will notice. CI, test and build-tooling work (about 55 PRs) and the Weblate merges are not listed one by one; [the full compare view](https://github.com/amule-org/amule/compare/3.1.0...3.1.1) lists every merged pull request between 3.1.0 and this tag.
+The entries above cover the changes users will notice. CI, test and build-tooling work (about 55 PRs) and the Weblate merges are not listed one by one; [the full compare view](https://github.com/amule-org/amule/compare/3.1.0...3.2.0) lists every merged pull request between 3.1.0 and this tag.
 
 Fixes to features added during this same cycle are folded into the entries above rather than listed as separate bug fixes, since no released aMule ever carried those bugs.
 
