@@ -4,6 +4,258 @@ The history of every aMule release. Versions are listed newest first.
 
 ---
 
+## Version 3.1.1 - "The secure until proven otherwise edition"
+2026-10-28
+
+A security release first: it fixes 15 vulnerabilities reported through GitHub Security Advisories, and 10 of them are also present in aMule 2.3.3. If you still run 2.3.x or any 3.x release, please upgrade. The release is 454 merged PRs on top of 3.1.0, including the 12 advisory fixes merged at release time. Around those fixes: uploads that no longer stall behind a slow disk, new downloads that find sources sooner, an "All" search across eD2k and Kad, chat spam protection everywhere, an appearance setting, a working Linux tray, and the Web UI in seven languages.
+
+Upgrading is a drop-in, but a few defaults changed for safety. Read [Before you upgrade](#before-you-upgrade) if you drive aMule from a remote GUI, amuleapi, amuleweb or scripts.
+
+### Highlights
+
+- **Safer against other users and your network.** 15 security problems are fixed. Other eD2k and Kad users, devices on your local network and remote-control users can no longer crash aMule, read parts of its memory, or reach files and programs outside it. The [table below](#security) shows each one and whether 2.3.3 has it too.
+- **No more freezes from a slow disk.** A slow, busy or sleeping disk used to freeze the GUI and every remote control for seconds, sometimes over 20. Now replies take milliseconds, and uploads from your other disks keep going at full speed: 93 MiB/s instead of 10 MiB/s in our test (#2067, #2073, #1775, #1779, #1889, #1942). [See the numbers](#performance-measured).
+- **Faster uploads that use less CPU.** Up to 16% more upload speed and about half the CPU per MiB at low speeds (#2088, #1879). No CPU is wasted compressing videos and other files that are already compressed (#1816, #1932). Your upload slots are shared fairly, because one machine can no longer take most of them by posing as many users (#2043, #2092). [See the numbers](#performance-measured).
+- **New downloads start sooner.** aMule asks the servers for sources as soon as you add or resume a download, within seconds, instead of waiting up to 22 minutes for the next round of server requests (#2064, #2110, #2079). With a download limit set, aMule now answers new peers at once instead of letting some time out, so you lose fewer sources (#2065). [See the numbers](#performance-measured).
+- **Search both networks at once.** One "All" search covers eD2k and Kad (#1670). Filters for length, codec, title, album and artist now narrow results on the networks too (#1939, #1887). The Web UI can rerun a past search with one click (#2062).
+- **Less chat spam, whatever you use.** The spam filter and chat CAPTCHA now protect amuled, amulegui, amuleapi and the Web UI, not only the desktop app, and they're on by default (#2089, #1829).
+- **You decide which folders remote clients can use.** A remote GUI, amuleapi or script can only set download and shared folders inside a list you keep on the aMule machine, so a leaked password no longer exposes the whole disk. Folders you already use keep working.
+- **A nicer desktop app.** Pick Light, Dark or follow the system (#1922); set bandwidth with sliders and an Mbit/s calculator (#1920, #2004); find preferences in eMule's familiar order (#1919); see progress while aMule shuts down (#1924); and use the Linux tray icon again, now with status icons and speed bars (#2036, #2045, #2026).
+- **Damaged files are caught and not spread.** Verify Local Data remembers its result and shows it in amulegui and File Details (#1638, #1691). aMule stops offering parts it found damaged, so peers no longer download bad data from you (#1721). It can also recheck shared files every few days (#1948).
+- **The Web UI speaks seven languages.** Catalan, Italian, Dutch, Portuguese (Brazil) and Russian join English and Spanish (#1755, #1773, #2131), and its catalogues are now translated on Weblate with the rest of aMule (#1737).
+- **A better server list.** aMule combines server lists from several sources you choose, and ignores a broken download instead of importing it (#1923).
+
+### Before you upgrade
+
+- **Remote folder changes are refused until you allow them.** amulegui, amuleapi and EC clients can only set the incoming, temporary, shared and category folders to a folder under the list in `allowed-remote-dirs.dat` (one absolute path per line, in the config folder). The list is empty by default. In the monolithic aMule, edit it under Preferences → Remote Controls; on a daemon-only install, edit the file and restart amuled. Folders already configured keep working, and removing a folder is always allowed. amuleapi answers `403 path_not_allowed` for a refused folder.
+- **Some settings are local only.** The ffprobe path, the online-signature folder and "Follow symbolic links in shared folders" can no longer be changed over EC or amuleapi. Set them in the local GUI or in `amule.conf`.
+- **amuleweb guests need guest access turned on, and are read-only.** A guest password alone no longer lets a guest log in: turn on "Enable Low rights User" in Preferences → Remote Controls, or start amuleweb with `--allow-guest`. A guest can no longer add downloads or make the core fetch URLs.
+- **Downloads use http and https only.** Server lists, the IP filter, nodes.dat and GeoIP updates from any other kind of address are refused.
+- **Chat spam protection and CAPTCHA are on by default.** A saved setting, including an explicit opt-out, is kept (#2089).
+- **Office documents are not shared by default** (#2098). This applies to new profiles only; a saved exclusion list is kept. To get the same on an existing profile, append this to "Exclude files and folders matching" under Preferences → Directories (wildcard mode, not regex):
+  `*.doc|*.docx|*.docm|*.dot|*.dotx|*.dotm|*.xls|*.xlsx|*.xlsm|*.xlsb|*.xlt|*.xltx|*.xltm|*.xlam|*.ppt|*.pptx|*.pptm|*.pot|*.potx|*.potm|*.pps|*.ppsx|*.ppsm|*.odt|*.ott|*.ods|*.ots|*.odp|*.otp|*.odg|*.otg|*.odf|*.odb|*.rtf|*.csv|*.tsv`
+  Downloads stay shared while they are incomplete.
+- **Share exclusion patterns now match folder names too** (#1571). A pattern that matches a folder name now leaves that whole folder out of the share.
+
+### Security
+
+All 15 problems below are fixed in 3.1.1. "Also in 2.3.3" tells you whether the old 2.3.3 release has the same problem. Every problem is also in 3.0.0, 3.0.1 and 3.1.0, except where the last column says otherwise.
+
+"Remote control" below means the connection that amulegui, amulecmd, amuleweb and amuleapi use to control aMule (External Connections, port 4712 by default).
+
+| Advisory | Severity | What could happen | Who could do it | Also in 2.3.3 |
+|---|---|---|---|---|
+| [GHSA-cp82](https://github.com/amule-org/amule/security/advisories/GHSA-cp82-q55r-936c) | High | aMule could crash, and possibly be taken over | A device on your local network, if UPnP is on | Yes |
+| [GHSA-2crf](https://github.com/amule-org/amule/security/advisories/GHSA-2crf-cv3v-53w5) | High | amuled could crash, without a password | Anyone who can reach the remote-control port | Yes |
+| [GHSA-52mv](https://github.com/amule-org/amule/security/advisories/GHSA-52mv-r67q-c985) | High | aMule could freeze for tens of seconds, again and again | Any Kad user | Yes |
+| [GHSA-q2jr](https://github.com/amule-org/amule/security/advisories/GHSA-q2jr-xf54-v364) | High | Files could be moved anywhere on the computer that runs aMule | A remote-control user | Yes |
+| [GHSA-3j74](https://github.com/amule-org/amule/security/advisories/GHSA-3j74-m5qw-75xg) | High | amuled could be made to run any program | A remote-control user | No, new in 3.1.0 |
+| [GHSA-cvxg](https://github.com/amule-org/amule/security/advisories/GHSA-cvxg-rcqx-rp9p) | Medium | Parts of aMule's memory could leak | Any eD2k user | Yes |
+| [GHSA-g22c](https://github.com/amule-org/amule/security/advisories/GHSA-g22c-pmwf-qmwm) | Medium | The statistics page could crash aMule, amulegui, amulecmd or amuleweb | Any eD2k user | Yes |
+| [GHSA-6qxf](https://github.com/amule-org/amule/security/advisories/GHSA-6qxf-6fj4-q8fv) | Medium | Parts of aMule's memory could leak into its log, without a password | Anyone who can reach the remote-control port | Yes |
+| [GHSA-hv8p](https://github.com/amule-org/amule/security/advisories/GHSA-hv8p-rp6f-rmf7) | Medium | aMule could use up all memory | Someone you download from | Yes |
+| [GHSA-vh6g](https://github.com/amule-org/amule/security/advisories/GHSA-vh6g-8m3v-wfmf) | Medium | An amuleweb guest could add downloads and make aMule fetch web pages | An amuleweb guest | Yes |
+| [GHSA-42j9](https://github.com/amule-org/amule/security/advisories/GHSA-42j9-4vh7-jvw6) | Medium | A bad update file could fill the disk or crash aMule | Whoever serves your IP filter, server list or GeoIP updates | Yes |
+| [GHSA-7rxg](https://github.com/amule-org/amule/security/advisories/GHSA-7rxg-6w2f-3w57) | Medium | You could get a different file than the link you added, and aMule would not notice | Someone you download from | Yes |
+| [GHSA-frfq](https://github.com/amule-org/amule/security/advisories/GHSA-frfq-582f-4jww) | Medium | A bad server-list address could make aMule send data to other computers on your network | Whoever gives you a server-list address | No, since 3.0.0 |
+| [GHSA-gc7p](https://github.com/amule-org/amule/security/advisories/GHSA-gc7p-357m-xj2j) | Low | amulecmd, amuleweb or amuleapi could show fake data, even with encryption on | Someone on the network between them and aMule | No, new in 3.1.0 |
+| [GHSA-vj9g](https://github.com/amule-org/amule/security/advisories/GHSA-vj9g-4mg6-q9hw) | Low | A web page could change aMule through amuleapi while you are logged in | A web page you open | No, new in 3.1.0 |
+
+Since 3.0.0, the remote-control port only accepts connections from the same computer, unless you changed that to use amulegui or amuleweb from another one. Configurations carried over from 2.3.x often accept connections from the network.
+
+**Other hardening.** Beyond the advisories, this release closes more ways that servers, peers, links and update files could crash aMule, slow it down or use too much memory or disk (#1701, #1733, #1864, #1865, #1867, #1868, #1869, #1873, #1862, #1890, #1900, #1925, #2054, #2125). amuleapi guests no longer see your MaxMind licence, proxy user name or GeoIP update address (#1860, #1974), and amuleapi passwords can be set without typing them on the command line (#1973).
+
+### Performance, measured
+
+These numbers come from the tests in each PR, comparing the code just before and just after it. They are not one 3.1.0 against 3.1.1 benchmark, and your results depend on your disks, line and peers.
+
+**aMule stays responsive when the disk is slow.** In 3.1.0 a slow disk could freeze the GUI and every remote control for seconds.
+
+| Test | Before | After | Change |
+|---|---|---|---|
+| Every upload read takes 400 ms longer: typical remote-control reply (#1775) | 297 ms | 0.9 ms | 330× faster |
+| Slow reads while an upload slot changes: slowest remote-control reply (#1779) | 1.6 to 5.0 s | 8 to 62 ms | about 80× faster |
+| Memory pressure while uploads are sent: slowest remote-control reply (#2073) | 4.9 s | 8.4 ms | about 590× faster |
+| Saving a download's progress takes 15 s: remote control during the save (#1889) | frozen for 15 s | slowest reply 372 ms | about 40× faster |
+| The free-space check takes 3 s: remote-control replies in 3 minutes (#1942) | 25, the slowest 23.9 s | 1745, the slowest 20 ms | 70× more replies, slowest 1,200× faster |
+
+**Uploads and downloads.**
+
+| Test | Before | After | Change |
+|---|---|---|---|
+| Upload from a fast disk while another disk is slow (#2067) | 10.3 MiB/s | 93.0 MiB/s | 9× faster |
+| Upload speed with a 64 MiB/s limit, from a fast SSD (#2088) | 49.1 MiB/s | 57.0 MiB/s | +16% |
+| Upload speed with no limit, 3 slots (#2088) | 173 MiB/s | 184 MiB/s | +6% |
+| CPU per MiB uploaded, 15 slots at 2.5 MiB/s (#2088) | 44.1 ms | 22.8 ms | −48% |
+| CPU per MiB uploaded, no upload limit (#1879) | 4.00 ms | 3.09 ms | −23% |
+| CPU spent compressing video and other compressed media (#1816) | 15 to 18 ms per MB, to save 0 to 3% | none | all of it saved |
+| A download added mid-session asked at other servers (#2064) | not within 5 minutes | within 1 s | at least 300× sooner |
+| Second new download asked at the connected server (#2110) | after 249 s | after 2 s | about 120× sooner |
+| Answering a new peer with a 20 KiB/s download limit (#2065) | up to 29 s, sometimes timed out | 3 to 6 ms | about 5,000× faster, no timeouts |
+| Memory while the disk stalls (#2078) | grows for as long as the stall lasts: 320 MiB with stalls of only 2 s | capped by a write budget: 94 MiB in the same test, however long the stall | −71% in this test, more for longer stalls |
+| Peers flooding 1-byte packets (#2109) | no progress, CPU at 100%, 120 s to shut down | 0.3 MiB/s, 2 s to shut down | keeps working; shutdown 60× faster |
+
+**Startup with a large recursive share.**
+
+| Test | Before | After | Change |
+|---|---|---|---|
+| Listing 2,040 shared folders with 200,000 files, macOS / Linux (#1569) | 930 / 425 ms | 80 / 23 ms | 12× / 18× faster |
+| Time to the splash screen, 20,200 shared folders (#1572) | 744 ms | 125 ms | 6× faster |
+
+### Transfers and sources
+
+Measured gains for the changes below are in [Performance, measured](#performance-measured).
+
+- Upload reads on a worker pool, one per volume, with packet building outside the uploading-list lock (#2067, #2073, #2112, #2113, #1933, #2055).
+- Locks no longer held across upload disk reads (#1775, #1779), and the done-block list each request walks is capped (#1801).
+- Per-address upload slot caps, also when free slots remain (#2043, #2092).
+- No zlib for media and other formats that are compressed by design (#1816, #1932).
+- `.part.met` saves and free-space checks off the main thread (#1889, #1942, #1915); one write budget for the temp folder (#2114); tiny data packets no longer stall reception (#2109).
+- Sources for new downloads from the connected server and other servers, within budgets (#2064, #2110); servers known by name get UDP requests, and paused downloads are not rescanned (#2079).
+- The download limit counts only download data (#2065).
+- Endgame: a failed takeover requeues the cancelled source (#1651); free intervals inside partly reserved blocks are used (#1965).
+- A cancel never deletes a finished download (#1854); a download completed at startup no longer sorts as 0% (#1855); disk-space budgeting holds across automatic resumes (#1891, #1963).
+- Cached read handles for uploaded complete files (#1953).
+
+### Networking and protocol
+
+- Live port rebinding: TCP and UDP port changes apply without a restart, also from remote clients (#1706).
+- ED2K can be switched on at runtime, and the Networks page follows network changes made from other clients (#2010).
+- SOCKS5 replies bound to 0.0.0.0 and SOCKS4 replies with a zero port and address are accepted, so Tor works again as a SOCKS proxy (#1648, #1819).
+- Bind-to-interface says what it binds and no longer leaks HTTP (#1649).
+- An obfuscated server connection that times out is retried without obfuscation (#2052); dead servers are counted the same way on every platform (#1650); `server.met` stays readable and deleted servers stay deleted (#1794).
+- Kad: the hourly firewall recheck no longer flips Kad to firewalled (#1745); silent buddies are detected and callback routes recovered (#1831, #1833); persisted indexes load in the background (#1742); publication covers large libraries (#1918); string tags are UTF-8 (#1997); `TAG_BUDDYHASH` uses the eMule layout (#1993); stale UDP verification expires (#1782); callback and source publication fixes (#1781, #1808).
+- Kad shares and uses file repair hashes (AICH, Kad protocol 0x0a), on by default and also for profiles upgraded from 3.1.0. It is a setting now, not a build option: "Share and use file repair hashes (AICH) over Kad" under Preferences → Files. The stricter filter for old publishers stays off (#1663, #1725, #2044). AICH evidence selection and subnet voting fixed (#1713, #1738, #1739).
+- Packets dropped before sending are freed (#1822); data races in sockets, uploads, part-file I/O and statistics found by ThreadSanitizer are closed (#1807); the RC4 loop is faster (#1951).
+
+### Search
+
+- "All" search across eD2k and Kad (#1670), and an identical running search reuses its tab (#1589).
+- Media filters: duration, codec, title, album and artist (#1939), and minimum bitrate in core Kad searches (#1887).
+- Search parameters stored and recoverable in the Web UI (#2062); search state saved periodically, not only at exit (#1882).
+- Corrupted UTF-8 file names are repaired (#1985); unrequested server UDP results and sources are dropped (#1856); null form fields and damaged filter blocks handled (#2133).
+
+### Chat
+
+- Spam protection and CAPTCHA run in amuled and reach every client (#2089, #1829).
+- Chat peers are addressed by a stable hash over EC, amulegui and amuleapi (#1512, #1551, #1576), and 3.1.0 clients get one chat per route again (#1578, #1555).
+- The comment filter applies to Kad notes and EC, and the message-filter master switch turns every rule off (#1600, #1579, #1575).
+
+### Shared files and Verify Local Data
+
+- Verify Local Data results persist, show in amulegui and File Details, and corrupt parts are no longer advertised or sent (#1638, #1691, #1721, #1634).
+- Optional re-verification of requested completed files every N days (#1948).
+- Delete completed and shared files from disk, also from remote clients (#1692, #1950).
+- Exclusion patterns match folder names (#1571); completed files that become excluded are unshared (#2108); the exclusion preview checks every file the scan saw (#1531).
+- Faster startup scan: subdirectories listed without a `stat()` per file, recursive shares expanded once (#1569, #1572), known.met saved in a 5-minute window while hashing (#1535, #1540).
+- The share watcher no longer treats a move into a shared folder as a rename (#1789) or logs one line per folder it cannot add (#1533).
+
+### GUI
+
+- Appearance: Follow system, Light or Dark, on wxWidgets 3.3 builds (#1922); macOS follows live light/dark switches (#1764).
+- Preferences: eMule page order (#1919), bandwidth sliders and an Mbit/s calculator (#1920, #2004), and pages that scroll on small screens (#1696, #1734, #1735).
+- Lists: hidden columns and defaults recoverable, content-fitted widths, widths kept across display scales, and window placement restored (#1975, #1987, #1988, #1989, #1990); clear buttons on search and file filters (#2009); Enter and other control keys reach the lists (#1772).
+- Tray: Linux availability, crash and Minimize to Tray fixed, state icons, and native-DPI SVG icons with speed bars (#2036, #2045, #2026).
+- Kad contact distribution and bounded lookup diagnostics, in the local and remote GUI (#1743, #1741).
+- Context-menu icons and multi-resolution country flags (#1694); live transfer speeds averaged over one second (#2007); source counts readable and accurate (#2016); a SecIdent warning overlay for failed signatures (#1947).
+- The startup splash appears before the downloaded-files history, the clients list and the IP filter load, so a large library no longer starts with a long wait and nothing on screen. Its progress bar follows the real work, and closing it no longer crashes aMule (#1532, #1536, #1561). The same window shows progress while aMule shuts down (#1924).
+- The Clients icon is back in the Gnome, KDE4, Papirus, Priscilla, Tango and Xfce skins (#1560, #1570, #1590, #1621, #1636, #1656).
+- amulegui runs its local "download completed" command (#1785) and no longer writes a stale preferences copy back to the core (#1677).
+
+### amuleapi and the Web UI
+
+- Web UI in Catalan, Italian, Dutch, Portuguese (Brazil) and Russian, translated on Weblate (#1737, #1755, #1773, #2131, #2040).
+- `[Server]/BasePath` for reverse proxies on a sub-path (#1558); accent-insensitive filter boxes (#1815); the EC listener settings shown read-only (#1614, #1660).
+- `/events` streams end with their session, and admin slots are reserved (#1861); an automatically launched amuleapi restarts after a failure (#1897) and reports a thread limit instead of hanging (#1983).
+- Magnet links accepted, and every link in a paste kept (#1640); the Kad bootstrap address sent in Kad byte order (#1711).
+
+### Daemon and command-line tools
+
+- amulecmd: download without a prior listing and by search id (#1633), allocating, stopped and low-disk states shown (#1976), and shutdown delivered before exit (#2096).
+- Configurable log file paths, and logs kept when a backup fails (#1744); `amuled -f` says why it stopped (#1752).
+- Event commands get literal arguments and are explained in remote-GUI mode (#1774, #1769).
+- Autostart and URL handlers registered the same way on every platform and kept across upgrades (#1629, #1630, #1643, #1645, #1646); `--configure-*` options exit 0 or 1 (#1637).
+- `amulecmd` and `amuleweb` respect explicit configuration paths (#2006); default folders work in non-ASCII profiles (#1913).
+
+### Preferences and defaults
+
+- Chat spam filter and CAPTCHA on by default (#2089).
+- Kad file repair hashes (AICH) shared and used by default, also on profiles upgraded from 3.1.0 (#1725).
+- Office documents excluded from sharing in new profiles (#2098).
+- GeoIP refreshed weekly, keeping the working database when an update fails (#1824, #1653, #1624).
+- Download list Part column hidden by default (#1592).
+- The userhash is generated from the crypto RNG, as in eMule (#1790).
+- Unused `DateTimeFormat`, `ShowAllNotCats` and `SplitterbarPosition` keys removed (#1596).
+
+### Platform and packaging
+
+- wxWidgets 3.2.12 in the bundles (#1820); libgd built without HEIF and AVIF (#2139, #2140, #2145).
+- Third-party notices and bundled-library licence files shipped in every package (#2135, #2136).
+- macOS: local-network use declared in Info.plist (#1765).
+- Windows: Unicode command-line arguments preserved (#1971); no bare program names handed to CreateProcess (#1894).
+- Flatpak: no DRI access, and a clear message when no video player is available (#1945, #1881).
+- Collections read correctly on big-endian hosts (#1594).
+- CMake 3.12 is the tested minimum (#1674); `compile.sh` gains `--clean`, `--experimental` and `--strip` (#1759).
+
+### Groundwork, not switched on
+
+kno continued the addressing work: native IPv6 peers and sources, IPv6 in the server login and Kad, server-coordinated NAT traversal with Lugdunum and ed2k-server, uTP hole punching, and a QUIC transport (#1604 through #2143). It all sits behind `ENABLE_IPV6`, `ENABLE_NATT_SERVER_COORDINATION`, `ENABLE_UTP` and `ENABLE_QUIC`, which are off by default, so a stock 3.1.1 build connects exactly as before.
+
+### Known Limitations
+
+Carried over from 3.1.0:
+
+- The macOS `.dmg` is **not code-signed or notarized**, and there are no plans to change that. Gatekeeper warns on first launch; open the app from its context menu (Open) to allow it.
+- **Flathub submission still pending** - install the `.flatpak` directly with `flatpak install <file>` for now.
+- AppImage isn't yet in AppImageLauncher's catalogue.
+
+### Contributors
+
+This release is 454 merged PRs, including the 12 advisory fixes. Particular thanks to:
+
+- **got3nks** - 198 PRs. The fixes for 13 of the 15 advisories, the upload and source-request work, Verify Local Data follow-ups, the share watcher, tray and autostart fixes, packaging and CI.
+- **3togo** - 109 PRs in a first cycle with the project. The upload worker pool (#2067), the All search, chat spam protection and CAPTCHA across every client, the appearance setting and preference reorganization, list column handling, Kad buddy recovery, and server.met sources.
+- **kno** - 44 PRs. The IPv6, NAT traversal and QUIC groundwork, and stable chat identity.
+- **danim7** - 9 PRs. The remote-control path hardening that fixes GHSA-3j74 and GHSA-q2jr, with the allow-list for remote folders; Verify Local Data persisted, shown everywhere and acted on; and clearer connection logs.
+- **ngosang** - 7 PRs. Web UI translation on Weblate and five new Web UI languages, and 35 issues filed.
+- **adem4ik** - 7 PRs restoring the Clients icon across the skins, the design work below, and the most active translator this cycle.
+- **mrjimenez** - 6 PRs on dialog sizing, `compile.sh` and test stability.
+- **aresta** - 3 PRs: accent-insensitive Web UI filters, stored search parameters and cached upload read handles.
+- **XG-DL** - 2 PRs: live port rebinding and periodic search saves.
+- **gbcox** and **aciceri** - one PR each.
+
+#### Design
+
+- **adem4ik** - the artwork behind the new tray icon: the SVG icons for the connected, LowID and disconnected states, drawn sharp at any screen scale (#2026), and the monochrome version that macOS tints to match the menu bar (#2045). Also the Clients icon for the Gnome, KDE4, Papirus, Priscilla, Tango and Xfce skins, and many of the reports that shaped this cycle's interface fixes.
+
+#### Security research
+
+- **SpankulatorX** - reported 13 of the 15 advisories, each with a clear analysis and most with a working reproduction, and moved the low-risk findings to public issues.
+- **itlezy** - reported the two update and inflation advisories (GHSA-hv8p, GHSA-42j9).
+- **danim7** - reported the ffprobe and rename advisories (GHSA-3j74, GHSA-q2jr), then wrote their fix.
+- **mrjimenez** - credited as finder on GHSA-6qxf.
+
+#### Testing and bug reports
+
+- **adem4ik** (17 issues, 15 fixed), **SpankulatorX** (13, all fixed), **slrslr** (6), **demanuel** (3), **ramicastro** (3) and **itlezy** (3).
+- Thanks also to everyone who reported a single bug, confirmed a fix, or ran a pre-release build.
+
+#### Translators
+
+Translation flows through [Weblate](https://hosted.weblate.org/projects/amule/). Credited on this cycle's translation commits, with the largest contributions first:
+
+**Watchman89**, **Kisnov**, **Coool**, **தமிழ்நேரம்**, **reducedradius**, **mslr8**, **Michal Várady**, **thorin**, **Francisco José Juan Quintanilla**, **Mondher Njehi**, **Jaume Casado Ruiz**, **Rares Andrei Acatrini**, **Mojelumi**, **Aniol**, **Andi Chandler**, **الاصيل**, **martinjurran**, **leinaduhcs**, **cedev-1**, **Victorio Nicolas de Melo Soares**, **Télio R**, **Noé Brunner**, **Michaela Kowalski**, **Marcell Balla**, **LenUser0**, **Kurt Schumacher**, **Jack Frank**, **Ihor Samko**, **Eleonor Fernandez**, and the contributors who translate anonymously.
+
+Several developers also carried catalogues: adem4ik, ngosang, mrjimenez, LSalami, got3nks and danim7.
+
+### Merged PRs in this release
+
+The entries above cover the changes users will notice. CI, test and build-tooling work (about 55 PRs) and the Weblate merges are not listed one by one; [the full compare view](https://github.com/amule-org/amule/compare/3.1.0...3.1.1) lists every merged pull request between 3.1.0 and this tag.
+
+Fixes to features added during this same cycle are folded into the entries above rather than listed as separate bug fixes, since no released aMule ever carried those bugs.
+
+---
+
 ## Version 3.1.0 - "Three versions in a year! Can we have some REST?"
 2026-09-21
 
