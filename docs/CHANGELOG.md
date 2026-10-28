@@ -7,7 +7,7 @@ The history of every aMule release. Versions are listed newest first.
 ## Version 3.2.0 - "The secure until proven otherwise edition"
 2026-10-28
 
-A security release first: it fixes 15 vulnerabilities reported through GitHub Security Advisories, and 10 of them are also present in aMule 2.3.3. If you still run 2.3.x or any 3.x release, please upgrade. The release is 454 merged PRs on top of 3.1.0, including the 12 advisory fixes merged at release time. Around those fixes: uploads that no longer stall behind a slow disk, new downloads that find sources sooner, an "All" search across eD2k and Kad, chat spam protection everywhere, an appearance setting, a working Linux tray, and the Web UI in seven languages.
+A security release first: it fixes 15 vulnerabilities reported through GitHub Security Advisories, and 10 of them are also present in aMule 2.3.3. If you still run 2.3.x or any 3.x release, please upgrade. The release is 456 merged PRs on top of 3.1.0, including the 12 advisory fixes merged at release time. Around those fixes: uploads that no longer stall behind a slow disk, new downloads that find sources sooner, an "All" search across eD2k and Kad, chat spam protection everywhere, an appearance setting, a working Linux tray, and the Web UI in seven languages.
 
 Upgrading is a drop-in, but a few defaults changed for safety. Read [Before you upgrade](#before-you-upgrade) if you drive aMule from a remote GUI, amuleapi, amuleweb or scripts.
 
@@ -211,9 +211,9 @@ Carried over from 3.1.0:
 
 ### Contributors
 
-This release is 454 merged PRs, including the 12 advisory fixes. Particular thanks to:
+This release is 456 merged PRs, including the 12 advisory fixes. Particular thanks to:
 
-- **got3nks** - 198 PRs. The fixes for 13 of the 15 advisories, the upload and source-request work, Verify Local Data follow-ups, the share watcher, tray and autostart fixes, packaging and CI.
+- **got3nks** - 199 PRs. The fixes for 13 of the 15 advisories, the upload and source-request work, Verify Local Data follow-ups, the share watcher, tray and autostart fixes, packaging and CI.
 - **3togo** - 109 PRs in a first cycle with the project. The upload worker pool (#2067), the All search, chat spam protection and CAPTCHA across every client, the appearance setting and preference reorganization, list column handling, Kad buddy recovery, and server.met sources.
 - **kno** - 44 PRs. The IPv6, NAT traversal and QUIC groundwork, and stable chat identity.
 - **danim7** - 9 PRs. The remote-control path hardening that fixes GHSA-3j74 and GHSA-q2jr, with the allow-list for remote folders; Verify Local Data persisted, shown everywhere and acted on; and clearer connection logs.
@@ -244,7 +244,7 @@ This release is 454 merged PRs, including the 12 advisory fixes. Particular than
 
 Translation flows through [Weblate](https://hosted.weblate.org/projects/amule/). Credited on this cycle's translation commits, with the largest contributions first:
 
-**Watchman89**, **Kisnov**, **Coool**, **தமிழ்நேரம்**, **reducedradius**, **mslr8**, **Michal Várady**, **thorin**, **Francisco José Juan Quintanilla**, **Mondher Njehi**, **Jaume Casado Ruiz**, **Rares Andrei Acatrini**, **Mojelumi**, **Aniol**, **Andi Chandler**, **الاصيل**, **martinjurran**, **leinaduhcs**, **cedev-1**, **Victorio Nicolas de Melo Soares**, **Télio R**, **Noé Brunner**, **Michaela Kowalski**, **Marcell Balla**, **LenUser0**, **Kurt Schumacher**, **Jack Frank**, **Ihor Samko**, **Eleonor Fernandez**, and the contributors who translate anonymously.
+**Watchman89**, **Kisnov**, **Coool**, **reducedradius**, **தமிழ்நேரம்**, **mslr8**, **Michal Várady**, **thorin**, **Francisco José Juan Quintanilla**, **Mondher Njehi**, **Jaume Casado Ruiz**, **Rares Andrei Acatrini**, **Mojelumi**, **Aniol**, **Andi Chandler**, **الاصيل**, **martinjurran**, **leinaduhcs**, **cedev-1**, **Victorio Nicolas de Melo Soares**, **Télio R**, **Noé Brunner**, **Michaela Kowalski**, **Marcell Balla**, **LenUser0**, **Kurt Schumacher**, **Jack Frank**, **Ihor Samko**, **Eleonor Fernandez**, and the contributors who translate anonymously.
 
 Several developers also carried catalogues: adem4ik, ngosang, mrjimenez, LSalami, got3nks and danim7.
 
